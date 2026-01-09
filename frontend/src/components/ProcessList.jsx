@@ -1,4 +1,5 @@
 import React from 'react';
+import ChartPreview from './ChartPreview';
 import './ProcessList.css';
 
 function ProcessList({ processes, selectedProcess, onSelectProcess }) {
@@ -79,6 +80,8 @@ function ProcessList({ processes, selectedProcess, onSelectProcess }) {
               <span>{calculateTotalEnergy(process)} Wh</span>
             </div>
           </div>
+          
+          {process.endTime && <ChartPreview process={process} />}
         </div>
       ))}
     </div>
