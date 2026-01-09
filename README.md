@@ -57,7 +57,7 @@ The application consists of two main components:
    MQTT_BROKER_URL=mqtt://192.168.1.100:1883
    MQTT_USERNAME=your-username  # if required
    MQTT_PASSWORD=your-password  # if required
-   MQTT_DEVICES=shellyplug-s-12345,shellyplug-s-67890
+   MQTT_DEVICES=Office Charger:shellies/shellyplug07,Kitchen Charger:shellies/shellyplug02
    ```
 
 3. Start the application:
@@ -101,7 +101,9 @@ All configuration can be managed via environment variables (through `.env` file 
 - `MQTT_BROKER_URL`: MQTT broker URL (e.g., `mqtt://your-broker:1883`)
 - `MQTT_USERNAME`: MQTT username (optional)
 - `MQTT_PASSWORD`: MQTT password (optional)
-- `MQTT_DEVICES`: Comma-separated list of device IDs (e.g., Shelly Plug names)
+- `MQTT_DEVICES`: Device configurations in the format `Name:topic` or legacy format `deviceId`
+  - New format: `Office Charger:shellies/shellyplug07,Kitchen:shellies/shellyplug02`
+  - Legacy format (backward compatible): `shellyplug-s-12345,shellyplug-s-67890`
 
 ### Using with External MQTT Broker (Default)
 
@@ -112,7 +114,7 @@ The application is designed to work with your existing MQTT broker:
    MQTT_BROKER_URL=mqtt://192.168.1.100:1883
    MQTT_USERNAME=your-username
    MQTT_PASSWORD=your-password
-   MQTT_DEVICES=device1,device2
+   MQTT_DEVICES=Office Charger:shellies/device1,Garage:shellies/device2
    ```
 
 2. Start the application (mosquitto service will not be started):
@@ -127,7 +129,7 @@ If you don't have an MQTT broker, you can use the included Mosquitto:
 1. Update the `.env` file:
    ```env
    MQTT_BROKER_URL=mqtt://mosquitto:1883
-   MQTT_DEVICES=device1,device2
+   MQTT_DEVICES=Office Charger:shellies/device1,Garage:shellies/device2
    ```
 
 2. Start with the mosquitto profile:
@@ -137,13 +139,19 @@ If you don't have an MQTT broker, you can use the included Mosquitto:
 
 ### MQTT Topics
 
-For each device with ID `{DEVICE_ID}`, the backend subscribes to:
-- `{DEVICE_ID}/relay/0` - Power on/off events
-- `{DEVICE_ID}/relay/0/power` - Power consumption in Watts
+For each device configuration, the backend subscribes to:
+- `{topic}/relay/0` - Power on/off events
+- `{topic}/relay/0/power` - Power consumption in Watts
 
-Example for Shelly Plug S named "shellyplug-s-12345":
-- `shellyplug-s-12345/relay/0` - Receives "on" or "off"
-- `shellyplug-s-12345/relay/0/power` - Receives power value (e.g., "15.5")
+Example for device configured as "Office Charger:shellies/shellyplug07":
+- Subscribes to: `shellies/shellyplug07/relay/0` - Receives "on" or "off"
+- Subscribes to: `shellies/shellyplug07/relay/0/power` - Receives power value (e.g., "15.5")
+- Displays as: "Office Charger" in the UI
+
+Legacy format example for "shellyplug-s-12345":
+- Subscribes to: `shellyplug-s-12345/relay/0` - Receives "on" or "off"
+- Subscribes to: `shellyplug-s-12345/relay/0/power` - Receives power value (e.g., "15.5")
+- Displays as: "shellyplug-s-12345" in the UI
 
 ## API Endpoints
 
@@ -186,13 +194,19 @@ Currently, the application uses in-memory storage for charging processes. For pr
 
 ## Monitoring Multiple Devices
 
-Add multiple device IDs to the `MQTT_DEVICES` environment variable:
+Configure multiple devices with custom names and topics using the `MQTT_DEVICES` environment variable:
+
+```env
+MQTT_DEVICES=Living Room:shellies/living-room-plug,Bedroom:shellies/bedroom-plug,Garage:home/garage-plug
+```
+
+Or use the legacy format (backward compatible):
 
 ```env
 MQTT_DEVICES=living-room-plug,bedroom-plug,garage-plug
 ```
 
-Each device will be monitored independently, and the UI will display all devices and their charging processes.
+Each device will be monitored independently, and the UI will display all devices with their custom names and their charging processes.
 
 ## Troubleshooting
 

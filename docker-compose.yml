@@ -10,7 +10,7 @@ services:
       - MQTT_BROKER_URL=${MQTT_BROKER_URL}
       - MQTT_USERNAME=${MQTT_USERNAME:-}
       - MQTT_PASSWORD=${MQTT_PASSWORD:-}
-      - MQTT_DEVICES=${MQTT_DEVICES:-shellyplug-s-12345,shellyplug-s-67890}
+      - MQTT_DEVICES=${MQTT_DEVICES:-Office Charger:shellies/shellyplug07,Kitchen Charger:shellies/shellyplug02}
       - PORT=3000
     labels:
       - "io.portainer.accesscontrol.teams=administrators"
@@ -18,7 +18,7 @@ services:
       - "com.pinicharging.env.MQTT_BROKER_URL.description=MQTT broker URL (e.g., mqtt://host:1883)"
       - "com.pinicharging.env.MQTT_USERNAME.description=MQTT broker username (optional)"
       - "com.pinicharging.env.MQTT_PASSWORD.description=MQTT broker password (optional)"
-      - "com.pinicharging.env.MQTT_DEVICES.description=Comma-separated list of device IDs (e.g., device1,device2)"
+      - "com.pinicharging.env.MQTT_DEVICES.description=Device configs in format 'Name:topic' (e.g., Office Charger:shellies/plug07) or legacy format 'deviceId'"
     restart: unless-stopped
     networks:
       - pini-network

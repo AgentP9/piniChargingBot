@@ -34,13 +34,23 @@ This guide explains how to deploy and configure the Pini Charging Monitor using 
    | `MQTT_BROKER_URL` | MQTT broker connection URL | `mqtt://192.168.1.100:1883` |
    | `MQTT_USERNAME` | MQTT broker username (optional) | `myuser` |
    | `MQTT_PASSWORD` | MQTT broker password (optional) | `mypassword` |
-   | `MQTT_DEVICES` | Comma-separated device IDs | `shellyplug-living-room,shellyplug-garage` |
+   | `MQTT_DEVICES` | Device configurations (see below) | `Office:shellies/plug07,Kitchen:shellies/plug02` |
+
+   **Device Configuration Format:**
+   
+   **New format (recommended):** `Name:topic,Name2:topic2`
+   - Example: `Office Charger:shellies/shellyplug07,Kitchen Charger:shellies/shellyplug02`
+   - Allows custom friendly names and full MQTT topic paths
+   
+   **Legacy format (backward compatible):** `deviceId,deviceId2`
+   - Example: `shellyplug-living-room,shellyplug-garage`
+   - Uses device ID as both name and topic
 
    **Default deployment (using external MQTT broker):**
    - `MQTT_BROKER_URL`: Set to your existing broker (e.g., `mqtt://192.168.1.100:1883`)
    - `MQTT_USERNAME`: Your broker username (if required)
    - `MQTT_PASSWORD`: Your broker password (if required)
-   - `MQTT_DEVICES`: Your device IDs
+   - `MQTT_DEVICES`: Your device configurations (e.g., `Office Charger:shellies/plug07`)
    
    **To use the built-in Mosquitto broker (optional):**
    - `MQTT_BROKER_URL`: `mqtt://mosquitto:1883`
@@ -129,7 +139,7 @@ This guide explains how to deploy and configure the Pini Charging Monitor using 
 MQTT_BROKER_URL=mqtt://192.168.1.100:1883
 MQTT_USERNAME=iot_user
 MQTT_PASSWORD=secure_password
-MQTT_DEVICES=living-room-plug,bedroom-plug,garage-plug
+MQTT_DEVICES=Living Room:shellies/living-room-plug,Bedroom:shellies/bedroom-plug,Garage:shellies/garage-plug
 ```
 
 **Note:** The internal mosquitto service will not start by default, so no port conflicts.
@@ -141,7 +151,7 @@ To enable the built-in Mosquitto broker:
 1. Set environment variables:
    ```env
    MQTT_BROKER_URL=mqtt://mosquitto:1883
-   MQTT_DEVICES=device1,device2
+   MQTT_DEVICES=Office Charger:shellies/device1,Kitchen:shellies/device2
    ```
 
 2. In Portainer, edit the stack:
@@ -160,7 +170,7 @@ This will start the Mosquitto container and expose ports 1883 and 9001.
 
 ```env
 MQTT_BROKER_URL=mqtt://mosquitto:1883
-MQTT_DEVICES=kitchen-plug,office-plug,workshop-plug,garage-ev-charger
+MQTT_DEVICES=Kitchen:home/kitchen-plug,Office:home/office-plug,Workshop:garage/workshop-plug,EV Charger:garage/ev-charger
 ```
 
 #### Secure MQTT with TLS
@@ -169,7 +179,7 @@ MQTT_DEVICES=kitchen-plug,office-plug,workshop-plug,garage-ev-charger
 MQTT_BROKER_URL=mqtts://broker.example.com:8883
 MQTT_USERNAME=secure_user
 MQTT_PASSWORD=secure_password
-MQTT_DEVICES=device1,device2
+MQTT_DEVICES=Secure Device 1:home/secure/device1,Secure Device 2:home/secure/device2
 ```
 
 ## Container Management in Portainer

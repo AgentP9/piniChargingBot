@@ -23,13 +23,33 @@ const deviceStates = {};
 
 // MQTT Configuration
 const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || 'mqtt://localhost:1883';
-const MQTT_DEVICES = process.env.MQTT_DEVICES ? process.env.MQTT_DEVICES.split(',').map(d => d.trim()) : [];
 const MQTT_USERNAME = process.env.MQTT_USERNAME || '';
 const MQTT_PASSWORD = process.env.MQTT_PASSWORD || '';
 
+// Parse device configurations
+// New format: "Name:topic,Name2:topic2" (e.g., "Office Charger:shellies/shellyplug07")
+// Legacy format: "deviceId,deviceId2" (backward compatible)
+const parseDeviceConfig = (configString) => {
+  if (!configString) return [];
+  
+  return configString.split(',').map(item => {
+    const trimmed = item.trim();
+    if (trimmed.includes(':')) {
+      // New format: name:topic
+      const [name, topic] = trimmed.split(':').map(s => s.trim());
+      return { name, topic, id: topic.replace(/\//g, '_') };
+    } else {
+      // Legacy format: just device ID (topic = deviceId)
+      return { name: trimmed, topic: trimmed, id: trimmed };
+    }
+  });
+};
+
+const MQTT_DEVICES = parseDeviceConfig(process.env.MQTT_DEVICES);
+
 console.log('Starting backend server...');
 console.log('MQTT Broker:', MQTT_BROKER_URL);
-console.log('Configured devices:', MQTT_DEVICES);
+console.log('Configured devices:', MQTT_DEVICES.map(d => `${d.name} (${d.topic})`).join(', '));
 
 // MQTT Client setup
 const mqttOptions = {
@@ -51,29 +71,31 @@ const mqttClient = mqtt.connect(MQTT_BROKER_URL, mqttOptions);
 mqttClient.on('connect', () => {
   console.log('Connected to MQTT broker');
   
-  MQTT_DEVICES.forEach(deviceId => {
+  MQTT_DEVICES.forEach(device => {
     // Subscribe to power on/off topic
-    const powerTopic = `${deviceId}/relay/0`;
+    const powerTopic = `${device.topic}/relay/0`;
     mqttClient.subscribe(powerTopic, (err) => {
       if (err) {
         console.error(`Failed to subscribe to ${powerTopic}:`, err);
       } else {
-        console.log(`Subscribed to ${powerTopic}`);
+        console.log(`Subscribed to ${powerTopic} for device "${device.name}"`);
       }
     });
     
     // Subscribe to power consumption topic
-    const consumptionTopic = `${deviceId}/relay/0/power`;
+    const consumptionTopic = `${device.topic}/relay/0/power`;
     mqttClient.subscribe(consumptionTopic, (err) => {
       if (err) {
         console.error(`Failed to subscribe to ${consumptionTopic}:`, err);
       } else {
-        console.log(`Subscribed to ${consumptionTopic}`);
+        console.log(`Subscribed to ${consumptionTopic} for device "${device.name}"`);
       }
     });
     
-    // Initialize device state
-    deviceStates[deviceId] = {
+    // Initialize device state with unique ID and name
+    deviceStates[device.id] = {
+      name: device.name,
+      topic: device.topic,
       isOn: false,
       power: 0,
       currentProcessId: null
@@ -91,12 +113,20 @@ mqttClient.on('message', (topic, message) => {
   
   console.log(`Received message on ${topic}: ${messageStr}`);
   
-  // Parse topic to extract device ID
-  const topicParts = topic.split('/');
-  const deviceId = topicParts[0];
+  // Find device by matching topic prefix
+  let deviceId = null;
+  let deviceConfig = null;
   
-  if (!deviceStates[deviceId]) {
-    console.warn(`Received message for unknown device: ${deviceId}`);
+  for (const [id, state] of Object.entries(deviceStates)) {
+    if (topic.startsWith(state.topic + '/')) {
+      deviceId = id;
+      deviceConfig = state;
+      break;
+    }
+  }
+  
+  if (!deviceId || !deviceConfig) {
+    console.warn(`Received message for unknown device on topic: ${topic}`);
     return;
   }
   
@@ -110,6 +140,7 @@ mqttClient.on('message', (topic, message) => {
       const newProcess = {
         id: processId,
         deviceId: deviceId,
+        deviceName: deviceConfig.name,
         startTime: timestamp,
         endTime: null,
         events: [
@@ -125,7 +156,7 @@ mqttClient.on('message', (topic, message) => {
       deviceStates[deviceId].currentProcessId = processId;
       deviceStates[deviceId].isOn = true;
       
-      console.log(`Started charging process ${processId} for device ${deviceId}`);
+      console.log(`Started charging process ${processId} for device "${deviceConfig.name}"`);
     } else if (!isOn && deviceStates[deviceId].isOn) {
       // End current charging process
       const processId = deviceStates[deviceId].currentProcessId;
@@ -139,7 +170,7 @@ mqttClient.on('message', (topic, message) => {
           value: false
         });
         
-        console.log(`Ended charging process ${processId} for device ${deviceId}`);
+        console.log(`Ended charging process ${processId} for device "${deviceConfig.name}"`);
       }
       
       deviceStates[deviceId].isOn = false;
@@ -200,6 +231,8 @@ app.get('/api/processes/:id', (req, res) => {
 app.get('/api/devices', (req, res) => {
   const devices = Object.entries(deviceStates).map(([id, state]) => ({
     id,
+    name: state.name,
+    topic: state.topic,
     isOn: state.isOn,
     power: state.power,
     currentProcessId: state.currentProcessId
@@ -216,6 +249,8 @@ app.get('/api/devices/:deviceId', (req, res) => {
   if (state) {
     res.json({
       id: deviceId,
+      name: state.name,
+      topic: state.topic,
       isOn: state.isOn,
       power: state.power,
       currentProcessId: state.currentProcessId

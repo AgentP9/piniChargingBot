@@ -77,7 +77,7 @@ function App() {
                 <h2>Charging Details - Process #{selectedProcess.id}</h2>
                 <div className="process-info">
                   <div className="info-item">
-                    <strong>Device:</strong> {selectedProcess.deviceId}
+                    <strong>Device:</strong> {selectedProcess.deviceName || selectedProcess.deviceId}
                   </div>
                   <div className="info-item">
                     <strong>Start:</strong> {new Date(selectedProcess.startTime).toLocaleString()}
