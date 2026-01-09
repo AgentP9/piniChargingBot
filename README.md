@@ -54,7 +54,7 @@ The application consists of two main components:
    Edit `.env` and configure your MQTT broker and devices:
    ```env
    # Use your existing MQTT broker
-   MQTT_BROKER_URL=mqtt://your-broker-host:1883
+   MQTT_BROKER_URL=mqtt://192.168.1.100:1883
    MQTT_USERNAME=your-username  # if required
    MQTT_PASSWORD=your-password  # if required
    MQTT_DEVICES=shellyplug-s-12345,shellyplug-s-67890
@@ -109,7 +109,7 @@ The application is designed to work with your existing MQTT broker:
 
 1. Update the `.env` file with your broker details:
    ```env
-   MQTT_BROKER_URL=mqtt://your-broker-address:1883
+   MQTT_BROKER_URL=mqtt://192.168.1.100:1883
    MQTT_USERNAME=your-username
    MQTT_PASSWORD=your-password
    MQTT_DEVICES=device1,device2

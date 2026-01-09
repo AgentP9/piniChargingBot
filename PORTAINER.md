@@ -31,7 +31,7 @@ This guide explains how to deploy and configure the Pini Charging Monitor using 
 
    | Variable Name | Description | Example Value |
    |--------------|-------------|---------------|
-   | `MQTT_BROKER_URL` | MQTT broker connection URL | `mqtt://your-broker-host:1883` |
+   | `MQTT_BROKER_URL` | MQTT broker connection URL | `mqtt://192.168.1.100:1883` |
    | `MQTT_USERNAME` | MQTT broker username (optional) | `myuser` |
    | `MQTT_PASSWORD` | MQTT broker password (optional) | `mypassword` |
    | `MQTT_DEVICES` | Comma-separated device IDs | `shellyplug-living-room,shellyplug-garage` |

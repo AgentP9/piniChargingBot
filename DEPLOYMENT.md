@@ -111,7 +111,7 @@ sudo apt-get install mosquitto-clients
 ```env
 # MQTT Configuration
 # Using external broker (default):
-MQTT_BROKER_URL=mqtt://your-broker-host:1883
+MQTT_BROKER_URL=mqtt://192.168.1.100:1883
 MQTT_USERNAME=your-username
 MQTT_PASSWORD=your-password
 
