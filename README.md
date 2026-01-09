@@ -190,7 +190,17 @@ See the Configuration section above for details on connecting to your existing M
 
 ## Data Storage
 
-Currently, the application uses in-memory storage for charging processes. For production use, consider implementing persistent storage using a database (e.g., MongoDB, PostgreSQL).
+The application uses file-based persistent storage for charging processes:
+- Charging processes are automatically saved to disk
+- Data persists across container restarts
+- Storage location: `/app/data` in the container (mapped to a Docker volume)
+- Saves are throttled (max once per 5 seconds) to minimize disk I/O during high-frequency power readings
+- Graceful shutdown ensures all data is saved before the application exits
+
+The data is stored in JSON format and includes:
+- All charging processes with start/end times
+- Power consumption events with timestamps
+- Process ID counter for unique identification
 
 ## Monitoring Multiple Devices
 

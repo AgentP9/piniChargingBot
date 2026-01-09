@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const mqtt = require('mqtt');
 const dotenv = require('dotenv');
+const storage = require('./storage');
 
 // Load environment variables
 dotenv.config();
@@ -13,10 +14,24 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// In-memory storage for charging processes
-// In production, this should be replaced with a proper database
-const chargingProcesses = [];
-let processIdCounter = 1;
+// Persistent storage for charging processes
+// Load existing processes from file
+const chargingProcesses = storage.loadProcesses();
+let processIdCounter = storage.loadProcessCounter();
+
+// Throttle mechanism for saving power consumption events
+let saveTimer = null;
+const SAVE_THROTTLE_MS = 5000; // Save at most once every 5 seconds
+
+function scheduleSave() {
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+  }
+  saveTimer = setTimeout(() => {
+    storage.saveProcesses(chargingProcesses);
+    saveTimer = null;
+  }, SAVE_THROTTLE_MS);
+}
 
 // Current state of each device
 const deviceStates = {};
@@ -156,6 +171,10 @@ mqttClient.on('message', (topic, message) => {
       deviceStates[deviceId].currentProcessId = processId;
       deviceStates[deviceId].isOn = true;
       
+      // Persist to storage
+      storage.saveProcesses(chargingProcesses);
+      storage.saveProcessCounter(processIdCounter);
+      
       console.log(`Started charging process ${processId} for device "${deviceConfig.name}"`);
     } else if (!isOn && deviceStates[deviceId].isOn) {
       // End current charging process
@@ -169,6 +188,9 @@ mqttClient.on('message', (topic, message) => {
           type: 'power_off',
           value: false
         });
+        
+        // Persist to storage
+        storage.saveProcesses(chargingProcesses);
         
         console.log(`Ended charging process ${processId} for device "${deviceConfig.name}"`);
       }
@@ -195,6 +217,9 @@ mqttClient.on('message', (topic, message) => {
             type: 'power_consumption',
             value: power
           });
+          
+          // Schedule a throttled save
+          scheduleSave();
         }
       }
     }
@@ -274,3 +299,39 @@ app.get('/api/health', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
+// Graceful shutdown handler to save data before exit
+function gracefulShutdown(signal) {
+  console.log(`\nReceived ${signal}, saving data and shutting down gracefully...`);
+  
+  // Clear any pending save timer and save immediately
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+  }
+  storage.saveProcesses(chargingProcesses);
+  storage.saveProcessCounter(processIdCounter);
+  
+  // Close MQTT connection with timeout
+  if (mqttClient && mqttClient.connected) {
+    const shutdownTimeout = setTimeout(() => {
+      console.log('MQTT disconnect timeout, forcing exit');
+      process.exit(0);
+    }, 5000);
+    
+    mqttClient.end(false, (err) => {
+      clearTimeout(shutdownTimeout);
+      if (err) {
+        console.error('Error disconnecting MQTT client:', err);
+      } else {
+        console.log('MQTT client disconnected');
+      }
+      process.exit(0);
+    });
+  } else {
+    process.exit(0);
+  }
+}
+
+// Register shutdown handlers
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
