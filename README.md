@@ -32,10 +32,12 @@ The application consists of three main components:
 
 ## Prerequisites
 
-- Docker and Docker Compose installed
+- Docker and Docker Compose installed (or Portainer for web-based management)
 - MQTT-compatible power plugs (e.g., Shelly Plug S) configured to publish to MQTT
 
 ## Quick Start
+
+### Option 1: Docker Compose (Command Line)
 
 1. Clone the repository:
    ```bash
@@ -63,9 +65,28 @@ The application consists of three main components:
    - Frontend: http://localhost
    - Backend API: http://localhost:3000/api/health
 
+### Option 2: Portainer (Web-based Management)
+
+For users who prefer a graphical interface to manage Docker containers, Portainer provides an easy way to deploy and configure the application.
+
+**See [PORTAINER.md](PORTAINER.md) for detailed instructions on:**
+- Deploying the stack via Portainer
+- Configuring environment variables through the web UI
+- Managing and monitoring containers
+- Updating configuration without command line
+
+Quick Portainer steps:
+1. Access your Portainer instance
+2. Go to **Stacks** → **+ Add stack**
+3. Use Git repository: `https://github.com/AgentP9/piniChargingBot`
+4. Configure environment variables in the web UI
+5. Deploy the stack
+
 ## Configuration
 
 ### Environment Variables
+
+All configuration can be managed via environment variables (through `.env` file or Portainer):
 
 - `MQTT_BROKER_URL`: MQTT broker URL (default: `mqtt://mosquitto:1883`)
 - `MQTT_USERNAME`: MQTT username (optional)

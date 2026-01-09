@@ -14,6 +14,13 @@ services:
       - MQTT_PASSWORD=${MQTT_PASSWORD:-}
       - MQTT_DEVICES=${MQTT_DEVICES:-shellyplug-s-12345,shellyplug-s-67890}
       - PORT=3000
+    labels:
+      - "io.portainer.accesscontrol.teams=administrators"
+      - "com.pinicharging.description=MQTT Charging Monitor Backend"
+      - "com.pinicharging.env.MQTT_BROKER_URL.description=MQTT broker URL (e.g., mqtt://host:1883)"
+      - "com.pinicharging.env.MQTT_USERNAME.description=MQTT broker username (optional)"
+      - "com.pinicharging.env.MQTT_PASSWORD.description=MQTT broker password (optional)"
+      - "com.pinicharging.env.MQTT_DEVICES.description=Comma-separated list of device IDs (e.g., device1,device2)"
     depends_on:
       - mosquitto
     restart: unless-stopped
@@ -27,6 +34,9 @@ services:
     container_name: pini-frontend
     ports:
       - "80:80"
+    labels:
+      - "io.portainer.accesscontrol.teams=administrators"
+      - "com.pinicharging.description=MQTT Charging Monitor Frontend"
     depends_on:
       - backend
     restart: unless-stopped
@@ -43,6 +53,9 @@ services:
       - ./mosquitto/config:/mosquitto/config
       - ./mosquitto/data:/mosquitto/data
       - ./mosquitto/log:/mosquitto/log
+    labels:
+      - "io.portainer.accesscontrol.teams=administrators"
+      - "com.pinicharging.description=MQTT Broker (Mosquitto)"
     restart: unless-stopped
     networks:
       - pini-network
