@@ -23,16 +23,16 @@ function ChartPreview({ process }) {
 
   return (
     <div className="chart-preview">
-      <ResponsiveContainer width="100%" height={80}>
+      <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={chartData}
-          margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
+          margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
         >
           <Line 
             type="monotone" 
             dataKey="power" 
             stroke="#999999" 
-            strokeWidth={1.5}
+            strokeWidth={2}
             dot={false}
             isAnimationActive={false}
           />
