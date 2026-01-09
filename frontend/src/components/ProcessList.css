@@ -4,6 +4,8 @@
   gap: 1rem;
   max-height: 600px;
   overflow-y: auto;
+  position: relative;
+  z-index: 1;
 }
 
 .process-list::-webkit-scrollbar {
