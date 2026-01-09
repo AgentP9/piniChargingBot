@@ -33,6 +33,9 @@ function App() {
       setProcesses(processesRes.data);
       
       // Update selected process with fresh data if one is selected
+      // Note: selectedProcessIdRef.current is intentionally not in the dependency array
+      // because refs are stable and don't trigger re-renders. The ref's .current property
+      // is accessed directly to get the latest selected process ID.
       if (selectedProcessIdRef.current !== null) {
         const updatedProcess = processesRes.data.find(p => p.id === selectedProcessIdRef.current);
         if (updatedProcess) {
