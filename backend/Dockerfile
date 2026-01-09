@@ -9,7 +9,7 @@ COPY package*.json ./
 RUN npm install --omit=dev
 
 # Copy application files
-COPY server.js ./
+COPY *.js ./
 
 # Expose port
 EXPOSE 3000
