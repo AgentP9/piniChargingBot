@@ -61,7 +61,7 @@ function ProcessList({ processes, selectedProcess, onSelectProcess }) {
           <div className="process-details">
             <div className="detail-item">
               <span className="detail-icon">🔌</span>
-              <span>{process.deviceId}</span>
+              <span>{process.deviceName || process.deviceId}</span>
             </div>
             
             <div className="detail-item">

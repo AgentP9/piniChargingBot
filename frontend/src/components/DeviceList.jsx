@@ -11,7 +11,7 @@ function DeviceList({ devices }) {
       {devices.map(device => (
         <div key={device.id} className="device-item">
           <div className="device-header">
-            <h3 className="device-name">{device.id}</h3>
+            <h3 className="device-name">{device.name}</h3>
             <span className={`device-status ${device.isOn ? 'status-on' : 'status-off'}`}>
               {device.isOn ? '● ON' : '○ OFF'}
             </span>
