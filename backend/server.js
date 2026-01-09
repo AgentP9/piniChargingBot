@@ -255,6 +255,12 @@ app.get('/api/processes/:id', (req, res) => {
 // Delete a charging process
 app.delete('/api/processes/:id', (req, res) => {
   const processId = parseInt(req.params.id);
+  
+  // Validate that the ID is a valid number
+  if (isNaN(processId)) {
+    return res.status(400).json({ error: 'Invalid process ID' });
+  }
+  
   const processIndex = chargingProcesses.findIndex(p => p.id === processId);
   
   if (processIndex === -1) {

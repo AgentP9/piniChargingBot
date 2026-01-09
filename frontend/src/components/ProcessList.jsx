@@ -72,8 +72,8 @@ function ProcessList({ processes, selectedProcess, onSelectProcess, onDeleteProc
                 <button 
                   className="delete-button"
                   onClick={(e) => handleDelete(e, process.id)}
-                  title="Delete process"
-                  aria-label="Delete process"
+                  title="Delete this charging process"
+                  aria-label={`Delete charging process #${process.id}`}
                 >
                   🗑️
                 </button>
