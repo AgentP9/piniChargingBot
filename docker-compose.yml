@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: pini-backend
     ports:
-      - "3000:3000"
+      - "1818:3000"
     environment:
       - MQTT_BROKER_URL=${MQTT_BROKER_URL}
       - MQTT_USERNAME=${MQTT_USERNAME:-}
