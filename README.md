@@ -72,8 +72,8 @@ The application consists of two main components:
    ```
 
 4. Access the web interface:
-   - Frontend: http://localhost
-   - Backend API: http://localhost:3000/api/health
+   - Frontend: http://localhost:1818
+   - Backend API: Available only through frontend proxy at http://localhost:1818/api/health
 
 ### Option 2: Portainer (Web-based Management)
 
@@ -203,13 +203,14 @@ Each device will be monitored independently, and the UI will display all devices
 
 ### No data showing in frontend
 - Verify backend is running: `docker-compose logs backend`
-- Check backend health: http://localhost:3000/api/health
+- Check backend health through frontend proxy: http://localhost:1818/api/health
 - Ensure devices are publishing to the correct MQTT topics
 
 ### Frontend can't connect to backend
-- Check that backend is running on port 3000
+- Check that both frontend and backend containers are running: `docker-compose ps`
+- Check backend health through frontend proxy: http://localhost:1818/api/health
 - Check browser console for errors
-- Verify CORS settings if running frontend separately
+- Verify both containers are on the same Docker network
 
 ## License
 

@@ -57,8 +57,8 @@ This guide explains how to deploy and configure the Pini Charging Monitor using 
    4. Then deploy the stack
 
 6. **Access Application**
-   - Frontend: `http://your-server-ip` (port 80)
-   - Backend API: `http://your-server-ip:3000/api/health`
+   - Frontend: `http://your-server-ip:1818`
+   - Backend API: Available only through frontend proxy at `http://your-server-ip:1818/api/health`
    - MQTT Broker (if enabled): `your-server-ip:1883`
 
 ## Method 2: Deploy from Web Editor
@@ -238,7 +238,7 @@ To view volumes in Portainer:
    - Click `pini-frontend` → **Logs**
 
 3. Test backend API:
-   - Open browser: `http://your-server-ip:3000/api/health`
+   - Open browser: `http://your-server-ip:1818/api/health`
    - Should return JSON with status
 
 ### No Data Appearing
