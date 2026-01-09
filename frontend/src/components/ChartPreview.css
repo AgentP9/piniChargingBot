@@ -5,15 +5,15 @@
   right: 0;
   bottom: 0;
   z-index: 0;
-  opacity: 0.15;
+  opacity: 0.2;
   transition: opacity 0.3s ease;
   pointer-events: none;
 }
 
 .process-item:hover .chart-preview {
-  opacity: 0.25;
+  opacity: 0.35;
 }
 
 .process-item.selected .chart-preview {
-  opacity: 0.3;
+  opacity: 0.4;
 }
