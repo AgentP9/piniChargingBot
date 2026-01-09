@@ -65,6 +65,23 @@ function App() {
     setSelectedProcess(process);
   };
 
+  const handleProcessDelete = async (processId) => {
+    try {
+      await axios.delete(`${API_URL}/processes/${processId}`);
+      
+      // Remove from local state
+      setProcesses(processes.filter(p => p.id !== processId));
+      
+      // Clear selection if the deleted process was selected
+      if (selectedProcess?.id === processId) {
+        setSelectedProcess(null);
+      }
+    } catch (err) {
+      console.error('Error deleting process:', err);
+      setError('Failed to delete process. Please try again.');
+    }
+  };
+
   return (
     <div className="app">
       <header className="app-header">
@@ -91,6 +108,7 @@ function App() {
                   processes={processes} 
                   selectedProcess={selectedProcess}
                   onSelectProcess={handleProcessSelect}
+                  onDeleteProcess={handleProcessDelete}
                 />
               </section>
             </div>

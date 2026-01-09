@@ -2,7 +2,15 @@ import React from 'react';
 import ChartPreview from './ChartPreview';
 import './ProcessList.css';
 
-function ProcessList({ processes, selectedProcess, onSelectProcess }) {
+function ProcessList({ processes, selectedProcess, onSelectProcess, onDeleteProcess }) {
+  const handleDelete = (e, processId) => {
+    e.stopPropagation(); // Prevent selecting the process when clicking delete
+    
+    if (window.confirm('Are you sure you want to delete this charging process? This action cannot be undone.')) {
+      onDeleteProcess(processId);
+    }
+  };
+
   if (processes.length === 0) {
     return <div className="empty-state">No charging processes yet</div>;
   }
@@ -57,9 +65,19 @@ function ProcessList({ processes, selectedProcess, onSelectProcess }) {
           <div className="process-content">
             <div className="process-header">
               <span className="process-id">Process #{process.id}</span>
-              <span className={`process-badge ${process.endTime ? 'badge-completed' : 'badge-active'}`}>
-                {process.endTime ? 'Completed' : 'Active'}
-              </span>
+              <div className="process-header-actions">
+                <span className={`process-badge ${process.endTime ? 'badge-completed' : 'badge-active'}`}>
+                  {process.endTime ? 'Completed' : 'Active'}
+                </span>
+                <button 
+                  className="delete-button"
+                  onClick={(e) => handleDelete(e, process.id)}
+                  title="Delete this charging process"
+                  aria-label={`Delete charging process #${process.id}`}
+                >
+                  🗑️
+                </button>
+              </div>
             </div>
             
             <div className="process-details">
