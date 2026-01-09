@@ -6,10 +6,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: pini-backend
-    ports:
-      - "3000:3000"
     environment:
-      - MQTT_BROKER_URL=${MQTT_BROKER_URL:-mqtt://mosquitto:1883}
+      - MQTT_BROKER_URL=${MQTT_BROKER_URL}
       - MQTT_USERNAME=${MQTT_USERNAME:-}
       - MQTT_PASSWORD=${MQTT_PASSWORD:-}
       - MQTT_DEVICES=${MQTT_DEVICES:-shellyplug-s-12345,shellyplug-s-67890}
@@ -21,8 +19,6 @@ services:
       - "com.pinicharging.env.MQTT_USERNAME.description=MQTT broker username (optional)"
       - "com.pinicharging.env.MQTT_PASSWORD.description=MQTT broker password (optional)"
       - "com.pinicharging.env.MQTT_DEVICES.description=Comma-separated list of device IDs (e.g., device1,device2)"
-    depends_on:
-      - mosquitto
     restart: unless-stopped
     networks:
       - pini-network
@@ -33,7 +29,7 @@ services:
       dockerfile: Dockerfile
     container_name: pini-frontend
     ports:
-      - "80:80"
+      - "1818:80"
     labels:
       - "io.portainer.accesscontrol.teams=administrators"
       - "com.pinicharging.description=MQTT Charging Monitor Frontend"
@@ -59,6 +55,8 @@ services:
     restart: unless-stopped
     networks:
       - pini-network
+    profiles:
+      - with-mosquitto
 
 networks:
   pini-network:

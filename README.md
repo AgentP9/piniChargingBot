@@ -13,7 +13,7 @@ A Docker-based application for monitoring device charging via MQTT-compatible po
 
 ## Architecture
 
-The application consists of three main components:
+The application consists of two main components:
 
 1. **Backend (Node.js + Express)**: 
    - MQTT client that subscribes to device topics
@@ -26,14 +26,15 @@ The application consists of three main components:
    - Interactive power consumption charts
    - Charging process selection and visualization
 
-3. **MQTT Broker (Eclipse Mosquitto)**:
-   - Lightweight MQTT broker for device communication
-   - Included in Docker Compose setup
+**Optional MQTT Broker:**
+   - Can optionally include Eclipse Mosquitto broker using Docker profiles
+   - Designed to work with your existing MQTT broker by default
 
 ## Prerequisites
 
 - Docker and Docker Compose installed (or Portainer for web-based management)
 - MQTT-compatible power plugs (e.g., Shelly Plug S) configured to publish to MQTT
+- An existing MQTT broker (or use the optional built-in Mosquitto broker)
 
 ## Quick Start
 
@@ -50,9 +51,12 @@ The application consists of three main components:
    cp .env.example .env
    ```
    
-   Edit `.env` and configure your devices:
+   Edit `.env` and configure your MQTT broker and devices:
    ```env
-   MQTT_BROKER_URL=mqtt://mosquitto:1883
+   # Use your existing MQTT broker
+   MQTT_BROKER_URL=mqtt://192.168.1.100:1883
+   MQTT_USERNAME=your-username  # if required
+   MQTT_PASSWORD=your-password  # if required
    MQTT_DEVICES=shellyplug-s-12345,shellyplug-s-67890
    ```
 
@@ -60,10 +64,16 @@ The application consists of three main components:
    ```bash
    docker-compose up -d
    ```
+   
+   **Note:** If you want to use the built-in Mosquitto broker instead:
+   ```bash
+   # Update MQTT_BROKER_URL in .env to: mqtt://mosquitto:1883
+   docker-compose --profile with-mosquitto up -d
+   ```
 
 4. Access the web interface:
-   - Frontend: http://localhost
-   - Backend API: http://localhost:3000/api/health
+   - Frontend: http://localhost:1818
+   - Backend API: Available only through frontend proxy at http://localhost:1818/api/health
 
 ### Option 2: Portainer (Web-based Management)
 
@@ -88,10 +98,42 @@ Quick Portainer steps:
 
 All configuration can be managed via environment variables (through `.env` file or Portainer):
 
-- `MQTT_BROKER_URL`: MQTT broker URL (default: `mqtt://mosquitto:1883`)
+- `MQTT_BROKER_URL`: MQTT broker URL (e.g., `mqtt://your-broker:1883`)
 - `MQTT_USERNAME`: MQTT username (optional)
 - `MQTT_PASSWORD`: MQTT password (optional)
 - `MQTT_DEVICES`: Comma-separated list of device IDs (e.g., Shelly Plug names)
+
+### Using with External MQTT Broker (Default)
+
+The application is designed to work with your existing MQTT broker:
+
+1. Update the `.env` file with your broker details:
+   ```env
+   MQTT_BROKER_URL=mqtt://192.168.1.100:1883
+   MQTT_USERNAME=your-username
+   MQTT_PASSWORD=your-password
+   MQTT_DEVICES=device1,device2
+   ```
+
+2. Start the application (mosquitto service will not be started):
+   ```bash
+   docker-compose up -d
+   ```
+
+### Using Built-in Mosquitto Broker (Optional)
+
+If you don't have an MQTT broker, you can use the included Mosquitto:
+
+1. Update the `.env` file:
+   ```env
+   MQTT_BROKER_URL=mqtt://mosquitto:1883
+   MQTT_DEVICES=device1,device2
+   ```
+
+2. Start with the mosquitto profile:
+   ```bash
+   docker-compose --profile with-mosquitto up -d
+   ```
 
 ### MQTT Topics
 
@@ -120,7 +162,7 @@ Example for Shelly Plug S named "shellyplug-s-12345":
 cd backend
 npm install
 cp .env.example .env
-# Edit .env with your configuration
+# Edit .env with your MQTT broker configuration
 npm run dev
 ```
 
@@ -136,16 +178,7 @@ The frontend will be available at http://localhost:5173 with hot reload enabled.
 
 ## Using with External MQTT Broker
 
-To connect to an external MQTT broker instead of the included Mosquitto:
-
-1. Update the `.env` file:
-   ```env
-   MQTT_BROKER_URL=mqtt://your-broker-address:1883
-   MQTT_USERNAME=your-username
-   MQTT_PASSWORD=your-password
-   ```
-
-2. Comment out or remove the mosquitto service from `docker-compose.yml`
+See the Configuration section above for details on connecting to your existing MQTT broker.
 
 ## Data Storage
 
@@ -170,13 +203,14 @@ Each device will be monitored independently, and the UI will display all devices
 
 ### No data showing in frontend
 - Verify backend is running: `docker-compose logs backend`
-- Check backend health: http://localhost:3000/api/health
+- Check backend health through frontend proxy: http://localhost:1818/api/health
 - Ensure devices are publishing to the correct MQTT topics
 
 ### Frontend can't connect to backend
-- Check that backend is running on port 3000
+- Check that both frontend and backend containers are running: `docker-compose ps`
+- Check backend health through frontend proxy: http://localhost:1818/api/health
 - Check browser console for errors
-- Verify CORS settings if running frontend separately
+- Verify both containers are on the same Docker network
 
 ## License
 

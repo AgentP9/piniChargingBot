@@ -31,25 +31,35 @@ This guide explains how to deploy and configure the Pini Charging Monitor using 
 
    | Variable Name | Description | Example Value |
    |--------------|-------------|---------------|
-   | `MQTT_BROKER_URL` | MQTT broker connection URL | `mqtt://mosquitto:1883` |
+   | `MQTT_BROKER_URL` | MQTT broker connection URL | `mqtt://192.168.1.100:1883` |
    | `MQTT_USERNAME` | MQTT broker username (optional) | `myuser` |
    | `MQTT_PASSWORD` | MQTT broker password (optional) | `mypassword` |
    | `MQTT_DEVICES` | Comma-separated device IDs | `shellyplug-living-room,shellyplug-garage` |
 
-   **Default values if not specified:**
-   - `MQTT_BROKER_URL`: `mqtt://mosquitto:1883` (internal broker)
-   - `MQTT_USERNAME`: (empty - no authentication)
-   - `MQTT_PASSWORD`: (empty - no authentication)
-   - `MQTT_DEVICES`: `shellyplug-s-12345,shellyplug-s-67890`
+   **Default deployment (using external MQTT broker):**
+   - `MQTT_BROKER_URL`: Set to your existing broker (e.g., `mqtt://192.168.1.100:1883`)
+   - `MQTT_USERNAME`: Your broker username (if required)
+   - `MQTT_PASSWORD`: Your broker password (if required)
+   - `MQTT_DEVICES`: Your device IDs
+   
+   **To use the built-in Mosquitto broker (optional):**
+   - `MQTT_BROKER_URL`: `mqtt://mosquitto:1883`
+   - Enable the `with-mosquitto` profile (see note below)
 
 5. **Deploy Stack**
    - Click **Deploy the stack**
    - Wait for deployment to complete (may take a few minutes for first-time build)
+   
+   **Note:** By default, the built-in Mosquitto broker is NOT started. If you need it:
+   1. Before deploying, scroll down to find **Advanced mode** toggle
+   2. In the compose file editor, find the `mosquitto:` service
+   3. Remove or comment out the `profiles:` section (lines with `profiles:` and `- with-mosquitto`)
+   4. Then deploy the stack
 
 6. **Access Application**
-   - Frontend: `http://your-server-ip` (port 80)
-   - Backend API: `http://your-server-ip:3000/api/health`
-   - MQTT Broker: `your-server-ip:1883`
+   - Frontend: `http://your-server-ip:1818`
+   - Backend API: Available only through frontend proxy at `http://your-server-ip:1818/api/health`
+   - MQTT Broker (if enabled): `your-server-ip:1883`
 
 ## Method 2: Deploy from Web Editor
 
@@ -113,7 +123,7 @@ This guide explains how to deploy and configure the Pini Charging Monitor using 
 
 ### Example Configuration Scenarios
 
-#### Using External MQTT Broker
+#### Using External MQTT Broker (Default)
 
 ```env
 MQTT_BROKER_URL=mqtt://192.168.1.100:1883
@@ -122,12 +132,29 @@ MQTT_PASSWORD=secure_password
 MQTT_DEVICES=living-room-plug,bedroom-plug,garage-plug
 ```
 
-**Note:** If using an external broker, you may want to disable the internal mosquitto service:
-1. In Portainer, go to your stack's **Editor** tab
-2. Find the `mosquitto:` service section
-3. Comment it out by adding `#` at the start of each line in that section
-4. Also comment out `depends_on: - mosquitto` in the backend service
-5. Click **Update the stack**
+**Note:** The internal mosquitto service will not start by default, so no port conflicts.
+
+#### Using Built-in Mosquitto Broker (Optional)
+
+To enable the built-in Mosquitto broker:
+
+1. Set environment variables:
+   ```env
+   MQTT_BROKER_URL=mqtt://mosquitto:1883
+   MQTT_DEVICES=device1,device2
+   ```
+
+2. In Portainer, edit the stack:
+   - Go to **Editor** tab
+   - Find the `mosquitto:` service section
+   - Remove these two lines:
+     ```yaml
+     profiles:
+       - with-mosquitto
+     ```
+   - Click **Update the stack**
+
+This will start the Mosquitto container and expose ports 1883 and 9001.
 
 #### Multiple Devices
 
@@ -211,7 +238,7 @@ To view volumes in Portainer:
    - Click `pini-frontend` → **Logs**
 
 3. Test backend API:
-   - Open browser: `http://your-server-ip:3000/api/health`
+   - Open browser: `http://your-server-ip:1818/api/health`
    - Should return JSON with status
 
 ### No Data Appearing
