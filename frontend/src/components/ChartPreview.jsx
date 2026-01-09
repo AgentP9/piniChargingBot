@@ -16,8 +16,8 @@ function ChartPreview({ process }) {
     return powerEvents;
   }, [process]);
 
-  // Don't render if no data or process is still active
-  if (chartData.length === 0 || !process.endTime) {
+  // Don't render if no data
+  if (chartData.length === 0) {
     return null;
   }
 
