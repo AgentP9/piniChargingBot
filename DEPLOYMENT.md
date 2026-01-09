@@ -24,8 +24,8 @@
    ```
 
 3. **Access the application**:
-   - Web UI: http://localhost
-   - Backend API: http://localhost:3000/api/health
+   - Web UI: http://localhost:1818
+   - Backend API: Available only through frontend proxy at http://localhost:1818/api/health
    - MQTT Broker (if using built-in): localhost:1883
 
 ## Testing with Simulated Data
@@ -53,14 +53,14 @@ sudo apt-get install mosquitto-clients
        │ HTTP/API
        ▼
 ┌──────────────────┐
-│  Nginx (Port 80) │
+│ Nginx (Port 1818)│
 │   React + Vite   │
 └──────┬───────────┘
        │ Proxies /api
        ▼
 ┌──────────────────┐      MQTT      ┌────────────────┐
 │ Backend (Node.js)├───────────────►│ Mosquitto MQTT │
-│   Port 3000      │◄───────────────┤   Broker       │
+│  (Internal only) │◄───────────────┤   Broker       │
 └──────────────────┘                └────────┬───────┘
        │                                     │
        │ Stores in memory                    │
@@ -182,7 +182,7 @@ docker compose logs mosquitto
 ### Frontend not loading
 ```bash
 docker compose logs frontend
-# Check http://localhost:3000/api/health
+# Check http://localhost:1818/api/health
 ```
 
 ### No data appearing
