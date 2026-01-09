@@ -37,6 +37,9 @@ function App() {
         const updatedProcess = processesRes.data.find(p => p.id === selectedProcessIdRef.current);
         if (updatedProcess) {
           setSelectedProcess(updatedProcess);
+        } else {
+          // Clear selection if process is no longer available
+          setSelectedProcess(null);
         }
       }
       
