@@ -31,18 +31,22 @@
   background: #fafafa;
   cursor: pointer;
   transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
 }
 
 .process-item:hover {
   border-color: #667eea;
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
   transform: translateY(-2px);
+  z-index: 10;
 }
 
 .process-item.selected {
   border-color: #667eea;
   background: #f0f3ff;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  z-index: 5;
 }
 
 .process-header {
