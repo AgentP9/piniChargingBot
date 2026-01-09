@@ -61,13 +61,14 @@ sudo apt-get install mosquitto-clients
 ┌──────────────────┐      MQTT      ┌────────────────┐
 │ Backend (Node.js)├───────────────►│ Mosquitto MQTT │
 │  (Internal only) │◄───────────────┤   Broker       │
-└──────────────────┘                └────────┬───────┘
+└──────┬───────────┘                └────────┬───────┘
        │                                     │
-       │ Stores in memory                    │
-       │ (Events & Processes)                │
-       │                                     │
-       │                                     ▼
-       │                            ┌────────────────┐
+       │ Persistent storage                  │
+       ▼ (JSON files)                        │
+┌──────────────────┐                         │
+│  Docker Volume   │                         │
+│  /app/data       │                         ▼
+└──────────────────┘                ┌────────────────┐
        │                            │  Shelly Plugs  │
        │                            │  (IoT Devices) │
        │                            └────────────────┘
@@ -87,7 +88,9 @@ sudo apt-get install mosquitto-clients
 - ✅ Real-time event tracking (power on/off, power consumption)
 - ✅ Charging process lifecycle management
 - ✅ REST API for frontend communication
-- ✅ In-memory data storage (easily replaceable with database)
+- ✅ Persistent file-based storage (survives restarts)
+- ✅ Graceful shutdown with data preservation
+- ✅ Atomic write operations to prevent corruption
 
 ### Frontend
 - ✅ Modern, responsive React UI with Vite
@@ -105,6 +108,7 @@ sudo apt-get install mosquitto-clients
 - ✅ Embedded MQTT broker (Mosquitto)
 - ✅ Environment-based configuration
 - ✅ Health check endpoints
+- ✅ Persistent volumes for data storage
 
 ## Environment Variables
 
@@ -163,6 +167,21 @@ For each device configuration:
 
 ## Data Model
 
+### Data Persistence
+
+Charging processes are stored persistently in JSON files within a Docker volume:
+- **Location**: `/app/data` in the backend container
+- **Volume**: `backend-data` (named Docker volume)
+- **Files**:
+  - `charging-processes.json` - All charging processes with events
+  - `process-counter.json` - Process ID counter for unique identification
+- **Features**:
+  - Automatic save on power on/off events
+  - Throttled saves for power consumption (max once per 5 seconds)
+  - Atomic writes to prevent corruption
+  - Graceful shutdown ensures data is saved
+  - Data persists across container restarts and redeployments
+
 ### Charging Process
 ```javascript
 {
@@ -209,14 +228,13 @@ docker compose logs frontend
 
 For production deployment, consider:
 
-1. **Database**: Replace in-memory storage with PostgreSQL/MongoDB
+1. **Database**: The current file-based storage is suitable for small to medium deployments. For high-volume production with multiple backend instances, consider migrating to PostgreSQL/MongoDB
 2. **Authentication**: Add user authentication and API keys
 3. **HTTPS**: Configure SSL certificates for encrypted communication
 4. **Monitoring**: Add application monitoring (Prometheus, Grafana)
-5. **Persistence**: Configure persistent volumes for database and logs
-6. **Backup**: Implement automated backup strategies
-7. **Rate Limiting**: Add API rate limiting to prevent abuse
-8. **Security**: Implement MQTT authentication and ACLs
+5. **Backup**: Implement automated backup strategies for the data volume
+6. **Rate Limiting**: Add API rate limiting to prevent abuse
+7. **Security**: Implement MQTT authentication and ACLs
 
 ## Contributing
 
