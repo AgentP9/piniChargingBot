@@ -9,7 +9,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - MQTT_BROKER_URL=${MQTT_BROKER_URL:-mqtt://localhost:1883}
+      - MQTT_BROKER_URL=${MQTT_BROKER_URL}
       - MQTT_USERNAME=${MQTT_USERNAME:-}
       - MQTT_PASSWORD=${MQTT_PASSWORD:-}
       - MQTT_DEVICES=${MQTT_DEVICES:-shellyplug-s-12345,shellyplug-s-67890}

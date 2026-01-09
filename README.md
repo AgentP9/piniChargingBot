@@ -26,9 +26,9 @@ The application consists of two main components:
    - Interactive power consumption charts
    - Charging process selection and visualization
 
-3. **MQTT Broker (Optional)**:
-   - Can optionally include Eclipse Mosquitto broker
-   - Designed to work with your existing MQTT broker
+**Optional MQTT Broker:**
+   - Can optionally include Eclipse Mosquitto broker using Docker profiles
+   - Designed to work with your existing MQTT broker by default
 
 ## Prerequisites
 
