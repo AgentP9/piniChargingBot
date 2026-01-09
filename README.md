@@ -161,6 +161,7 @@ Legacy format example for "shellyplug-s-12345":
 - `GET /api/processes` - Get all charging processes
 - `GET /api/processes/:id` - Get specific charging process
 - `GET /api/processes/device/:deviceId` - Get processes for a device
+- `DELETE /api/processes/:id` - Delete a specific charging process
 
 ## Development
 
