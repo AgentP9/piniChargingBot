@@ -121,16 +121,31 @@ MQTT_PASSWORD=your-password
 # MQTT_PASSWORD=
 
 # Device Configuration
-MQTT_DEVICES=device1,device2,device3
+# New format: Name:topic (allows custom names and topics)
+MQTT_DEVICES=Office Charger:shellies/shellyplug07,Kitchen Charger:shellies/shellyplug02
+# Legacy format (backward compatible): deviceId
+# MQTT_DEVICES=device1,device2,device3
 ```
 
 ## MQTT Topic Structure
 
-For each device ID `{DEVICE_ID}`:
-- **Power On/Off**: `{DEVICE_ID}/relay/0`
+For each device configuration:
+- **Power On/Off**: `{topic}/relay/0`
   - Messages: "on", "off", "1", "0", "true", "false"
-- **Power Consumption**: `{DEVICE_ID}/relay/0/power`
+- **Power Consumption**: `{topic}/relay/0/power`
   - Messages: Numeric watts (e.g., "15.5")
+
+**Example with new format:**
+- Device: `Office Charger:shellies/shellyplug07`
+- Power topic: `shellies/shellyplug07/relay/0`
+- Consumption topic: `shellies/shellyplug07/relay/0/power`
+- Display name: "Office Charger"
+
+**Example with legacy format:**
+- Device: `device1`
+- Power topic: `device1/relay/0`
+- Consumption topic: `device1/relay/0/power`
+- Display name: "device1"
 
 ## API Endpoints
 
