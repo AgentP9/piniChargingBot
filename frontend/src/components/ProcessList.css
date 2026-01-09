@@ -25,12 +25,14 @@
 }
 
 .process-item {
+  position: relative;
   padding: 1rem;
   border: 2px solid #e0e0e0;
   border-radius: 8px;
   background: #fafafa;
   cursor: pointer;
   transition: all 0.3s ease;
+  overflow: hidden;
 }
 
 .process-item:hover {
@@ -42,6 +44,11 @@
   border-color: #667eea;
   background: #f0f3ff;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.process-content {
+  position: relative;
+  z-index: 1;
 }
 
 .process-header {

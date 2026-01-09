@@ -1,4 +1,5 @@
 import React from 'react';
+import ChartPreview from './ChartPreview';
 import './ProcessList.css';
 
 function ProcessList({ processes, selectedProcess, onSelectProcess }) {
@@ -48,35 +49,39 @@ function ProcessList({ processes, selectedProcess, onSelectProcess }) {
       {sortedProcesses.map(process => (
         <div 
           key={process.id} 
-          className={`process-item ${selectedProcess?.id === process.id ? 'selected' : ''}`}
+          className={`process-item ${selectedProcess?.id === process.id ? 'selected' : ''} ${process.endTime ? 'has-preview' : ''}`}
           onClick={() => onSelectProcess(process)}
         >
-          <div className="process-header">
-            <span className="process-id">Process #{process.id}</span>
-            <span className={`process-badge ${process.endTime ? 'badge-completed' : 'badge-active'}`}>
-              {process.endTime ? 'Completed' : 'Active'}
-            </span>
-          </div>
+          {process.endTime && <ChartPreview process={process} />}
           
-          <div className="process-details">
-            <div className="detail-item">
-              <span className="detail-icon">🔌</span>
-              <span>{process.deviceName || process.deviceId}</span>
+          <div className="process-content">
+            <div className="process-header">
+              <span className="process-id">Process #{process.id}</span>
+              <span className={`process-badge ${process.endTime ? 'badge-completed' : 'badge-active'}`}>
+                {process.endTime ? 'Completed' : 'Active'}
+              </span>
             </div>
             
-            <div className="detail-item">
-              <span className="detail-icon">🕐</span>
-              <span>{formatDate(process.startTime)}</span>
-            </div>
-            
-            <div className="detail-item">
-              <span className="detail-icon">⏱️</span>
-              <span>{formatDuration(process.startTime, process.endTime)}</span>
-            </div>
-            
-            <div className="detail-item">
-              <span className="detail-icon">⚡</span>
-              <span>{calculateTotalEnergy(process)} Wh</span>
+            <div className="process-details">
+              <div className="detail-item">
+                <span className="detail-icon">🔌</span>
+                <span>{process.deviceName || process.deviceId}</span>
+              </div>
+              
+              <div className="detail-item">
+                <span className="detail-icon">🕐</span>
+                <span>{formatDate(process.startTime)}</span>
+              </div>
+              
+              <div className="detail-item">
+                <span className="detail-icon">⏱️</span>
+                <span>{formatDuration(process.startTime, process.endTime)}</span>
+              </div>
+              
+              <div className="detail-item">
+                <span className="detail-icon">⚡</span>
+                <span>{calculateTotalEnergy(process)} Wh</span>
+              </div>
             </div>
           </div>
         </div>
