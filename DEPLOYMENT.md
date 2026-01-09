@@ -11,18 +11,22 @@
    git clone https://github.com/AgentP9/piniChargingBot.git
    cd piniChargingBot
    cp .env.example .env
-   # Edit .env with your device IDs
+   # Edit .env with your MQTT broker details and device IDs
    ```
 
 2. **Start the stack**:
    ```bash
+   # Using your existing MQTT broker (default)
    docker compose up -d
+   
+   # OR, to use the built-in Mosquitto broker
+   docker compose --profile with-mosquitto up -d
    ```
 
 3. **Access the application**:
    - Web UI: http://localhost
    - Backend API: http://localhost:3000/api/health
-   - MQTT Broker: localhost:1883
+   - MQTT Broker (if using built-in): localhost:1883
 
 ## Testing with Simulated Data
 
@@ -32,11 +36,11 @@ Use the provided test script to simulate charging cycles:
 # Install mosquitto clients if needed
 sudo apt-get install mosquitto-clients
 
-# Run simulation
-./test-mqtt.sh shellyplug-s-12345
+# Using your existing broker
+./test-mqtt.sh shellyplug-s-12345 your-broker-host
 
-# Or specify a different MQTT broker
-./test-mqtt.sh my-device-id mqtt.example.com
+# Using built-in mosquitto (if started with --profile with-mosquitto)
+./test-mqtt.sh shellyplug-s-12345 localhost
 ```
 
 ## Architecture Overview
@@ -106,9 +110,15 @@ sudo apt-get install mosquitto-clients
 
 ```env
 # MQTT Configuration
-MQTT_BROKER_URL=mqtt://mosquitto:1883
-MQTT_USERNAME=
-MQTT_PASSWORD=
+# Using external broker (default):
+MQTT_BROKER_URL=mqtt://your-broker-host:1883
+MQTT_USERNAME=your-username
+MQTT_PASSWORD=your-password
+
+# OR, using built-in mosquitto (requires --profile with-mosquitto):
+# MQTT_BROKER_URL=mqtt://mosquitto:1883
+# MQTT_USERNAME=
+# MQTT_PASSWORD=
 
 # Device Configuration
 MQTT_DEVICES=device1,device2,device3

@@ -21,8 +21,6 @@ services:
       - "com.pinicharging.env.MQTT_USERNAME.description=MQTT broker username (optional)"
       - "com.pinicharging.env.MQTT_PASSWORD.description=MQTT broker password (optional)"
       - "com.pinicharging.env.MQTT_DEVICES.description=Comma-separated list of device IDs (e.g., device1,device2)"
-    depends_on:
-      - mosquitto
     restart: unless-stopped
     networks:
       - pini-network
@@ -59,6 +57,8 @@ services:
     restart: unless-stopped
     networks:
       - pini-network
+    profiles:
+      - with-mosquitto
 
 networks:
   pini-network:
