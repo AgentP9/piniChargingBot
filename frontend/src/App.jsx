@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import DeviceList from './components/DeviceList';
 import ProcessList from './components/ProcessList';
@@ -13,14 +13,16 @@ function App() {
   const [selectedProcess, setSelectedProcess] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Use ref to track the currently selected process ID
+  const selectedProcessIdRef = useRef(null);
 
+  // Update ref when selectedProcess changes
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 5000); // Refresh every 5 seconds
-    return () => clearInterval(interval);
-  }, []);
+    selectedProcessIdRef.current = selectedProcess?.id || null;
+  }, [selectedProcess]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [devicesRes, processesRes] = await Promise.all([
         axios.get(`${API_URL}/devices`),
@@ -29,6 +31,15 @@ function App() {
       
       setDevices(devicesRes.data);
       setProcesses(processesRes.data);
+      
+      // Update selected process with fresh data if one is selected
+      if (selectedProcessIdRef.current !== null) {
+        const updatedProcess = processesRes.data.find(p => p.id === selectedProcessIdRef.current);
+        if (updatedProcess) {
+          setSelectedProcess(updatedProcess);
+        }
+      }
+      
       setLoading(false);
       setError(null);
     } catch (err) {
@@ -36,7 +47,13 @@ function App() {
       setError('Failed to connect to backend. Please check if the server is running.');
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 5000); // Refresh every 5 seconds
+    return () => clearInterval(interval);
+  }, [fetchData]);
 
   const handleProcessSelect = (process) => {
     setSelectedProcess(process);
