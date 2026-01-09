@@ -252,6 +252,25 @@ app.get('/api/processes/:id', (req, res) => {
   }
 });
 
+// Delete a charging process
+app.delete('/api/processes/:id', (req, res) => {
+  const processId = parseInt(req.params.id);
+  const processIndex = chargingProcesses.findIndex(p => p.id === processId);
+  
+  if (processIndex === -1) {
+    return res.status(404).json({ error: 'Process not found' });
+  }
+  
+  // Remove the process from the array
+  chargingProcesses.splice(processIndex, 1);
+  
+  // Persist the change to storage
+  storage.saveProcesses(chargingProcesses);
+  
+  console.log(`Deleted charging process ${processId}`);
+  res.json({ success: true, message: 'Process deleted successfully' });
+});
+
 // Get current device states
 app.get('/api/devices', (req, res) => {
   const devices = Object.entries(deviceStates).map(([id, state]) => ({

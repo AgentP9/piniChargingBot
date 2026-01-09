@@ -58,6 +58,12 @@
   margin-bottom: 0.75rem;
 }
 
+.process-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .process-id {
   font-weight: 600;
   color: #333;
@@ -69,6 +75,28 @@
   border-radius: 12px;
   font-size: 0.85rem;
   font-weight: 600;
+}
+
+.delete-button {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-button:hover {
+  background: #fee;
+  transform: scale(1.1);
+}
+
+.delete-button:active {
+  transform: scale(0.95);
 }
 
 .badge-active {
