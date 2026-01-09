@@ -311,10 +311,20 @@ function gracefulShutdown(signal) {
   storage.saveProcesses(chargingProcesses);
   storage.saveProcessCounter(processIdCounter);
   
-  // Close MQTT connection
-  if (mqttClient) {
-    mqttClient.end(false, () => {
-      console.log('MQTT client disconnected');
+  // Close MQTT connection with timeout
+  if (mqttClient && mqttClient.connected) {
+    const shutdownTimeout = setTimeout(() => {
+      console.log('MQTT disconnect timeout, forcing exit');
+      process.exit(0);
+    }, 5000);
+    
+    mqttClient.end(false, (err) => {
+      clearTimeout(shutdownTimeout);
+      if (err) {
+        console.error('Error disconnecting MQTT client:', err);
+      } else {
+        console.log('MQTT client disconnected');
+      }
       process.exit(0);
     });
   } else {

@@ -87,6 +87,7 @@ function saveProcessCounter(counter) {
     const tempFile = `${COUNTER_FILE}.tmp`;
     fs.writeFileSync(tempFile, JSON.stringify({ nextId: counter }, null, 2), 'utf8');
     fs.renameSync(tempFile, COUNTER_FILE);
+    console.log(`Saved process counter: ${counter}`);
   } catch (error) {
     console.error('Error saving process counter to file:', error);
   }
