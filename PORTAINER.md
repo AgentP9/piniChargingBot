@@ -122,7 +122,12 @@ MQTT_PASSWORD=secure_password
 MQTT_DEVICES=living-room-plug,bedroom-plug,garage-plug
 ```
 
-Then in docker-compose.yml, you may want to comment out or remove the mosquitto service since you're using an external broker.
+**Note:** If using an external broker, you may want to disable the internal mosquitto service:
+1. In Portainer, go to your stack's **Editor** tab
+2. Find the `mosquitto:` service section
+3. Comment it out by adding `#` at the start of each line in that section
+4. Also comment out `depends_on: - mosquitto` in the backend service
+5. Click **Update the stack**
 
 #### Multiple Devices
 
@@ -240,7 +245,6 @@ For easier deployment, you can create a Portainer App Template:
   "description": "MQTT-based device charging monitor with real-time visualization",
   "categories": ["IoT", "Monitoring"],
   "platform": "linux",
-  "logo": "https://raw.githubusercontent.com/AgentP9/piniChargingBot/main/logo.png",
   "repository": {
     "url": "https://github.com/AgentP9/piniChargingBot",
     "stackfile": "docker-compose.yml"
@@ -285,6 +289,8 @@ When using Portainer:
 
 ### Using Portainer Secrets (Advanced)
 
+**Note:** This requires modifying the application code to read passwords from files. This is an advanced configuration for production environments.
+
 1. Create secrets:
    - **Secrets** → **+ Add secret**
    - Name: `mqtt_password`
@@ -300,11 +306,9 @@ When using Portainer:
      backend:
        secrets:
          - mqtt_password
-       environment:
-         - MQTT_PASSWORD_FILE=/run/secrets/mqtt_password
    ```
 
-3. Update backend code to read from file if `MQTT_PASSWORD_FILE` is set
+3. For now, the application reads from environment variables. To use secrets, the backend code would need to be modified to read from `/run/secrets/mqtt_password` if the secret file exists.
 
 ## Monitoring and Alerts
 
