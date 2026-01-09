@@ -1,17 +1,17 @@
 .chart-preview {
   margin-top: 0.75rem;
   padding: 0.5rem;
-  background: white;
+  background: #f8f8f8;
   border-radius: 6px;
-  border: 1px solid #e0e0e0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e8e8e8;
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
 }
 
 .process-item:hover .chart-preview {
-  border-color: #667eea;
+  opacity: 0.8;
 }
 
 .process-item.selected .chart-preview {
-  border-color: #667eea;
-  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.1);
+  opacity: 0.9;
 }

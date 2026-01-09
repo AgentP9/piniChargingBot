@@ -31,7 +31,7 @@ function ChartPreview({ process }) {
           <Line 
             type="monotone" 
             dataKey="power" 
-            stroke="#667eea" 
+            stroke="#999999" 
             strokeWidth={1.5}
             dot={false}
             isAnimationActive={false}
