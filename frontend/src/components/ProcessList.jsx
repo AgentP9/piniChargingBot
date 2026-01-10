@@ -2,12 +2,20 @@ import React from 'react';
 import ChartPreview from './ChartPreview';
 import './ProcessList.css';
 
-function ProcessList({ processes, selectedProcess, onSelectProcess, onDeleteProcess }) {
+function ProcessList({ processes, selectedProcess, onSelectProcess, onDeleteProcess, onCompleteProcess }) {
   const handleDelete = (e, processId) => {
     e.stopPropagation(); // Prevent selecting the process when clicking delete
     
     if (window.confirm('Are you sure you want to delete this charging process? This action cannot be undone.')) {
       onDeleteProcess(processId);
+    }
+  };
+
+  const handleComplete = (e, processId) => {
+    e.stopPropagation(); // Prevent selecting the process when clicking complete
+    
+    if (window.confirm('Are you sure you want to mark this process as complete? This will end the charging session.')) {
+      onCompleteProcess(processId);
     }
   };
 
@@ -69,6 +77,16 @@ function ProcessList({ processes, selectedProcess, onSelectProcess, onDeleteProc
                 <span className={`process-badge ${process.endTime ? 'badge-completed' : 'badge-active'}`}>
                   {process.endTime ? 'Completed' : 'Active'}
                 </span>
+                {!process.endTime && (
+                  <button 
+                    className="complete-button"
+                    onClick={(e) => handleComplete(e, process.id)}
+                    title="Mark this process as complete"
+                    aria-label={`Mark charging process #${process.id} as complete`}
+                  >
+                    ✓
+                  </button>
+                )}
                 <button 
                   className="delete-button"
                   onClick={(e) => handleDelete(e, process.id)}

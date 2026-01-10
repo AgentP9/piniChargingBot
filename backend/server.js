@@ -240,6 +240,13 @@ app.get('/api/processes/device/:deviceId', (req, res) => {
   res.json(deviceProcesses);
 });
 
+// Get active (incomplete) processes for a specific device
+app.get('/api/devices/:deviceId/active-processes', (req, res) => {
+  const { deviceId } = req.params;
+  const activeProcesses = chargingProcesses.filter(p => p.deviceId === deviceId && p.endTime === null);
+  res.json(activeProcesses);
+});
+
 // Get a specific charging process
 app.get('/api/processes/:id', (req, res) => {
   const processId = parseInt(req.params.id);
@@ -252,21 +259,6 @@ app.get('/api/processes/:id', (req, res) => {
   }
 });
 
-// Delete a charging process
-app.delete('/api/processes/:id', (req, res) => {
-  const processId = parseInt(req.params.id);
-  
-  // Validate that the ID is a valid number
-  if (isNaN(processId)) {
-    return res.status(400).json({ error: 'Invalid process ID' });
-  }
-  
-  const processIndex = chargingProcesses.findIndex(p => p.id === processId);
-  
-  if (processIndex === -1) {
-    return res.status(404).json({ error: 'Process not found' });
-  }
-  
   // Remove the process from the array
   chargingProcesses.splice(processIndex, 1);
   
@@ -275,6 +267,51 @@ app.delete('/api/processes/:id', (req, res) => {
   
   console.log(`Deleted charging process ${processId}`);
   res.json({ success: true, message: 'Process deleted successfully' });
+});
+
+// Mark a charging process as complete (manually set endTime)
+app.put('/api/processes/:id/complete', (req, res) => {
+  const processId = parseInt(req.params.id);
+  
+  // Validate that the ID is a valid number
+  if (isNaN(processId)) {
+    return res.status(400).json({ error: 'Invalid process ID' });
+  }
+  
+  const process = chargingProcesses.find(p => p.id === processId);
+  
+  if (!process) {
+    return res.status(404).json({ error: 'Process not found' });
+  }
+  
+  // Check if process is already completed
+  if (process.endTime !== null) {
+    return res.status(400).json({ error: 'Process is already completed' });
+  }
+  
+  // Mark the process as complete with current timestamp
+  const timestamp = new Date().toISOString();
+  process.endTime = timestamp;
+  process.events.push({
+    timestamp: timestamp,
+    type: 'manual_completion',
+    value: false
+  });
+  
+  // Clear current process reference if this device is tracking it
+  const deviceState = Object.values(deviceStates).find(
+    state => state.currentProcessId === processId
+  );
+  if (deviceState) {
+    deviceState.isOn = false;
+    deviceState.currentProcessId = null;
+  }
+  
+  // Persist the change to storage
+  storage.saveProcesses(chargingProcesses);
+  
+  console.log(`Manually completed charging process ${processId}`);
+  res.json({ success: true, message: 'Process marked as complete', process });
 });
 
 // Get current device states
