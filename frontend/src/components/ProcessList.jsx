@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import ChartPreview from './ChartPreview';
 import './ProcessList.css';
 
@@ -52,6 +52,21 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
     return <div className="empty-state">No charging processes yet</div>;
   }
 
+  // Parse filter dates once to avoid repeated parsing in the filter function
+  const filterStartDate = useMemo(() => {
+    if (!filters?.startDate) return null;
+    const date = new Date(filters.startDate);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }, [filters?.startDate]);
+
+  const filterEndDate = useMemo(() => {
+    if (!filters?.endDate) return null;
+    const date = new Date(filters.endDate);
+    date.setHours(23, 59, 59, 999);
+    return date;
+  }, [filters?.endDate]);
+
   // Apply filters
   const filteredProcesses = processes.filter(process => {
     // State filter - A process is completed if it has an endTime, active otherwise
@@ -63,19 +78,15 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
     if (filters?.device && filters.device !== 'all' && process.deviceId !== filters.device) return false;
 
     // Start date filter
-    if (filters?.startDate) {
+    if (filterStartDate) {
       const processDate = new Date(process.startTime);
-      const filterDate = new Date(filters.startDate);
-      filterDate.setHours(0, 0, 0, 0);
-      if (processDate < filterDate) return false;
+      if (processDate < filterStartDate) return false;
     }
 
     // End date filter
-    if (filters?.endDate) {
+    if (filterEndDate) {
       const processDate = new Date(process.startTime);
-      const filterDate = new Date(filters.endDate);
-      filterDate.setHours(23, 59, 59, 999);
-      if (processDate > filterDate) return false;
+      if (processDate > filterEndDate) return false;
     }
 
     return true;

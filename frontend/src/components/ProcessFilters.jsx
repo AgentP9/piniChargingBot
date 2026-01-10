@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import './ProcessFilters.css';
 
 function ProcessFilters({ filters, onFilterChange, devices }) {
@@ -25,13 +25,16 @@ function ProcessFilters({ filters, onFilterChange, devices }) {
   const hasActiveFilters = filters.state !== 'all' || filters.device !== 'all' || filters.startDate || filters.endDate;
 
   // Get unique devices from the devices array using a Map for O(n) complexity
-  const uniqueDevicesMap = new Map();
-  devices.forEach(device => {
-    if (!uniqueDevicesMap.has(device.id)) {
-      uniqueDevicesMap.set(device.id, device);
-    }
-  });
-  const uniqueDevices = Array.from(uniqueDevicesMap.values());
+  // Memoized to avoid recalculation on every render
+  const uniqueDevices = useMemo(() => {
+    const uniqueDevicesMap = new Map();
+    devices.forEach(device => {
+      if (!uniqueDevicesMap.has(device.id)) {
+        uniqueDevicesMap.set(device.id, device);
+      }
+    });
+    return Array.from(uniqueDevicesMap.values());
+  }, [devices]);
 
   return (
     <div className="process-filters">
