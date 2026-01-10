@@ -220,8 +220,11 @@ The application is a fully functional Progressive Web App that can be installed 
 - `GET /api/patterns/device/:deviceId` - Get patterns for a specific device
 - `POST /api/patterns/analyze` - Manually trigger pattern analysis
 - `GET /api/processes/:id/pattern` - Get matching pattern for a charging process
+- `GET /api/patterns/debug` - Diagnostic endpoint for troubleshooting pattern issues
 
 For detailed information about pattern recognition, see [PATTERN_RECOGNITION.md](PATTERN_RECOGNITION.md).
+
+**Not seeing device names?** Check the [Pattern Recognition Troubleshooting Guide](TROUBLESHOOTING_PATTERNS.md).
 
 ## Development
 
