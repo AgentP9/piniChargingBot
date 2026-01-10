@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import ChartPreview from './ChartPreview';
+import { FRIENDLY_DEVICE_NAMES } from '../constants/deviceNames';
 import './ProcessList.css';
 
-function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, onDeleteProcess, onCompleteProcess }) {
+function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, onDeleteProcess, onCompleteProcess, filters }) {
   const handleDelete = (e, processId) => {
     e.stopPropagation(); // Prevent selecting the process when clicking delete
     
@@ -18,15 +19,12 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
       onCompleteProcess(processId);
     }
   };
-
-  // Generate friendly names for patterns
-  const friendlyNames = ['Hugo', 'Egon', 'Tom', 'Jerry', 'Alice', 'Bob', 'Charlie', 'Diana', 'Emma', 'Frank'];
   
   // Create a mapping of pattern IDs to friendly names
   const patternNames = {};
   if (patterns && patterns.length > 0) {
     patterns.forEach((pattern, index) => {
-      patternNames[pattern.id] = friendlyNames[index % friendlyNames.length];
+      patternNames[pattern.id] = FRIENDLY_DEVICE_NAMES[index % FRIENDLY_DEVICE_NAMES.length];
     });
   }
   
@@ -52,8 +50,89 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
     return <div className="empty-state">No charging processes yet</div>;
   }
 
+  // Parse filter dates once to avoid repeated parsing in the filter function
+  const filterStartDate = useMemo(() => {
+    if (!filters?.startDate) return null;
+    const date = new Date(filters.startDate);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }, [filters?.startDate]);
+
+  const filterEndDate = useMemo(() => {
+    if (!filters?.endDate) return null;
+    const date = new Date(filters.endDate);
+    date.setHours(23, 59, 59, 999);
+    return date;
+  }, [filters?.endDate]);
+
+  // Pre-compute pattern ID to device name mapping for O(1) lookup during filtering
+  const patternIdToDeviceName = useMemo(() => {
+    if (!patterns || patterns.length === 0) return {};
+    
+    const mapping = {};
+    patterns.forEach((pattern, index) => {
+      mapping[pattern.id] = FRIENDLY_DEVICE_NAMES[index % FRIENDLY_DEVICE_NAMES.length];
+    });
+    return mapping;
+  }, [patterns]);
+
+  // Pre-compute process ID to pattern ID mapping for O(1) lookup during filtering
+  const processIdToPatternId = useMemo(() => {
+    if (!patterns || patterns.length === 0) return {};
+    
+    const mapping = {};
+    patterns.forEach(pattern => {
+      if (pattern.processIds) {
+        pattern.processIds.forEach(processId => {
+          mapping[processId] = pattern.id;
+        });
+      }
+    });
+    return mapping;
+  }, [patterns]);
+
+  // Apply filters
+  const filteredProcesses = processes.filter(process => {
+    // State filter - A process is completed if it has an endTime, active otherwise
+    const isCompleted = process.endTime !== null && process.endTime !== undefined;
+    if (filters?.state === 'active' && isCompleted) return false;
+    if (filters?.state === 'completed' && !isCompleted) return false;
+
+    // Charger filter (physical charging device)
+    if (filters?.charger && filters.charger !== 'all' && process.deviceId !== filters.charger) return false;
+
+    // Device filter (charged device from pattern recognition)
+    // Note: Only completed processes can be filtered by device since pattern recognition
+    // requires a complete charging session to identify the device
+    if (filters?.device && filters.device !== 'all') {
+      // Use pre-computed mapping for O(1) lookup
+      const patternId = processIdToPatternId[process.id];
+      if (!patternId || patternId !== filters.device) {
+        return false;
+      }
+    }
+
+    // Start date filter
+    if (filterStartDate) {
+      const processDate = new Date(process.startTime);
+      if (processDate < filterStartDate) return false;
+    }
+
+    // End date filter
+    if (filterEndDate) {
+      const processDate = new Date(process.startTime);
+      if (processDate > filterEndDate) return false;
+    }
+
+    return true;
+  });
+
+  if (filteredProcesses.length === 0) {
+    return <div className="empty-state">No charging processes match the current filters</div>;
+  }
+
   // Sort processes by start time (most recent first)
-  const sortedProcesses = [...processes].sort((a, b) => 
+  const sortedProcesses = [...filteredProcesses].sort((a, b) => 
     new Date(b.startTime) - new Date(a.startTime)
   );
 
