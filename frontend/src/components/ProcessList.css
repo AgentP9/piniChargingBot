@@ -36,7 +36,7 @@
   cursor: pointer;
   transition: all 0.3s ease;
   overflow: hidden;
-  min-height: 120px; /* Ensure adequate height for all content including device names */
+  min-height: 180px; /* Increased to ensure all content is visible including chart preview */
 }
 
 .process-item:hover {
