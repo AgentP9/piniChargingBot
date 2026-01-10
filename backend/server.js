@@ -409,11 +409,14 @@ app.get('/api/patterns/device/:deviceId', (req, res) => {
 // Trigger pattern analysis manually
 app.post('/api/patterns/analyze', (req, res) => {
   try {
+    console.log('Manual pattern analysis triggered via API');
     runPatternAnalysis();
     res.json({ 
       success: true, 
       message: 'Pattern analysis completed',
-      patternsFound: chargingPatterns.length
+      patternsFound: chargingPatterns.length,
+      totalProcesses: chargingProcesses.length,
+      completedProcesses: chargingProcesses.filter(p => p.endTime).length
     });
   } catch (error) {
     console.error('Error running pattern analysis:', error);
@@ -455,6 +458,41 @@ app.get('/api/processes/:id/pattern', (req, res) => {
       message: 'No matching pattern found'
     });
   }
+});
+
+// Diagnostic endpoint to help troubleshoot pattern recognition
+app.get('/api/patterns/debug', (req, res) => {
+  const completedProcesses = chargingProcesses.filter(p => p.endTime);
+  const processesWithPowerData = completedProcesses.filter(p => 
+    p.events.some(e => e.type === 'power_consumption')
+  );
+  
+  const processDetails = processesWithPowerData.map(p => {
+    const powerEvents = p.events.filter(e => e.type === 'power_consumption' && e.value > 0);
+    const profile = patternAnalyzer.calculatePowerProfile(p);
+    const matchingPattern = chargingPatterns.find(pattern => 
+      pattern.processIds && pattern.processIds.includes(p.id)
+    );
+    
+    return {
+      id: p.id,
+      deviceName: p.deviceName || p.deviceId,
+      completed: !!p.endTime,
+      powerEventsCount: powerEvents.length,
+      hasProfile: profile !== null,
+      hasPattern: !!matchingPattern,
+      patternId: matchingPattern?.id,
+      duration: p.endTime ? (new Date(p.endTime) - new Date(p.startTime)) / 1000 / 60 : null
+    };
+  });
+  
+  res.json({
+    totalProcesses: chargingProcesses.length,
+    completedProcesses: completedProcesses.length,
+    processesWithPowerData: processesWithPowerData.length,
+    totalPatterns: chargingPatterns.length,
+    processDetails: processDetails
+  });
 });
 
 // Start the server

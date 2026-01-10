@@ -23,7 +23,9 @@ function ensureDataDirectory() {
 function calculatePowerProfile(process) {
   const powerEvents = process.events.filter(e => e.type === 'power_consumption' && e.value > 0);
   
-  if (powerEvents.length === 0) {
+  // Require at least 3 power consumption events for reliable pattern analysis
+  if (powerEvents.length < 3) {
+    console.log(`Process ${process.id}: Insufficient power data (${powerEvents.length} events, need 3+)`);
     return null;
   }
   
@@ -52,10 +54,14 @@ function calculatePowerProfile(process) {
   
   // Calculate power consumption curve shape
   // Divide into early, middle, late phases
-  const third = Math.floor(powerEvents.length / 3);
-  const earlyMean = powerEvents.slice(0, third).reduce((sum, e) => sum + e.value, 0) / third || 0;
-  const middleMean = powerEvents.slice(third, third * 2).reduce((sum, e) => sum + e.value, 0) / third || 0;
-  const lateMean = powerEvents.slice(third * 2).reduce((sum, e) => sum + e.value, 0) / (powerEvents.length - third * 2) || 0;
+  const third = Math.max(1, Math.floor(powerEvents.length / 3));
+  const earlyEvents = powerEvents.slice(0, third);
+  const middleEvents = powerEvents.slice(third, third * 2);
+  const lateEvents = powerEvents.slice(third * 2);
+  
+  const earlyMean = earlyEvents.length > 0 ? earlyEvents.reduce((sum, e) => sum + e.value, 0) / earlyEvents.length : mean;
+  const middleMean = middleEvents.length > 0 ? middleEvents.reduce((sum, e) => sum + e.value, 0) / middleEvents.length : mean;
+  const lateMean = lateEvents.length > 0 ? lateEvents.reduce((sum, e) => sum + e.value, 0) / lateEvents.length : mean;
   
   return {
     mean: parseFloat(mean.toFixed(2)),
@@ -153,13 +159,18 @@ function calculateProfileSimilarity(profile1, profile2) {
  * @returns {Array} Array of identified patterns with grouped processes
  */
 function analyzePatterns(processes) {
+  console.log(`Pattern analysis: Starting with ${processes.length} total processes`);
+  
   // Only analyze completed processes with power data
   const completedProcesses = processes.filter(p => 
     p.endTime && 
     p.events.some(e => e.type === 'power_consumption')
   );
   
+  console.log(`Pattern analysis: ${completedProcesses.length} completed processes with power data`);
+  
   if (completedProcesses.length === 0) {
+    console.log('Pattern analysis: No completed processes to analyze');
     return [];
   }
   
@@ -170,7 +181,10 @@ function analyzePatterns(processes) {
     duration: calculateDuration(process)
   })).filter(p => p.profile !== null);
   
+  console.log(`Pattern analysis: ${processesWithProfiles.length} processes with valid profiles`);
+  
   if (processesWithProfiles.length === 0) {
+    console.log('Pattern analysis: No processes with valid power profiles');
     return [];
   }
   
@@ -246,10 +260,14 @@ function analyzePatterns(processes) {
     
     // Remove raw durations array to save space
     delete pattern.durations;
+    
+    console.log(`Pattern ${pattern.id}: ${pattern.count} sessions, processes: [${pattern.processIds.join(', ')}]`);
   });
   
   // Sort patterns by frequency (most common first)
   patterns.sort((a, b) => b.count - a.count);
+  
+  console.log(`Pattern analysis complete: Found ${patterns.length} patterns`);
   
   return patterns;
 }
