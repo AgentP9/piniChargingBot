@@ -99,6 +99,30 @@
   transform: scale(0.95);
 }
 
+.complete-button {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #28a745;
+  font-weight: bold;
+}
+
+.complete-button:hover {
+  background: #d4edda;
+  transform: scale(1.1);
+}
+
+.complete-button:active {
+  transform: scale(0.95);
+}
+
 .badge-active {
   background: #d4edda;
   color: #28a745;

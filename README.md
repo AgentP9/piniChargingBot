@@ -204,9 +204,11 @@ The application is a fully functional Progressive Web App that can be installed 
 - `GET /api/health` - Health check and MQTT connection status
 - `GET /api/devices` - Get all device states
 - `GET /api/devices/:deviceId` - Get specific device state
+- `GET /api/devices/:deviceId/active-processes` - Get active (incomplete) processes for a device
 - `GET /api/processes` - Get all charging processes
 - `GET /api/processes/:id` - Get specific charging process
 - `GET /api/processes/device/:deviceId` - Get processes for a device
+- `PUT /api/processes/:id/complete` - Manually mark a process as complete
 - `DELETE /api/processes/:id` - Delete a specific charging process
 
 ## Development

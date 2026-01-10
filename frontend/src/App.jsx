@@ -82,6 +82,28 @@ function App() {
     }
   };
 
+  const handleProcessComplete = async (processId) => {
+    try {
+      const response = await axios.put(`${API_URL}/processes/${processId}/complete`);
+      
+      // Update the process in local state
+      setProcesses(processes.map(p => 
+        p.id === processId ? response.data.process : p
+      ));
+      
+      // Update selected process if it was the one completed
+      if (selectedProcess?.id === processId) {
+        setSelectedProcess(response.data.process);
+      }
+      
+      // Refresh data to get updated device states
+      fetchData();
+    } catch (err) {
+      console.error('Error completing process:', err);
+      setError('Failed to mark process as complete. Please try again.');
+    }
+  };
+
   return (
     <div className="app">
       <header className="app-header">
@@ -109,6 +131,7 @@ function App() {
                   selectedProcess={selectedProcess}
                   onSelectProcess={handleProcessSelect}
                   onDeleteProcess={handleProcessDelete}
+                  onCompleteProcess={handleProcessComplete}
                 />
               </section>
             </div>
