@@ -4,6 +4,7 @@ import DeviceList from './components/DeviceList';
 import ProcessList from './components/ProcessList';
 import ProcessFilters from './components/ProcessFilters';
 import ChargingChart from './components/ChargingChart';
+import PatternManager from './components/PatternManager';
 import './App.css';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -177,6 +178,10 @@ function App() {
               <section className="card devices-section">
                 <h2>Connected Chargers</h2>
                 <DeviceList devices={devices} />
+                <PatternManager 
+                  patterns={patterns}
+                  onPatternUpdate={handlePatternUpdate}
+                />
               </section>
 
               <section className="card processes-section">
