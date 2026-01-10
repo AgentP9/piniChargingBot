@@ -17,6 +17,7 @@ function App() {
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
     state: 'all',
+    charger: 'all',
     device: 'all',
     startDate: '',
     endDate: ''
@@ -144,6 +145,7 @@ function App() {
                   filters={filters}
                   onFilterChange={handleFilterChange}
                   devices={devices}
+                  patterns={patterns}
                 />
                 <ProcessList 
                   processes={processes}

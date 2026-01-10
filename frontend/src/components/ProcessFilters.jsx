@@ -1,9 +1,13 @@
 import React, { useMemo } from 'react';
 import './ProcessFilters.css';
 
-function ProcessFilters({ filters, onFilterChange, devices }) {
+function ProcessFilters({ filters, onFilterChange, devices, patterns }) {
   const handleStateChange = (e) => {
     onFilterChange({ ...filters, state: e.target.value });
+  };
+
+  const handleChargerChange = (e) => {
+    onFilterChange({ ...filters, charger: e.target.value });
   };
 
   const handleDeviceChange = (e) => {
@@ -19,22 +23,36 @@ function ProcessFilters({ filters, onFilterChange, devices }) {
   };
 
   const handleClearFilters = () => {
-    onFilterChange({ state: 'all', device: 'all', startDate: '', endDate: '' });
+    onFilterChange({ state: 'all', charger: 'all', device: 'all', startDate: '', endDate: '' });
   };
 
-  const hasActiveFilters = filters.state !== 'all' || filters.device !== 'all' || filters.startDate || filters.endDate;
+  const hasActiveFilters = filters.state !== 'all' || filters.charger !== 'all' || filters.device !== 'all' || filters.startDate || filters.endDate;
 
-  // Get unique devices from the devices array using a Map for O(n) complexity
+  // Get unique chargers (physical charging devices) using a Map for O(n) complexity
   // Memoized to avoid recalculation on every render
-  const uniqueDevices = useMemo(() => {
-    const uniqueDevicesMap = new Map();
+  const uniqueChargers = useMemo(() => {
+    const uniqueChargersMap = new Map();
     devices.forEach(device => {
-      if (!uniqueDevicesMap.has(device.id)) {
-        uniqueDevicesMap.set(device.id, device);
+      if (!uniqueChargersMap.has(device.id)) {
+        uniqueChargersMap.set(device.id, device);
       }
     });
-    return Array.from(uniqueDevicesMap.values());
+    return Array.from(uniqueChargersMap.values());
   }, [devices]);
+
+  // Get unique device names from patterns (charged devices like Hugo, Egon, etc.)
+  // Memoized to avoid recalculation on every render
+  const uniqueDeviceNames = useMemo(() => {
+    if (!patterns || patterns.length === 0) return [];
+    
+    const friendlyNames = ['Hugo', 'Egon', 'Tom', 'Jerry', 'Alice', 'Bob', 'Charlie', 'Diana', 'Emma', 'Frank'];
+    const deviceNames = patterns.map((pattern, index) => ({
+      id: pattern.id,
+      name: friendlyNames[index % friendlyNames.length]
+    }));
+    
+    return deviceNames;
+  }, [patterns]);
 
   return (
     <div className="process-filters">
@@ -54,6 +72,23 @@ function ProcessFilters({ filters, onFilterChange, devices }) {
         </div>
 
         <div className="filter-group">
+          <label htmlFor="charger-filter">Charger:</label>
+          <select 
+            id="charger-filter" 
+            value={filters.charger} 
+            onChange={handleChargerChange}
+            className="filter-select"
+          >
+            <option value="all">All Chargers</option>
+            {uniqueChargers.map(charger => (
+              <option key={charger.id} value={charger.id}>
+                {charger.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="filter-group">
           <label htmlFor="device-filter">Device:</label>
           <select 
             id="device-filter" 
@@ -62,7 +97,7 @@ function ProcessFilters({ filters, onFilterChange, devices }) {
             className="filter-select"
           >
             <option value="all">All Devices</option>
-            {uniqueDevices.map(device => (
+            {uniqueDeviceNames.map(device => (
               <option key={device.id} value={device.id}>
                 {device.name}
               </option>

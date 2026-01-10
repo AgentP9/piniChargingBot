@@ -74,8 +74,23 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
     if (filters?.state === 'active' && isCompleted) return false;
     if (filters?.state === 'completed' && !isCompleted) return false;
 
-    // Device filter
-    if (filters?.device && filters.device !== 'all' && process.deviceId !== filters.device) return false;
+    // Charger filter (physical charging device)
+    if (filters?.charger && filters.charger !== 'all' && process.deviceId !== filters.charger) return false;
+
+    // Device filter (charged device from pattern recognition)
+    if (filters?.device && filters.device !== 'all') {
+      const assumedDevice = getAssumedDevice(process);
+      // Get the pattern ID that matches this device name
+      const matchingPattern = patterns?.find(pattern => {
+        const index = patterns.indexOf(pattern);
+        const deviceName = friendlyNames[index % friendlyNames.length];
+        return deviceName === assumedDevice;
+      });
+      
+      if (!matchingPattern || matchingPattern.id !== filters.device) {
+        return false;
+      }
+    }
 
     // Start date filter
     if (filterStartDate) {
