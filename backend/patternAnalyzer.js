@@ -340,6 +340,134 @@ function findMatchingPattern(process, patterns) {
   return bestMatch;
 }
 
+/**
+ * Update the device label for a pattern
+ * Ensures label uniqueness by checking against other patterns
+ * @param {Array} patterns - Array of all patterns
+ * @param {string} patternId - ID of the pattern to update
+ * @param {string} newLabel - New device label
+ * @returns {Object} Result with success status and message
+ */
+function updatePatternLabel(patterns, patternId, newLabel) {
+  const pattern = patterns.find(p => p.id === patternId);
+  
+  if (!pattern) {
+    return { success: false, error: 'Pattern not found' };
+  }
+  
+  // Check if label already exists in another pattern
+  const existingPattern = patterns.find(p => p.id !== patternId && p.deviceName === newLabel);
+  
+  if (existingPattern) {
+    return { success: false, error: 'Label already exists', shouldMerge: true, targetPatternId: existingPattern.id };
+  }
+  
+  const oldLabel = pattern.deviceName;
+  pattern.deviceName = newLabel;
+  
+  return { success: true, oldLabel, newLabel, patternId };
+}
+
+/**
+ * Merge two patterns into one
+ * Combines process IDs and recalculates statistics
+ * @param {Array} patterns - Array of all patterns
+ * @param {string} sourcePatternId - ID of pattern to merge from (will be removed)
+ * @param {string} targetPatternId - ID of pattern to merge into (will be kept)
+ * @returns {Object} Result with success status and updated patterns
+ */
+function mergePatterns(patterns, sourcePatternId, targetPatternId) {
+  const sourceIndex = patterns.findIndex(p => p.id === sourcePatternId);
+  const targetPattern = patterns.find(p => p.id === targetPatternId);
+  
+  if (sourceIndex === -1 || !targetPattern) {
+    return { success: false, error: 'Pattern(s) not found' };
+  }
+  
+  const sourcePattern = patterns[sourceIndex];
+  
+  // Merge process IDs
+  targetPattern.processIds = [...targetPattern.processIds, ...sourcePattern.processIds];
+  
+  // Update count
+  const oldTargetCount = targetPattern.count;
+  targetPattern.count = targetPattern.processIds.length;
+  
+  // Merge average profile (weighted average based on counts)
+  const sourceWeight = sourcePattern.count;
+  const targetWeight = oldTargetCount;
+  const totalWeight = sourceWeight + targetWeight;
+  
+  for (const key of ['mean', 'stdDev', 'min', 'max', 'median', 'p25', 'p75', 'peakPowerRatio']) {
+    if (key === 'min') {
+      targetPattern.averageProfile[key] = Math.min(targetPattern.averageProfile[key], sourcePattern.averageProfile[key]);
+    } else if (key === 'max') {
+      targetPattern.averageProfile[key] = Math.max(targetPattern.averageProfile[key], sourcePattern.averageProfile[key]);
+    } else {
+      targetPattern.averageProfile[key] = parseFloat(
+        ((targetPattern.averageProfile[key] * targetWeight + sourcePattern.averageProfile[key] * sourceWeight) / totalWeight).toFixed(2)
+      );
+    }
+  }
+  
+  for (const phase of ['early', 'middle', 'late']) {
+    targetPattern.averageProfile.curveShape[phase] = parseFloat(
+      ((targetPattern.averageProfile.curveShape[phase] * targetWeight + sourcePattern.averageProfile.curveShape[phase] * sourceWeight) / totalWeight).toFixed(2)
+    );
+  }
+  
+  // Update timestamps
+  if (new Date(sourcePattern.firstSeen) < new Date(targetPattern.firstSeen)) {
+    targetPattern.firstSeen = sourcePattern.firstSeen;
+  }
+  if (new Date(sourcePattern.lastSeen) > new Date(targetPattern.lastSeen)) {
+    targetPattern.lastSeen = sourcePattern.lastSeen;
+  }
+  
+  // Merge statistics by recalculating from combined data
+  if (sourcePattern.statistics && targetPattern.statistics) {
+    // We don't have the raw durations, so we'll approximate
+    const sourceTotalDuration = sourcePattern.statistics.averageDuration * sourcePattern.count;
+    const targetTotalDuration = targetPattern.statistics.averageDuration * oldTargetCount;
+    targetPattern.statistics.averageDuration = parseFloat(
+      ((sourceTotalDuration + targetTotalDuration) / totalWeight).toFixed(2)
+    );
+    targetPattern.statistics.minDuration = Math.min(
+      targetPattern.statistics.minDuration, 
+      sourcePattern.statistics.minDuration
+    );
+    targetPattern.statistics.maxDuration = Math.max(
+      targetPattern.statistics.maxDuration, 
+      sourcePattern.statistics.maxDuration
+    );
+    targetPattern.statistics.totalSessions = totalWeight;
+  }
+  
+  // Remove source pattern
+  patterns.splice(sourceIndex, 1);
+  
+  return { success: true, mergedPattern: targetPattern, removedPatternId: sourcePatternId };
+}
+
+/**
+ * Delete a pattern
+ * @param {Array} patterns - Array of all patterns
+ * @param {string} patternId - ID of pattern to delete
+ * @returns {Object} Result with success status
+ */
+function deletePattern(patterns, patternId) {
+  const index = patterns.findIndex(p => p.id === patternId);
+  
+  if (index === -1) {
+    return { success: false, error: 'Pattern not found' };
+  }
+  
+  const pattern = patterns[index];
+  patterns.splice(index, 1);
+  
+  return { success: true, deletedPattern: pattern };
+}
+
 module.exports = {
   analyzePatterns,
   loadPatterns,
@@ -347,5 +475,8 @@ module.exports = {
   calculatePowerProfile,
   calculateDuration,
   calculateProfileSimilarity,
-  findMatchingPattern
+  findMatchingPattern,
+  updatePatternLabel,
+  mergePatterns,
+  deletePattern
 };
