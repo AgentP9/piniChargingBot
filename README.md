@@ -9,6 +9,7 @@ A Docker-based application for monitoring device charging via MQTT-compatible po
 - **Power Consumption Logging**: Records power consumption data with timestamps
 - **Modern Responsive UI**: Web interface with real-time updates and interactive charts
 - **Multi-Device Support**: Monitor multiple devices simultaneously
+- **Progressive Web App (PWA)**: Add to your iPhone/Android home screen for a native app experience
 - **Docker Deployment**: Easy deployment with Docker Compose
 
 ## Architecture
@@ -74,6 +75,12 @@ The application consists of two main components:
 4. Access the web interface:
    - Frontend: http://localhost:1818
    - Backend API: Available only through frontend proxy at http://localhost:1818/api/health
+
+5. **Add to Home Screen (iOS/Android):**
+   - On your mobile device, open the app in your browser
+   - **iOS**: Tap the Share button, then "Add to Home Screen"
+   - **Android**: Tap the menu (⋮), then "Add to Home Screen" or "Install app"
+   - The app will now open as a standalone application without browser UI
 
 ### Option 2: Portainer (Web-based Management)
 
@@ -152,6 +159,45 @@ Legacy format example for "shellyplug-s-12345":
 - Subscribes to: `shellyplug-s-12345/relay/0` - Receives "on" or "off"
 - Subscribes to: `shellyplug-s-12345/relay/0/power` - Receives power value (e.g., "15.5")
 - Displays as: "shellyplug-s-12345" in the UI
+
+## Progressive Web App (PWA) Support
+
+The application is a fully functional Progressive Web App that can be installed on mobile devices for a native app experience:
+
+### Features:
+- **Standalone Mode**: Opens without browser UI (no Safari/Chrome interface)
+- **Home Screen Icon**: Custom app icon on your device's home screen
+- **Offline Capability**: Basic offline functionality with service worker caching
+- **Responsive Design**: Optimized for mobile and desktop devices
+
+### Installation:
+
+**iOS (iPhone/iPad):**
+1. Open the app in Safari (http://your-server:1818)
+2. Tap the Share button (square with arrow pointing up)
+3. Scroll down and tap "Add to Home Screen"
+4. Tap "Add" in the top right corner
+5. The app icon will appear on your home screen
+6. Open the app - it will launch in standalone mode without Safari UI
+
+**Android:**
+1. Open the app in Chrome (http://your-server:1818)
+2. Tap the menu button (⋮) in the top right
+3. Tap "Add to Home Screen" or "Install app"
+4. Tap "Add" to confirm
+5. The app icon will appear on your home screen
+6. Open the app - it will launch in standalone mode
+
+**Desktop (Chrome/Edge):**
+1. Look for the install icon (➕ or computer icon) in the address bar
+2. Click the icon and confirm installation
+3. The app will open in its own window
+
+### Technical Details:
+- Web App Manifest: Configured for standalone display mode
+- Service Worker: Provides offline caching for static assets and API responses
+- App Icons: Multiple sizes (192x192, 512x512) for different devices
+- Apple Touch Icons: Optimized for iOS devices
 
 ## API Endpoints
 

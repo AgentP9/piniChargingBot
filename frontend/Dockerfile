@@ -1,12 +1,15 @@
-FROM node:18-alpine as build
+FROM node:20-alpine AS build
 
 WORKDIR /app
+
+# Downgrade to npm 9 to avoid npm 10 bugs in Alpine
+RUN npm install -g npm@9
 
 # Copy package files
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Copy application files
 COPY . .
