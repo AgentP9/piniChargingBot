@@ -3,6 +3,7 @@ const cors = require('cors');
 const mqtt = require('mqtt');
 const dotenv = require('dotenv');
 const storage = require('./storage');
+const patternAnalyzer = require('./patternAnalyzer');
 
 // Load environment variables
 dotenv.config();
@@ -19,6 +20,9 @@ app.use(express.json());
 const chargingProcesses = storage.loadProcesses();
 let processIdCounter = storage.loadProcessCounter();
 
+// Pattern analysis storage
+let chargingPatterns = patternAnalyzer.loadPatterns();
+
 // Throttle mechanism for saving power consumption events
 let saveTimer = null;
 const SAVE_THROTTLE_MS = 5000; // Save at most once every 5 seconds
@@ -31,6 +35,14 @@ function scheduleSave() {
     storage.saveProcesses(chargingProcesses);
     saveTimer = null;
   }, SAVE_THROTTLE_MS);
+}
+
+// Function to run pattern analysis
+function runPatternAnalysis() {
+  console.log('Running pattern analysis...');
+  chargingPatterns = patternAnalyzer.analyzePatterns(chargingProcesses);
+  patternAnalyzer.savePatterns(chargingPatterns);
+  console.log(`Pattern analysis complete. Found ${chargingPatterns.length} patterns.`);
 }
 
 // Current state of each device
@@ -193,6 +205,10 @@ mqttClient.on('message', (topic, message) => {
         storage.saveProcesses(chargingProcesses);
         
         console.log(`Ended charging process ${processId} for device "${deviceConfig.name}"`);
+        
+        // Run pattern analysis after completing a process
+        // This helps identify device patterns immediately
+        setTimeout(() => runPatternAnalysis(), 1000);
       }
       
       deviceStates[deviceId].isOn = false;
@@ -326,6 +342,10 @@ app.put('/api/processes/:id/complete', (req, res) => {
   storage.saveProcesses(chargingProcesses);
   
   console.log(`Manually completed charging process ${processId}`);
+  
+  // Run pattern analysis after manual completion
+  setTimeout(() => runPatternAnalysis(), 1000);
+  
   res.json({ success: true, message: 'Process marked as complete', process });
 });
 
@@ -372,9 +392,80 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Pattern Analysis Endpoints
+
+// Get all identified charging patterns
+app.get('/api/patterns', (req, res) => {
+  res.json(chargingPatterns);
+});
+
+// Get patterns for a specific device
+app.get('/api/patterns/device/:deviceId', (req, res) => {
+  const { deviceId } = req.params;
+  const devicePatterns = chargingPatterns.filter(p => p.deviceId === deviceId);
+  res.json(devicePatterns);
+});
+
+// Trigger pattern analysis manually
+app.post('/api/patterns/analyze', (req, res) => {
+  try {
+    runPatternAnalysis();
+    res.json({ 
+      success: true, 
+      message: 'Pattern analysis completed',
+      patternsFound: chargingPatterns.length
+    });
+  } catch (error) {
+    console.error('Error running pattern analysis:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to run pattern analysis' 
+    });
+  }
+});
+
+// Get pattern match for a specific process
+app.get('/api/processes/:id/pattern', (req, res) => {
+  const processId = parseInt(req.params.id);
+  const process = chargingProcesses.find(p => p.id === processId);
+  
+  if (!process) {
+    return res.status(404).json({ error: 'Process not found' });
+  }
+  
+  const match = patternAnalyzer.findMatchingPattern(process, chargingPatterns);
+  
+  if (match) {
+    res.json({
+      processId: processId,
+      matchFound: true,
+      pattern: match.pattern,
+      similarity: match.similarity
+    });
+  } else {
+    res.json({
+      processId: processId,
+      matchFound: false,
+      message: 'No matching pattern found'
+    });
+  }
+});
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  
+  // Run initial pattern analysis on startup
+  if (chargingProcesses.length > 0) {
+    console.log('Running initial pattern analysis...');
+    setTimeout(() => runPatternAnalysis(), 2000);
+  }
+  
+  // Schedule periodic pattern analysis (every 1 hour)
+  setInterval(() => {
+    console.log('Running scheduled pattern analysis...');
+    runPatternAnalysis();
+  }, 60 * 60 * 1000);
 });
 
 // Graceful shutdown handler to save data before exit
