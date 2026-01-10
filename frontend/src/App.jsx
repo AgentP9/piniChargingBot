@@ -10,6 +10,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 function App() {
   const [devices, setDevices] = useState([]);
   const [processes, setProcesses] = useState([]);
+  const [patterns, setPatterns] = useState([]);
   const [selectedProcess, setSelectedProcess] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -24,13 +25,15 @@ function App() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [devicesRes, processesRes] = await Promise.all([
+      const [devicesRes, processesRes, patternsRes] = await Promise.all([
         axios.get(`${API_URL}/devices`),
-        axios.get(`${API_URL}/processes`)
+        axios.get(`${API_URL}/processes`),
+        axios.get(`${API_URL}/patterns`)
       ]);
       
       setDevices(devicesRes.data);
       setProcesses(processesRes.data);
+      setPatterns(patternsRes.data);
       
       // Update selected process with fresh data if one is selected
       // Note: selectedProcessIdRef.current is intentionally not in the dependency array
@@ -120,14 +123,15 @@ function App() {
           <>
             <div className="dashboard-grid">
               <section className="card devices-section">
-                <h2>Connected Devices</h2>
+                <h2>Connected Chargers</h2>
                 <DeviceList devices={devices} />
               </section>
 
               <section className="card processes-section">
                 <h2>Charging Processes</h2>
                 <ProcessList 
-                  processes={processes} 
+                  processes={processes}
+                  patterns={patterns}
                   selectedProcess={selectedProcess}
                   onSelectProcess={handleProcessSelect}
                   onDeleteProcess={handleProcessDelete}

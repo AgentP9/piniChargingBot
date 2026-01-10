@@ -2,7 +2,7 @@ import React from 'react';
 import ChartPreview from './ChartPreview';
 import './ProcessList.css';
 
-function ProcessList({ processes, selectedProcess, onSelectProcess, onDeleteProcess, onCompleteProcess }) {
+function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, onDeleteProcess, onCompleteProcess }) {
   const handleDelete = (e, processId) => {
     e.stopPropagation(); // Prevent selecting the process when clicking delete
     
@@ -17,6 +17,35 @@ function ProcessList({ processes, selectedProcess, onSelectProcess, onDeleteProc
     if (window.confirm('Are you sure you want to mark this process as complete? This will end the charging session.')) {
       onCompleteProcess(processId);
     }
+  };
+
+  // Generate friendly names for patterns
+  const friendlyNames = ['Hugo', 'Egon', 'Tom', 'Jerry', 'Alice', 'Bob', 'Charlie', 'Diana', 'Emma', 'Frank'];
+  
+  // Create a mapping of pattern IDs to friendly names
+  const patternNames = {};
+  if (patterns && patterns.length > 0) {
+    patterns.forEach((pattern, index) => {
+      patternNames[pattern.id] = friendlyNames[index % friendlyNames.length];
+    });
+  }
+  
+  // Get the assumed device name for a process based on pattern matching
+  const getAssumedDevice = (process) => {
+    if (!process.endTime || !patterns || patterns.length === 0) {
+      return null; // No pattern for active processes or if no patterns available
+    }
+    
+    // Find pattern that contains this process ID
+    const matchingPattern = patterns.find(pattern => 
+      pattern.processIds && pattern.processIds.includes(process.id)
+    );
+    
+    if (matchingPattern && patternNames[matchingPattern.id]) {
+      return patternNames[matchingPattern.id];
+    }
+    
+    return null;
   };
 
   if (processes.length === 0) {
@@ -103,6 +132,13 @@ function ProcessList({ processes, selectedProcess, onSelectProcess, onDeleteProc
                 <span className="detail-icon">🔌</span>
                 <span>{process.deviceName || process.deviceId}</span>
               </div>
+              
+              {getAssumedDevice(process) && (
+                <div className="detail-item">
+                  <span className="detail-icon">📱</span>
+                  <span>Device: {getAssumedDevice(process)}</span>
+                </div>
+              )}
               
               <div className="detail-item">
                 <span className="detail-icon">🕐</span>

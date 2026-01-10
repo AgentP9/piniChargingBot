@@ -58,6 +58,17 @@
   padding-bottom: 0.5rem;
 }
 
+/* Ensure processes section has proper height for scrolling */
+.processes-section {
+  display: flex;
+  flex-direction: column;
+  max-height: 700px;
+}
+
+.processes-section h2 {
+  flex-shrink: 0;
+}
+
 .chart-section {
   grid-column: 1 / -1;
 }

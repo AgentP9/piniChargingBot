@@ -7,6 +7,7 @@ A Docker-based application for monitoring device charging via MQTT-compatible po
 - **Real-time MQTT Monitoring**: Connects to MQTT broker and subscribes to configurable device topics
 - **Charging Process Tracking**: Automatically tracks charging sessions based on power on/off events
 - **Power Consumption Logging**: Records power consumption data with timestamps
+- **Pattern Recognition**: AI-powered device fingerprinting that identifies charged devices based on power consumption characteristics
 - **Modern Responsive UI**: Web interface with real-time updates and interactive charts
 - **Multi-Device Support**: Monitor multiple devices simultaneously
 - **Progressive Web App (PWA)**: Add to your iPhone/Android home screen for a native app experience
@@ -201,6 +202,8 @@ The application is a fully functional Progressive Web App that can be installed 
 
 ## API Endpoints
 
+### Device & Process Management
+
 - `GET /api/health` - Health check and MQTT connection status
 - `GET /api/devices` - Get all device states
 - `GET /api/devices/:deviceId` - Get specific device state
@@ -210,6 +213,18 @@ The application is a fully functional Progressive Web App that can be installed 
 - `GET /api/processes/device/:deviceId` - Get processes for a device
 - `PUT /api/processes/:id/complete` - Manually mark a process as complete
 - `DELETE /api/processes/:id` - Delete a specific charging process
+
+### Pattern Recognition
+
+- `GET /api/patterns` - Get all identified charging patterns
+- `GET /api/patterns/device/:deviceId` - Get patterns for a specific device
+- `POST /api/patterns/analyze` - Manually trigger pattern analysis
+- `GET /api/processes/:id/pattern` - Get matching pattern for a charging process
+- `GET /api/patterns/debug` - Diagnostic endpoint for troubleshooting pattern issues
+
+For detailed information about pattern recognition, see [PATTERN_RECOGNITION.md](PATTERN_RECOGNITION.md).
+
+**Not seeing device names?** Check the [Pattern Recognition Troubleshooting Guide](TROUBLESHOOTING_PATTERNS.md).
 
 ## Development
 

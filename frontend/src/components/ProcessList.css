@@ -4,10 +4,13 @@
   gap: 1rem;
   max-height: 600px;
   overflow-y: auto;
+  /* Ensure scrollbar is always visible for better UX */
+  scrollbar-width: thin; /* For Firefox */
+  scrollbar-color: #888 #f1f1f1; /* For Firefox */
 }
 
 .process-list::-webkit-scrollbar {
-  width: 8px;
+  width: 10px; /* Slightly wider for better visibility */
 }
 
 .process-list::-webkit-scrollbar-track {
@@ -33,6 +36,7 @@
   cursor: pointer;
   transition: all 0.3s ease;
   overflow: hidden;
+  min-height: 180px; /* Increased to ensure all content is visible including chart preview */
 }
 
 .process-item:hover {
