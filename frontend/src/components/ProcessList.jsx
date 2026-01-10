@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import ChartPreview from './ChartPreview';
+import { FRIENDLY_DEVICE_NAMES } from '../constants/deviceNames';
 import './ProcessList.css';
 
 function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, onDeleteProcess, onCompleteProcess, filters }) {
@@ -18,15 +19,12 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
       onCompleteProcess(processId);
     }
   };
-
-  // Generate friendly names for patterns
-  const friendlyNames = ['Hugo', 'Egon', 'Tom', 'Jerry', 'Alice', 'Bob', 'Charlie', 'Diana', 'Emma', 'Frank'];
   
   // Create a mapping of pattern IDs to friendly names
   const patternNames = {};
   if (patterns && patterns.length > 0) {
     patterns.forEach((pattern, index) => {
-      patternNames[pattern.id] = friendlyNames[index % friendlyNames.length];
+      patternNames[pattern.id] = FRIENDLY_DEVICE_NAMES[index % FRIENDLY_DEVICE_NAMES.length];
     });
   }
   
@@ -81,9 +79,8 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
     if (filters?.device && filters.device !== 'all') {
       const assumedDevice = getAssumedDevice(process);
       // Get the pattern ID that matches this device name
-      const matchingPattern = patterns?.find(pattern => {
-        const index = patterns.indexOf(pattern);
-        const deviceName = friendlyNames[index % friendlyNames.length];
+      const matchingPattern = patterns?.find((pattern, index) => {
+        const deviceName = FRIENDLY_DEVICE_NAMES[index % FRIENDLY_DEVICE_NAMES.length];
         return deviceName === assumedDevice;
       });
       
