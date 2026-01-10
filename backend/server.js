@@ -427,6 +427,12 @@ app.post('/api/patterns/analyze', (req, res) => {
 // Get pattern match for a specific process
 app.get('/api/processes/:id/pattern', (req, res) => {
   const processId = parseInt(req.params.id);
+  
+  // Validate that the ID is a valid number
+  if (isNaN(processId)) {
+    return res.status(400).json({ error: 'Invalid process ID' });
+  }
+  
   const process = chargingProcesses.find(p => p.id === processId);
   
   if (!process) {
