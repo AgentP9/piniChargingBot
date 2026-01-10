@@ -54,9 +54,10 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
 
   // Apply filters
   const filteredProcesses = processes.filter(process => {
-    // State filter
-    if (filters?.state === 'active' && process.endTime) return false;
-    if (filters?.state === 'completed' && !process.endTime) return false;
+    // State filter - A process is completed if it has an endTime, active otherwise
+    const isCompleted = process.endTime !== null && process.endTime !== undefined;
+    if (filters?.state === 'active' && isCompleted) return false;
+    if (filters?.state === 'completed' && !isCompleted) return false;
 
     // Device filter
     if (filters?.device && filters.device !== 'all' && process.deviceId !== filters.device) return false;

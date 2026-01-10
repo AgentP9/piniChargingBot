@@ -24,13 +24,14 @@ function ProcessFilters({ filters, onFilterChange, devices }) {
 
   const hasActiveFilters = filters.state !== 'all' || filters.device !== 'all' || filters.startDate || filters.endDate;
 
-  // Get unique devices from the devices array
-  const uniqueDevices = devices.reduce((acc, device) => {
-    if (!acc.find(d => d.id === device.id)) {
-      acc.push(device);
+  // Get unique devices from the devices array using a Map for O(n) complexity
+  const uniqueDevicesMap = new Map();
+  devices.forEach(device => {
+    if (!uniqueDevicesMap.has(device.id)) {
+      uniqueDevicesMap.set(device.id, device);
     }
-    return acc;
-  }, []);
+  });
+  const uniqueDevices = Array.from(uniqueDevicesMap.values());
 
   return (
     <div className="process-filters">
