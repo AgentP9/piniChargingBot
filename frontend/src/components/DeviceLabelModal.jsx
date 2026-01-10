@@ -127,8 +127,8 @@ function DeviceLabelModal({ pattern, patterns, onClose, onSave, onMerge }) {
               <strong>Pattern Info:</strong>
               <ul>
                 <li>Sessions: {pattern.count}</li>
-                <li>Avg. Duration: {pattern.statistics?.averageDuration?.toFixed(1)} min</li>
-                <li>Avg. Power: {pattern.averageProfile?.mean?.toFixed(1)} W</li>
+                <li>Avg. Duration: {pattern.statistics?.averageDuration?.toFixed(1) ?? 'N/A'} min</li>
+                <li>Avg. Power: {pattern.averageProfile?.mean?.toFixed(1) ?? 'N/A'} W</li>
               </ul>
             </div>
           </div>

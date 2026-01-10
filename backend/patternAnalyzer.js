@@ -340,6 +340,10 @@ function findMatchingPattern(process, patterns) {
   return bestMatch;
 }
 
+// Constants for profile merging
+const PROFILE_KEYS = ['mean', 'stdDev', 'min', 'max', 'median', 'p25', 'p75', 'peakPowerRatio'];
+const CURVE_PHASES = ['early', 'middle', 'late'];
+
 /**
  * Update the device label for a pattern
  * Ensures label uniqueness by checking against other patterns
@@ -398,7 +402,7 @@ function mergePatterns(patterns, sourcePatternId, targetPatternId) {
   const targetWeight = oldTargetCount;
   const totalWeight = sourceWeight + targetWeight;
   
-  for (const key of ['mean', 'stdDev', 'min', 'max', 'median', 'p25', 'p75', 'peakPowerRatio']) {
+  for (const key of PROFILE_KEYS) {
     if (key === 'min') {
       targetPattern.averageProfile[key] = Math.min(targetPattern.averageProfile[key], sourcePattern.averageProfile[key]);
     } else if (key === 'max') {
@@ -410,7 +414,7 @@ function mergePatterns(patterns, sourcePatternId, targetPatternId) {
     }
   }
   
-  for (const phase of ['early', 'middle', 'late']) {
+  for (const phase of CURVE_PHASES) {
     targetPattern.averageProfile.curveShape[phase] = parseFloat(
       ((targetPattern.averageProfile.curveShape[phase] * targetWeight + sourcePattern.averageProfile.curveShape[phase] * sourceWeight) / totalWeight).toFixed(2)
     );

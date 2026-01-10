@@ -21,12 +21,6 @@ function PatternManager({ patterns, onPatternUpdate }) {
     }
   };
 
-  const handleEditPattern = (pattern) => {
-    // This could trigger the same modal as in ProcessList
-    // For now, we'll just show an alert
-    alert(`Edit functionality for pattern ${pattern.id} - implement edit modal here`);
-  };
-
   if (!patterns || patterns.length === 0) {
     return (
       <div className="pattern-manager">
@@ -80,15 +74,15 @@ function PatternManager({ patterns, onPatternUpdate }) {
                   <div className="detail-grid">
                     <div className="detail-item">
                       <span className="detail-label">Average Power:</span>
-                      <span className="detail-value">{pattern.averageProfile?.mean?.toFixed(1)} W</span>
+                      <span className="detail-value">{pattern.averageProfile?.mean?.toFixed(1) ?? 'N/A'} W</span>
                     </div>
                     <div className="detail-item">
                       <span className="detail-label">Average Duration:</span>
-                      <span className="detail-value">{pattern.statistics?.averageDuration?.toFixed(1)} min</span>
+                      <span className="detail-value">{pattern.statistics?.averageDuration?.toFixed(1) ?? 'N/A'} min</span>
                     </div>
                     <div className="detail-item">
                       <span className="detail-label">Total Sessions:</span>
-                      <span className="detail-value">{pattern.statistics?.totalSessions}</span>
+                      <span className="detail-value">{pattern.statistics?.totalSessions ?? 'N/A'}</span>
                     </div>
                     <div className="detail-item">
                       <span className="detail-label">Last Seen:</span>
@@ -101,15 +95,15 @@ function PatternManager({ patterns, onPatternUpdate }) {
                     <div className="profile-curve">
                       <div className="curve-phase">
                         <span className="phase-label">Early</span>
-                        <span className="phase-value">{pattern.averageProfile?.curveShape?.early?.toFixed(1)} W</span>
+                        <span className="phase-value">{pattern.averageProfile?.curveShape?.early?.toFixed(1) ?? 'N/A'} W</span>
                       </div>
                       <div className="curve-phase">
                         <span className="phase-label">Middle</span>
-                        <span className="phase-value">{pattern.averageProfile?.curveShape?.middle?.toFixed(1)} W</span>
+                        <span className="phase-value">{pattern.averageProfile?.curveShape?.middle?.toFixed(1) ?? 'N/A'} W</span>
                       </div>
                       <div className="curve-phase">
                         <span className="phase-label">Late</span>
-                        <span className="phase-value">{pattern.averageProfile?.curveShape?.late?.toFixed(1)} W</span>
+                        <span className="phase-value">{pattern.averageProfile?.curveShape?.late?.toFixed(1) ?? 'N/A'} W</span>
                       </div>
                     </div>
                   </div>
