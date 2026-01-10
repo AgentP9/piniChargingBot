@@ -65,6 +65,32 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
     return date;
   }, [filters?.endDate]);
 
+  // Pre-compute pattern ID to device name mapping for O(1) lookup during filtering
+  const patternIdToDeviceName = useMemo(() => {
+    if (!patterns || patterns.length === 0) return {};
+    
+    const mapping = {};
+    patterns.forEach((pattern, index) => {
+      mapping[pattern.id] = FRIENDLY_DEVICE_NAMES[index % FRIENDLY_DEVICE_NAMES.length];
+    });
+    return mapping;
+  }, [patterns]);
+
+  // Pre-compute process ID to pattern ID mapping for O(1) lookup during filtering
+  const processIdToPatternId = useMemo(() => {
+    if (!patterns || patterns.length === 0) return {};
+    
+    const mapping = {};
+    patterns.forEach(pattern => {
+      if (pattern.processIds) {
+        pattern.processIds.forEach(processId => {
+          mapping[processId] = pattern.id;
+        });
+      }
+    });
+    return mapping;
+  }, [patterns]);
+
   // Apply filters
   const filteredProcesses = processes.filter(process => {
     // State filter - A process is completed if it has an endTime, active otherwise
@@ -76,15 +102,12 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
     if (filters?.charger && filters.charger !== 'all' && process.deviceId !== filters.charger) return false;
 
     // Device filter (charged device from pattern recognition)
+    // Note: Only completed processes can be filtered by device since pattern recognition
+    // requires a complete charging session to identify the device
     if (filters?.device && filters.device !== 'all') {
-      const assumedDevice = getAssumedDevice(process);
-      // Get the pattern ID that matches this device name
-      const matchingPattern = patterns?.find((pattern, index) => {
-        const deviceName = FRIENDLY_DEVICE_NAMES[index % FRIENDLY_DEVICE_NAMES.length];
-        return deviceName === assumedDevice;
-      });
-      
-      if (!matchingPattern || matchingPattern.id !== filters.device) {
+      // Use pre-computed mapping for O(1) lookup
+      const patternId = processIdToPatternId[process.id];
+      if (!patternId || patternId !== filters.device) {
         return false;
       }
     }
