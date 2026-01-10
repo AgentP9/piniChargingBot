@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import DeviceList from './components/DeviceList';
 import ProcessList from './components/ProcessList';
+import ProcessFilters from './components/ProcessFilters';
 import ChargingChart from './components/ChargingChart';
 import './App.css';
 
@@ -14,6 +15,12 @@ function App() {
   const [selectedProcess, setSelectedProcess] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filters, setFilters] = useState({
+    state: 'all',
+    device: 'all',
+    startDate: '',
+    endDate: ''
+  });
   
   // Use ref to track the currently selected process ID
   const selectedProcessIdRef = useRef(null);
@@ -107,6 +114,10 @@ function App() {
     }
   };
 
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+  };
+
   return (
     <div className="app">
       <header className="app-header">
@@ -129,6 +140,11 @@ function App() {
 
               <section className="card processes-section">
                 <h2>Charging Processes</h2>
+                <ProcessFilters 
+                  filters={filters}
+                  onFilterChange={handleFilterChange}
+                  devices={devices}
+                />
                 <ProcessList 
                   processes={processes}
                   patterns={patterns}
@@ -136,6 +152,7 @@ function App() {
                   onSelectProcess={handleProcessSelect}
                   onDeleteProcess={handleProcessDelete}
                   onCompleteProcess={handleProcessComplete}
+                  filters={filters}
                 />
               </section>
             </div>

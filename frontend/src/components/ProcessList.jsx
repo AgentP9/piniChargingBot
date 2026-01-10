@@ -2,7 +2,7 @@ import React from 'react';
 import ChartPreview from './ChartPreview';
 import './ProcessList.css';
 
-function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, onDeleteProcess, onCompleteProcess }) {
+function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, onDeleteProcess, onCompleteProcess, filters }) {
   const handleDelete = (e, processId) => {
     e.stopPropagation(); // Prevent selecting the process when clicking delete
     
@@ -52,8 +52,40 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
     return <div className="empty-state">No charging processes yet</div>;
   }
 
+  // Apply filters
+  const filteredProcesses = processes.filter(process => {
+    // State filter
+    if (filters?.state === 'active' && process.endTime) return false;
+    if (filters?.state === 'completed' && !process.endTime) return false;
+
+    // Device filter
+    if (filters?.device && filters.device !== 'all' && process.deviceId !== filters.device) return false;
+
+    // Start date filter
+    if (filters?.startDate) {
+      const processDate = new Date(process.startTime);
+      const filterDate = new Date(filters.startDate);
+      filterDate.setHours(0, 0, 0, 0);
+      if (processDate < filterDate) return false;
+    }
+
+    // End date filter
+    if (filters?.endDate) {
+      const processDate = new Date(process.startTime);
+      const filterDate = new Date(filters.endDate);
+      filterDate.setHours(23, 59, 59, 999);
+      if (processDate > filterDate) return false;
+    }
+
+    return true;
+  });
+
+  if (filteredProcesses.length === 0) {
+    return <div className="empty-state">No charging processes match the current filters</div>;
+  }
+
   // Sort processes by start time (most recent first)
-  const sortedProcesses = [...processes].sort((a, b) => 
+  const sortedProcesses = [...filteredProcesses].sort((a, b) => 
     new Date(b.startTime) - new Date(a.startTime)
   );
 
