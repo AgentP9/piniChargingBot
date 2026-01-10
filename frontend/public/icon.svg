@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#2196F3" rx="64"/>
+  <path d="M320 128 l-80 160 h60 l-60 160 l120-200 h-80 l40-120 z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="8" stroke-linejoin="round"/>
+  <text x="256" y="460" font-family="Arial, sans-serif" font-size="64" fill="#FFFFFF" text-anchor="middle" font-weight="bold">PINI</text>
+</svg>
