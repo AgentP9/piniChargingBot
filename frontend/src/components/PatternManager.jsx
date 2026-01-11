@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FRIENDLY_DEVICE_NAMES } from '../constants/deviceNames';
 import './PatternManager.css';
 
-function PatternManager({ patterns, onPatternUpdate }) {
+function PatternManager({ patterns, selectedPatternId, onPatternUpdate, onSelectPattern }) {
   const [expandedPattern, setExpandedPattern] = useState(null);
 
   const handleDeletePattern = async (patternId, deviceName) => {
@@ -36,6 +36,15 @@ function PatternManager({ patterns, onPatternUpdate }) {
     patternNames[pattern.id] = FRIENDLY_DEVICE_NAMES[index % FRIENDLY_DEVICE_NAMES.length];
   });
 
+  const handlePatternClick = (patternId) => {
+    // If clicking the already selected pattern, deselect it
+    if (selectedPatternId === patternId) {
+      onSelectPattern(null);
+    } else {
+      onSelectPattern(patternId);
+    }
+  };
+
   return (
     <div className="pattern-manager">
       <h3>Recognized Devices ({patterns.length})</h3>
@@ -43,9 +52,24 @@ function PatternManager({ patterns, onPatternUpdate }) {
         {patterns.map((pattern, index) => {
           const displayName = patternNames[pattern.id];
           const isExpanded = expandedPattern === pattern.id;
+          const isSelected = selectedPatternId === pattern.id;
 
           return (
-            <div key={pattern.id} className="pattern-card">
+            <div 
+              key={pattern.id} 
+              className={`pattern-card ${isSelected ? 'selected' : ''}`}
+              onClick={() => handlePatternClick(pattern.id)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space') {
+                  e.preventDefault();
+                  handlePatternClick(pattern.id);
+                }
+              }}
+              aria-pressed={isSelected}
+              aria-label={`Select ${pattern.deviceName || displayName}`}
+            >
               <div className="pattern-header">
                 <div className="pattern-info">
                   <span className="pattern-name">{pattern.deviceName || displayName}</span>
@@ -54,14 +78,20 @@ function PatternManager({ patterns, onPatternUpdate }) {
                 <div className="pattern-actions">
                   <button
                     className="pattern-expand-btn"
-                    onClick={() => setExpandedPattern(isExpanded ? null : pattern.id)}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent card selection when clicking expand
+                      setExpandedPattern(isExpanded ? null : pattern.id);
+                    }}
                     title={isExpanded ? "Collapse" : "Expand"}
                   >
                     {isExpanded ? '▼' : '▶'}
                   </button>
                   <button
                     className="pattern-delete-btn"
-                    onClick={() => handleDeletePattern(pattern.id, pattern.deviceName || displayName)}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent card selection when clicking delete
+                      handleDeletePattern(pattern.id, pattern.deviceName || displayName);
+                    }}
                     title="Delete this pattern"
                   >
                     🗑️
