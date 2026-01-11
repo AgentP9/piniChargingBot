@@ -1,9 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import ChartPreview from './ChartPreview';
+import DeviceLabelModal from './DeviceLabelModal';
 import { FRIENDLY_DEVICE_NAMES } from '../constants/deviceNames';
 import './ProcessList.css';
 
-function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, onDeleteProcess, onCompleteProcess, filters }) {
+function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, onDeleteProcess, onCompleteProcess, filters, onPatternUpdate }) {
+  const [editingPattern, setEditingPattern] = useState(null);
   const handleDelete = (e, processId) => {
     e.stopPropagation(); // Prevent selecting the process when clicking delete
     
@@ -18,6 +20,43 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
     if (window.confirm('Are you sure you want to mark this process as complete? This will end the charging session.')) {
       onCompleteProcess(processId);
     }
+  };
+
+  const handleEditDevice = (e, process) => {
+    e.stopPropagation(); // Prevent selecting the process when clicking edit
+    
+    // Find pattern that contains this process ID
+    const matchingPattern = patterns.find(pattern => 
+      pattern.processIds && pattern.processIds.includes(process.id)
+    );
+    
+    if (matchingPattern) {
+      setEditingPattern(matchingPattern);
+    }
+  };
+
+  const handleSaveLabel = async (patternId, newLabel, shouldRenameAll) => {
+    try {
+      await onPatternUpdate('updateLabel', { patternId, newLabel, shouldRenameAll });
+      setEditingPattern(null);
+    } catch (error) {
+      console.error('Error updating label:', error);
+      alert('Failed to update device label. Please try again.');
+    }
+  };
+
+  const handleMergePatterns = async (sourcePatternId, targetPatternId) => {
+    try {
+      await onPatternUpdate('merge', { sourcePatternId, targetPatternId });
+      setEditingPattern(null);
+    } catch (error) {
+      console.error('Error merging patterns:', error);
+      alert('Failed to merge patterns. Please try again.');
+    }
+  };
+  
+  const handleCloseModal = () => {
+    setEditingPattern(null);
   };
   
   // Create a mapping of pattern IDs to friendly names
@@ -213,9 +252,19 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
               </div>
               
               {getAssumedDevice(process) && (
-                <div className="detail-item">
+                <div className="detail-item device-label-row">
                   <span className="detail-icon">📱</span>
                   <span>Device: {getAssumedDevice(process)}</span>
+                  {process.endTime && (
+                    <button
+                      className="edit-label-button"
+                      onClick={(e) => handleEditDevice(e, process)}
+                      title="Edit device label"
+                      aria-label="Edit device label"
+                    >
+                      ✏️
+                    </button>
+                  )}
                 </div>
               )}
               
@@ -237,6 +286,16 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
           </div>
         </div>
       ))}
+
+      {editingPattern && (
+        <DeviceLabelModal
+          pattern={editingPattern}
+          patterns={patterns}
+          onClose={handleCloseModal}
+          onSave={handleSaveLabel}
+          onMerge={handleMergePatterns}
+        />
+      )}
     </div>
   );
 }

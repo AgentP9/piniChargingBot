@@ -8,6 +8,7 @@ A Docker-based application for monitoring device charging via MQTT-compatible po
 - **Charging Process Tracking**: Automatically tracks charging sessions based on power on/off events
 - **Power Consumption Logging**: Records power consumption data with timestamps
 - **Pattern Recognition**: AI-powered device fingerprinting that identifies charged devices based on power consumption characteristics
+- **Device Label Management**: Edit, merge, and manage device labels for recognized charging patterns
 - **Modern Responsive UI**: Web interface with real-time updates and interactive charts
 - **Multi-Device Support**: Monitor multiple devices simultaneously
 - **Progressive Web App (PWA)**: Add to your iPhone/Android home screen for a native app experience
@@ -221,8 +222,13 @@ The application is a fully functional Progressive Web App that can be installed 
 - `POST /api/patterns/analyze` - Manually trigger pattern analysis
 - `GET /api/processes/:id/pattern` - Get matching pattern for a charging process
 - `GET /api/patterns/debug` - Diagnostic endpoint for troubleshooting pattern issues
+- `PUT /api/patterns/:patternId/label` - Update device label for a pattern
+- `POST /api/patterns/merge` - Merge two patterns into one
+- `DELETE /api/patterns/:patternId` - Delete a pattern
 
 For detailed information about pattern recognition, see [PATTERN_RECOGNITION.md](PATTERN_RECOGNITION.md).
+
+For information about managing device labels, see [DEVICE_LABELS.md](DEVICE_LABELS.md).
 
 **Not seeing device names?** Check the [Pattern Recognition Troubleshooting Guide](TROUBLESHOOTING_PATTERNS.md).
 

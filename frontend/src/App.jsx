@@ -4,6 +4,7 @@ import DeviceList from './components/DeviceList';
 import ProcessList from './components/ProcessList';
 import ProcessFilters from './components/ProcessFilters';
 import ChargingChart from './components/ChargingChart';
+import PatternManager from './components/PatternManager';
 import './App.css';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -119,6 +120,46 @@ function App() {
     setFilters(newFilters);
   };
 
+  const handlePatternUpdate = async (action, data) => {
+    try {
+      if (action === 'updateLabel') {
+        const { patternId, newLabel, shouldRenameAll } = data;
+        await axios.put(`${API_URL}/patterns/${patternId}/label`, {
+          newLabel,
+          shouldRenameAll
+        });
+        
+        // Refresh data to reflect changes
+        await fetchData();
+      } else if (action === 'merge') {
+        const { sourcePatternId, targetPatternId } = data;
+        await axios.post(`${API_URL}/patterns/merge`, {
+          sourcePatternId,
+          targetPatternId
+        });
+        
+        // Refresh data to reflect changes
+        await fetchData();
+      } else if (action === 'delete') {
+        const { patternId } = data;
+        await axios.delete(`${API_URL}/patterns/${patternId}`);
+        
+        // Refresh data to reflect changes
+        await fetchData();
+      }
+    } catch (err) {
+      console.error(`Error performing pattern action ${action}:`, err);
+      
+      // Check if it's a merge conflict (409 status)
+      if (err.response?.status === 409 && err.response?.data?.shouldMerge) {
+        // The backend detected that merging is needed, but let the modal handle it
+        throw err;
+      }
+      
+      throw new Error(err.response?.data?.error || 'Failed to update pattern');
+    }
+  };
+
   return (
     <div className="app">
       <header className="app-header">
@@ -137,6 +178,10 @@ function App() {
               <section className="card devices-section">
                 <h2>Connected Chargers</h2>
                 <DeviceList devices={devices} />
+                <PatternManager 
+                  patterns={patterns}
+                  onPatternUpdate={handlePatternUpdate}
+                />
               </section>
 
               <section className="card processes-section">
@@ -154,6 +199,7 @@ function App() {
                   onSelectProcess={handleProcessSelect}
                   onDeleteProcess={handleProcessDelete}
                   onCompleteProcess={handleProcessComplete}
+                  onPatternUpdate={handlePatternUpdate}
                   filters={filters}
                 />
               </section>

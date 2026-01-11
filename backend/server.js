@@ -495,6 +495,130 @@ app.get('/api/patterns/debug', (req, res) => {
   });
 });
 
+// Pattern Label Management Endpoints
+
+// Update device label for a pattern
+app.put('/api/patterns/:patternId/label', (req, res) => {
+  const { patternId } = req.params;
+  const { newLabel, shouldRenameAll } = req.body;
+  
+  if (!newLabel || typeof newLabel !== 'string' || newLabel.trim() === '') {
+    return res.status(400).json({ error: 'Invalid label' });
+  }
+  
+  const trimmedLabel = newLabel.trim();
+  
+  // Try to update the label
+  const result = patternAnalyzer.updatePatternLabel(chargingPatterns, patternId, trimmedLabel);
+  
+  if (!result.success) {
+    if (result.shouldMerge) {
+      // Label exists, client needs to decide whether to merge
+      return res.status(409).json({ 
+        error: result.error, 
+        shouldMerge: true,
+        targetPatternId: result.targetPatternId 
+      });
+    }
+    return res.status(404).json({ error: result.error });
+  }
+  
+  // Save updated patterns
+  patternAnalyzer.savePatterns(chargingPatterns);
+  
+  // If shouldRenameAll is true, update all processes with the old label
+  if (shouldRenameAll && result.oldLabel) {
+    const pattern = chargingPatterns.find(p => p.id === patternId);
+    if (pattern && pattern.processIds) {
+      pattern.processIds.forEach(processId => {
+        const process = chargingProcesses.find(p => p.id === processId);
+        if (process) {
+          process.deviceName = trimmedLabel;
+        }
+      });
+      storage.saveProcesses(chargingProcesses);
+    }
+  }
+  
+  console.log(`Updated pattern ${patternId} label from "${result.oldLabel}" to "${trimmedLabel}"`);
+  
+  res.json({ 
+    success: true, 
+    message: 'Label updated successfully',
+    oldLabel: result.oldLabel,
+    newLabel: trimmedLabel,
+    processesUpdated: shouldRenameAll
+  });
+});
+
+// Merge two patterns
+app.post('/api/patterns/merge', (req, res) => {
+  const { sourcePatternId, targetPatternId } = req.body;
+  
+  if (!sourcePatternId || !targetPatternId) {
+    return res.status(400).json({ error: 'Source and target pattern IDs required' });
+  }
+  
+  if (sourcePatternId === targetPatternId) {
+    return res.status(400).json({ error: 'Cannot merge a pattern with itself' });
+  }
+  
+  const result = patternAnalyzer.mergePatterns(chargingPatterns, sourcePatternId, targetPatternId);
+  
+  if (!result.success) {
+    return res.status(404).json({ error: result.error });
+  }
+  
+  // Save updated patterns
+  patternAnalyzer.savePatterns(chargingPatterns);
+  
+  // Update all processes from source pattern to use target pattern's device name
+  const targetPattern = chargingPatterns.find(p => p.id === targetPatternId);
+  if (targetPattern && targetPattern.processIds) {
+    targetPattern.processIds.forEach(processId => {
+      const process = chargingProcesses.find(p => p.id === processId);
+      if (process) {
+        process.deviceName = targetPattern.deviceName;
+      }
+    });
+    storage.saveProcesses(chargingProcesses);
+  }
+  
+  console.log(`Merged pattern ${sourcePatternId} into ${targetPatternId}`);
+  
+  res.json({
+    success: true,
+    message: 'Patterns merged successfully',
+    mergedPattern: result.mergedPattern,
+    removedPatternId: result.removedPatternId
+  });
+});
+
+// Delete a pattern
+app.delete('/api/patterns/:patternId', (req, res) => {
+  const { patternId } = req.params;
+  
+  const result = patternAnalyzer.deletePattern(chargingPatterns, patternId);
+  
+  if (!result.success) {
+    return res.status(404).json({ error: result.error });
+  }
+  
+  // Save updated patterns
+  patternAnalyzer.savePatterns(chargingPatterns);
+  
+  // Note: We don't delete the processes, we just remove their pattern association
+  // The processes still exist with their original deviceName
+  
+  console.log(`Deleted pattern ${patternId}`);
+  
+  res.json({
+    success: true,
+    message: 'Pattern deleted successfully',
+    deletedPattern: result.deletedPattern
+  });
+});
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
