@@ -81,7 +81,7 @@ function ProcessFilters({ filters, onFilterChange, devices, patterns }) {
           aria-expanded={isExpanded}
           aria-label={isExpanded ? "Collapse filters" : "Expand filters"}
         >
-          <span className="toggle-icon">{isExpanded ? '▼' : '▶'}</span>
+          <span className="toggle-icon" aria-hidden="true">{isExpanded ? '▼' : '▶'}</span>
           <span className="toggle-text">Filters</span>
           {hasActiveFilters && !isExpanded && (
             <span className="active-filters-badge">{activeFilterCount}</span>
