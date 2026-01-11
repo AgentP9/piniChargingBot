@@ -16,7 +16,8 @@
   }
 }
 
-/* Responsive adjustments for medium screens */
+/* Responsive adjustments for medium screens (tablets) */
+/* Use smaller minmax for better fit on tablet screens */
 @media (min-width: 769px) and (max-width: 1200px) {
   .process-list {
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -50,7 +51,7 @@
   cursor: pointer;
   transition: all 0.3s ease;
   overflow: hidden;
-  min-height: 200px; /* Increased to ensure all content is visible including chart preview */
+  min-height: 200px; /* Ensure all content is visible including chart preview and device labels */
   display: flex;
   flex-direction: column;
 }
