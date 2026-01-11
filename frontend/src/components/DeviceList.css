@@ -10,11 +10,37 @@
   border-radius: 8px;
   background: #fafafa;
   transition: all 0.3s ease;
+  cursor: pointer;
+  user-select: none;
 }
 
 .device-item:hover {
   border-color: #667eea;
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+}
+
+.device-item.selected {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.device-item.selected .device-name,
+.device-item.selected .detail-label,
+.device-item.selected .detail-value {
+  color: #ffffff;
+}
+
+.device-item.selected .device-status {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.device-item.selected .status-on {
+  color: #ffffff;
+}
+
+.device-item.selected .status-off {
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .device-header {

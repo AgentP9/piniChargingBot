@@ -14,6 +14,7 @@ function App() {
   const [processes, setProcesses] = useState([]);
   const [patterns, setPatterns] = useState([]);
   const [selectedProcess, setSelectedProcess] = useState(null);
+  const [selectedDeviceId, setSelectedDeviceId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
@@ -118,6 +119,19 @@ function App() {
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
+    // If the charger filter changed and it doesn't match the selected device, clear device selection
+    if (newFilters.charger !== filters.charger && newFilters.charger !== selectedDeviceId) {
+      setSelectedDeviceId(null);
+    }
+  };
+
+  const handleDeviceSelect = (deviceId) => {
+    setSelectedDeviceId(deviceId);
+    // Update the charger filter to match the selected device
+    setFilters({
+      ...filters,
+      charger: deviceId || 'all'
+    });
   };
 
   const handlePatternUpdate = async (action, data) => {
@@ -177,7 +191,11 @@ function App() {
             <div className="dashboard-grid">
               <section className="card devices-section">
                 <h2>Connected Chargers</h2>
-                <DeviceList devices={devices} />
+                <DeviceList 
+                  devices={devices}
+                  selectedDeviceId={selectedDeviceId}
+                  onSelectDevice={handleDeviceSelect}
+                />
                 <PatternManager 
                   patterns={patterns}
                   onPatternUpdate={handlePatternUpdate}

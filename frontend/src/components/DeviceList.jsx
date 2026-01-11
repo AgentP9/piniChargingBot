@@ -1,15 +1,38 @@
 import React from 'react';
 import './DeviceList.css';
 
-function DeviceList({ devices }) {
+function DeviceList({ devices, selectedDeviceId, onSelectDevice }) {
   if (devices.length === 0) {
     return <div className="empty-state">No devices configured</div>;
   }
 
+  const handleDeviceClick = (deviceId) => {
+    // If clicking the already selected device, deselect it
+    if (selectedDeviceId === deviceId) {
+      onSelectDevice(null);
+    } else {
+      onSelectDevice(deviceId);
+    }
+  };
+
   return (
     <div className="device-list">
       {devices.map(device => (
-        <div key={device.id} className="device-item">
+        <div 
+          key={device.id} 
+          className={`device-item ${selectedDeviceId === device.id ? 'selected' : ''}`}
+          onClick={() => handleDeviceClick(device.id)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space') {
+              e.preventDefault();
+              handleDeviceClick(device.id);
+            }
+          }}
+          aria-pressed={selectedDeviceId === device.id}
+          aria-label={`Select ${device.name}`}
+        >
           <div className="device-header">
             <h3 className="device-name">{device.name}</h3>
             <span className={`device-status ${device.isOn ? 'status-on' : 'status-off'}`}>
