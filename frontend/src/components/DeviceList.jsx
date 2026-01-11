@@ -24,8 +24,8 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice }) {
           onClick={() => handleDeviceClick(device.id)}
           role="button"
           tabIndex={0}
-          onKeyPress={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space') {
               e.preventDefault();
               handleDeviceClick(device.id);
             }
