@@ -34,7 +34,6 @@
 .toggle-icon {
   font-size: 0.75rem;
   color: #667eea;
-  transition: transform 0.2s ease;
 }
 
 .toggle-text {

@@ -35,6 +35,18 @@ function ProcessFilters({ filters, onFilterChange, devices, patterns }) {
 
   const hasActiveFilters = filters.state !== 'all' || filters.charger !== 'all' || filters.device !== 'all' || filters.startDate || filters.endDate;
 
+  // Count active filters for badge display
+  // Memoized to avoid recalculation on every render
+  const activeFilterCount = useMemo(() => {
+    return [
+      filters.state !== 'all',
+      filters.charger !== 'all',
+      filters.device !== 'all',
+      filters.startDate,
+      filters.endDate
+    ].filter(Boolean).length;
+  }, [filters]);
+
   // Get unique chargers (physical charging devices) using a Map for O(n) complexity
   // Memoized to avoid recalculation on every render
   const uniqueChargers = useMemo(() => {
@@ -72,15 +84,7 @@ function ProcessFilters({ filters, onFilterChange, devices, patterns }) {
           <span className="toggle-icon">{isExpanded ? '▼' : '▶'}</span>
           <span className="toggle-text">Filters</span>
           {hasActiveFilters && !isExpanded && (
-            <span className="active-filters-badge">{
-              [
-                filters.state !== 'all',
-                filters.charger !== 'all',
-                filters.device !== 'all',
-                filters.startDate,
-                filters.endDate
-              ].filter(Boolean).length
-            }</span>
+            <span className="active-filters-badge">{activeFilterCount}</span>
           )}
         </button>
       </div>
