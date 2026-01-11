@@ -15,6 +15,7 @@ function App() {
   const [patterns, setPatterns] = useState([]);
   const [selectedProcess, setSelectedProcess] = useState(null);
   const [selectedDeviceId, setSelectedDeviceId] = useState(null);
+  const [selectedPatternId, setSelectedPatternId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
@@ -119,18 +120,37 @@ function App() {
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
-    // If the charger filter changed and it doesn't match the selected device, clear device selection
+    // If the charger filter changed and doesn't match the selected device, clear device selection
     if (newFilters.charger !== filters.charger && newFilters.charger !== selectedDeviceId) {
       setSelectedDeviceId(null);
+    }
+    // If the device filter changed and doesn't match the selected pattern, clear pattern selection
+    if (newFilters.device !== filters.device && newFilters.device !== selectedPatternId) {
+      setSelectedPatternId(null);
     }
   };
 
   const handleDeviceSelect = (deviceId) => {
     setSelectedDeviceId(deviceId);
+    // Clear pattern selection when selecting a charger device
+    setSelectedPatternId(null);
     // Update the charger filter to match the selected device
     setFilters({
       ...filters,
-      charger: deviceId || 'all'
+      charger: deviceId || 'all',
+      device: 'all' // Reset device filter when selecting charger
+    });
+  };
+
+  const handlePatternSelect = (patternId) => {
+    setSelectedPatternId(patternId);
+    // Clear charger selection when selecting a pattern
+    setSelectedDeviceId(null);
+    // Update the device filter to match the selected pattern
+    setFilters({
+      ...filters,
+      device: patternId || 'all',
+      charger: 'all' // Reset charger filter when selecting pattern
     });
   };
 
@@ -198,7 +218,9 @@ function App() {
                 />
                 <PatternManager 
                   patterns={patterns}
+                  selectedPatternId={selectedPatternId}
                   onPatternUpdate={handlePatternUpdate}
+                  onSelectPattern={handlePatternSelect}
                 />
               </section>
 
