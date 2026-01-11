@@ -54,6 +54,12 @@
   font-weight: 600;
 }
 
+/* Subtle style when no filters are active (count is 0) */
+.active-filters-badge.no-filters {
+  background: #e0e0e0;
+  color: #666;
+}
+
 .filter-row {
   display: flex;
   flex-wrap: wrap;
