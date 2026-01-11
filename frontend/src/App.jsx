@@ -120,11 +120,11 @@ function App() {
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
-    // If the charger filter changed and it doesn't match the selected device, clear device selection
+    // If the charger filter changed and doesn't match the selected device, clear device selection
     if (newFilters.charger !== filters.charger && newFilters.charger !== selectedDeviceId) {
       setSelectedDeviceId(null);
     }
-    // If the device filter changed and it doesn't match the selected pattern, clear pattern selection
+    // If the device filter changed and doesn't match the selected pattern, clear pattern selection
     if (newFilters.device !== filters.device && newFilters.device !== selectedPatternId) {
       setSelectedPatternId(null);
     }
