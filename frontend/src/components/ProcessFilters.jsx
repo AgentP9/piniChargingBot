@@ -83,8 +83,10 @@ function ProcessFilters({ filters, onFilterChange, devices, patterns }) {
         >
           <span className="toggle-icon" aria-hidden="true">{isExpanded ? '▼' : '▶'}</span>
           <span className="toggle-text">Filters</span>
-          {hasActiveFilters && !isExpanded && (
-            <span className="active-filters-badge">{activeFilterCount}</span>
+          {!isExpanded && (
+            <span className={`active-filters-badge ${activeFilterCount === 0 ? 'no-filters' : ''}`}>
+              {activeFilterCount}
+            </span>
           )}
         </button>
       </div>
