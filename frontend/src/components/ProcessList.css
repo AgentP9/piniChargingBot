@@ -23,13 +23,6 @@
   }
 }
 
-/* Responsive adjustments for larger screens */
-@media (min-width: 1201px) {
-  .process-list {
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  }
-}
-
 .process-list::-webkit-scrollbar {
   width: 10px; /* Slightly wider for better visibility */
 }
