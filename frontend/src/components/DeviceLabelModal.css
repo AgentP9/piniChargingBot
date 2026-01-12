@@ -13,9 +13,9 @@
 }
 
 .modal-content {
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 40px var(--shadow-medium);
   max-width: 500px;
   width: 100%;
   max-height: 90vh;
@@ -39,20 +39,20 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .modal-header h2 {
   margin: 0;
   font-size: 1.5rem;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .modal-close {
   background: transparent;
   border: none;
   font-size: 2rem;
-  color: #999;
+  color: var(--text-muted);
   cursor: pointer;
   padding: 0;
   width: 32px;
@@ -65,8 +65,8 @@
 }
 
 .modal-close:hover {
-  background: #f0f0f0;
-  color: #333;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
 }
 
 .modal-body {
@@ -74,11 +74,11 @@
 }
 
 .error-message {
-  background: #fee;
-  color: #c33;
+  background: var(--status-error-bg);
+  color: var(--status-error);
   padding: 0.75rem;
   border-radius: 6px;
-  border-left: 4px solid #c33;
+  border-left: 4px solid var(--status-error);
   margin-bottom: 1rem;
   font-size: 0.9rem;
 }
@@ -88,7 +88,7 @@
   justify-content: flex-end;
   gap: 0.75rem;
   padding: 1.5rem;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--border-primary);
 }
 
 .form-group {
@@ -99,7 +99,7 @@
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .input-container {
@@ -109,16 +109,18 @@
 .label-input {
   width: 100%;
   padding: 0.75rem;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--border-primary);
   border-radius: 6px;
   font-size: 1rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   transition: all 0.2s ease;
 }
 
 .label-input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--border-secondary);
+  box-shadow: 0 0 0 3px var(--shadow-accent);
 }
 
 .dropdown-menu {
@@ -126,30 +128,31 @@
   top: 100%;
   left: 0;
   right: 0;
-  background: white;
-  border: 2px solid #667eea;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-secondary);
   border-top: none;
   border-radius: 0 0 6px 6px;
   max-height: 200px;
   overflow-y: auto;
   z-index: 10;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px var(--shadow-light);
 }
 
 .dropdown-header {
   padding: 0.5rem 0.75rem;
   font-size: 0.85rem;
   font-weight: 600;
-  color: #667eea;
-  background: #f0f3ff;
-  border-bottom: 1px solid #e0e0e0;
+  color: var(--border-secondary);
+  background: var(--bg-hover);
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .dropdown-item {
   padding: 0.75rem;
   cursor: pointer;
   transition: background 0.2s ease;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border-primary);
+  color: var(--text-primary);
 }
 
 .dropdown-item:last-child {
@@ -157,8 +160,8 @@
 }
 
 .dropdown-item:hover {
-  background: #f0f3ff;
-  color: #667eea;
+  background: var(--bg-hover);
+  color: var(--border-secondary);
 }
 
 .checkbox-label {
@@ -184,13 +187,13 @@
   display: block;
   margin-top: 0.5rem;
   font-size: 0.85rem;
-  color: #666;
+  color: var(--text-tertiary);
   font-style: italic;
 }
 
 .info-box {
-  background: #f8f9fa;
-  border-left: 4px solid #667eea;
+  background: var(--info-bg);
+  border-left: 4px solid var(--border-secondary);
   padding: 1rem;
   border-radius: 4px;
   margin-top: 1rem;
@@ -199,7 +202,7 @@
 .info-box strong {
   display: block;
   margin-bottom: 0.5rem;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .info-box ul {
@@ -210,12 +213,12 @@
 
 .info-box li {
   padding: 0.25rem 0;
-  color: #555;
+  color: var(--text-secondary);
 }
 
 .info-box li:before {
   content: "•";
-  color: #667eea;
+  color: var(--border-secondary);
   font-weight: bold;
   display: inline-block;
   width: 1em;
@@ -234,13 +237,13 @@
 }
 
 .btn-primary {
-  background: #667eea;
-  color: white;
+  background: var(--border-secondary);
+  color: var(--text-on-primary);
 }
 
 .btn-primary:hover {
-  background: #5568d3;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  opacity: 0.9;
+  box-shadow: 0 4px 12px var(--shadow-accent);
 }
 
 .btn-primary:active {
@@ -248,12 +251,12 @@
 }
 
 .btn-secondary {
-  background: #e0e0e0;
-  color: #333;
+  background: var(--border-primary);
+  color: var(--text-primary);
 }
 
 .btn-secondary:hover {
-  background: #d0d0d0;
+  opacity: 0.9;
 }
 
 .btn-secondary:active {

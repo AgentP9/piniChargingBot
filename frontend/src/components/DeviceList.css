@@ -6,29 +6,29 @@
 
 .device-item {
   padding: 1rem;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--border-primary);
   border-radius: 8px;
-  background: #fafafa;
+  background: var(--bg-tertiary);
   transition: all 0.3s ease;
   cursor: pointer;
   user-select: none;
 }
 
 .device-item:hover {
-  border-color: #667eea;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+  border-color: var(--border-secondary);
+  box-shadow: 0 2px 8px var(--shadow-accent);
 }
 
 .device-item.selected {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-color: #667eea;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  background: var(--bg-header);
+  border-color: var(--border-secondary);
+  box-shadow: 0 4px 12px var(--shadow-accent);
 }
 
 .device-item.selected .device-name,
 .device-item.selected .detail-label,
 .device-item.selected .detail-value {
-  color: #ffffff;
+  color: var(--text-on-primary);
 }
 
 .device-item.selected .device-status {
@@ -36,7 +36,7 @@
 }
 
 .device-item.selected .status-on {
-  color: #ffffff;
+  color: var(--text-on-primary);
 }
 
 .device-item.selected .status-off {
@@ -52,7 +52,7 @@
 
 .device-name {
   font-size: 1.1rem;
-  color: #333;
+  color: var(--text-primary);
   font-weight: 600;
 }
 
@@ -64,13 +64,13 @@
 }
 
 .status-on {
-  color: #28a745;
-  background: #d4edda;
+  color: var(--status-active);
+  background: var(--status-active-bg);
 }
 
 .status-off {
-  color: #6c757d;
-  background: #e2e3e5;
+  color: var(--status-inactive);
+  background: var(--status-inactive-bg);
 }
 
 .device-details {
@@ -86,17 +86,17 @@
 }
 
 .detail-label {
-  color: #666;
+  color: var(--text-tertiary);
 }
 
 .detail-value {
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .empty-state {
   text-align: center;
   padding: 2rem;
-  color: #999;
+  color: var(--text-muted);
   font-style: italic;
 }

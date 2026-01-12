@@ -4,14 +4,14 @@
 
 .pattern-manager h3 {
   margin: 0 0 1rem 0;
-  color: #333;
+  color: var(--text-primary);
   font-size: 1.2rem;
 }
 
 .empty-message {
   text-align: center;
   padding: 2rem;
-  color: #999;
+  color: var(--text-muted);
   font-style: italic;
 }
 
@@ -22,8 +22,8 @@
 }
 
 .pattern-card {
-  background: #fafafa;
-  border: 2px solid #e0e0e0;
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-primary);
   border-radius: 8px;
   padding: 1rem;
   transition: all 0.2s ease;
@@ -32,18 +32,18 @@
 }
 
 .pattern-card:hover {
-  border-color: #667eea;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+  border-color: var(--border-secondary);
+  box-shadow: 0 2px 8px var(--shadow-accent);
 }
 
 .pattern-card.selected {
-  border-color: #667eea;
-  background: #f0f4ff;
-  box-shadow: 0 2px 12px rgba(102, 126, 234, 0.2);
+  border-color: var(--border-secondary);
+  background: var(--bg-hover);
+  box-shadow: 0 2px 12px var(--shadow-accent);
 }
 
 .pattern-card:focus {
-  outline: 2px solid #667eea;
+  outline: 2px solid var(--border-secondary);
   outline-offset: 2px;
 }
 
@@ -61,13 +61,13 @@
 
 .pattern-name {
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   font-size: 1.05rem;
 }
 
 .pattern-count {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--text-tertiary);
 }
 
 .pattern-actions {
@@ -91,16 +91,16 @@
 }
 
 .pattern-expand-btn {
-  color: #667eea;
+  color: var(--border-secondary);
 }
 
 .pattern-expand-btn:hover {
-  background: #e7f3ff;
+  background: var(--bg-hover);
   transform: scale(1.1);
 }
 
 .pattern-delete-btn:hover {
-  background: #fee;
+  background: var(--status-error-bg);
   transform: scale(1.1);
 }
 
@@ -112,7 +112,7 @@
 .pattern-details {
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--border-primary);
 }
 
 .detail-grid {
@@ -130,27 +130,27 @@
 
 .detail-label {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--text-tertiary);
   font-weight: 600;
 }
 
 .detail-value {
   font-size: 1rem;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .charging-profile {
   margin-top: 1rem;
   padding: 1rem;
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 6px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--border-primary);
 }
 
 .charging-profile h4 {
   margin: 0 0 0.75rem 0;
   font-size: 1rem;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .profile-curve {
@@ -166,21 +166,21 @@
   gap: 0.5rem;
   flex: 1;
   padding: 0.75rem;
-  background: #f8f9fa;
+  background: var(--info-bg);
   border-radius: 6px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--border-primary);
 }
 
 .phase-label {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--text-tertiary);
   font-weight: 600;
   text-transform: uppercase;
 }
 
 .phase-value {
   font-size: 1.1rem;
-  color: #667eea;
+  color: var(--border-secondary);
   font-weight: 600;
 }
 

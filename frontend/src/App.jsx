@@ -5,11 +5,13 @@ import ProcessList from './components/ProcessList';
 import ProcessFilters from './components/ProcessFilters';
 import ChargingChart from './components/ChargingChart';
 import PatternManager from './components/PatternManager';
+import { useTheme } from './contexts/ThemeContext';
 import './App.css';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 function App() {
+  const { theme, toggleTheme } = useTheme();
   const [devices, setDevices] = useState([]);
   const [processes, setProcesses] = useState([]);
   const [patterns, setPatterns] = useState([]);
@@ -197,6 +199,14 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
+        <button 
+          className="theme-toggle"
+          onClick={toggleTheme}
+          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+          title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+        >
+          {theme === 'light' ? '🌙' : '☀️'}
+        </button>
         <h1>🔌 Pini Charging Monitor</h1>
         <p>Real-time monitoring of device charging via MQTT</p>
       </header>
