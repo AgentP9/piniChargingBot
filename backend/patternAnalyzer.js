@@ -249,12 +249,12 @@ function analyzePatterns(processes) {
       }
     } else {
       // Create new pattern
-      // Generate unique pattern ID with timestamp and random string
-      // Adding a counter to further ensure uniqueness in rapid succession scenarios
+      // Generate unique pattern ID with high-resolution timestamp and random string
+      // The combination of timestamp (millisecond precision) and random string
+      // provides sufficient uniqueness for pattern IDs in normal usage
       const timestamp = Date.now();
       const random = Math.random().toString(36).substr(2, 9);
-      const counter = patterns.length;
-      const patternId = `pattern_${timestamp}_${counter}_${random}`;
+      const patternId = `pattern_${timestamp}_${random}`;
       const patternIndex = patterns.length;
       
       // Generate unique friendly name - append number if we've exhausted the base names
@@ -491,8 +491,8 @@ function mergePatterns(patterns, sourcePatternId, targetPatternId) {
     );
     targetPattern.statistics.totalSessions = totalWeight;
     // We cannot reliably compute a merged median without raw durations,
-    // so mark medianDuration as unavailable after merging.
-    delete targetPattern.statistics.medianDuration;
+    // so set medianDuration to null to indicate it's unavailable after merging.
+    targetPattern.statistics.medianDuration = null;
   }
   
   // Remove source pattern

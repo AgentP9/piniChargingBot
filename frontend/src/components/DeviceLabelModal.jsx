@@ -89,7 +89,7 @@ function DeviceLabelModal({ pattern, patterns, onClose, onSave, onMerge }) {
                 />
                 
                 {showDropdown && filteredSuggestions.length > 0 && (
-                  <div className="dropdown-menu" onClick={(e) => e.stopPropagation()}>
+                  <div className="dropdown-menu" onMouseDown={(e) => e.stopPropagation()}>
                     <div className="dropdown-header">Existing devices:</div>
                     {filteredSuggestions.map((name, index) => (
                       <div
