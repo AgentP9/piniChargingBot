@@ -280,7 +280,7 @@ function analyzePatterns(processes, existingPatterns = []) {
         // The combination of timestamp (millisecond precision) and random string
         // provides sufficient uniqueness for pattern IDs in normal usage
         const timestamp = Date.now();
-        const random = Math.random().toString(36).substr(2, 9);
+        const random = Math.random().toString(36).substring(2, 11);
         patternId = `pattern_${timestamp}_${random}`;
         const patternIndex = patterns.length;
         
