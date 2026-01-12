@@ -73,19 +73,43 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  gap: 0.5rem;
 }
 
-.process-header {
-  display: flex;
-  justify-content: space-between;
+/* Table-like row layout */
+.process-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
   align-items: center;
-  margin-bottom: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e0e0e0;
 }
 
-.process-header-actions {
+.process-row:last-child {
+  border-bottom: none;
+}
+
+/* Row 1 specific styling */
+.process-row-1 {
+  font-weight: 600;
+}
+
+/* Cell alignment */
+.process-cell {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.process-cell-center {
+  justify-content: center;
+}
+
+.process-cell-right {
+  justify-content: flex-end;
 }
 
 .process-id {
@@ -102,78 +126,79 @@
 }
 
 .delete-button {
-  background: transparent;
-  border: none;
-  font-size: 1.2rem;
+  background: #f8d7da;
+  border: 1px solid #f5c2c7;
+  color: #842029;
+  font-size: 0.85rem;
   cursor: pointer;
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem 0.75rem;
   border-radius: 4px;
   transition: all 0.2s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  font-weight: 500;
 }
 
 .delete-button:hover {
-  background: #fee;
-  transform: scale(1.1);
+  background: #f1aeb5;
+  border-color: #ea868f;
+  transform: translateY(-1px);
 }
 
 .delete-button:active {
-  transform: scale(0.95);
+  transform: translateY(0);
 }
 
 .complete-button {
-  background: transparent;
-  border: none;
-  font-size: 1.2rem;
+  background: #d1e7dd;
+  border: 1px solid #badbcc;
+  color: #0f5132;
+  font-size: 0.85rem;
   cursor: pointer;
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem 0.75rem;
   border-radius: 4px;
   transition: all 0.2s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #28a745;
-  font-weight: bold;
+  font-weight: 500;
+  margin-left: 0.5rem;
 }
 
 .complete-button:hover {
-  background: #d4edda;
-  transform: scale(1.1);
+  background: #a3cfbb;
+  border-color: #75b798;
+  transform: translateY(-1px);
 }
 
 .complete-button:active {
-  transform: scale(0.95);
+  transform: translateY(0);
 }
 
-.edit-label-button {
-  background: transparent;
-  border: none;
-  font-size: 1rem;
+.edit-button {
+  background: #cfe2ff;
+  border: 1px solid #b6d4fe;
+  color: #084298;
+  font-size: 0.85rem;
   cursor: pointer;
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem 0.75rem;
   border-radius: 4px;
   transition: all 0.2s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-left: auto;
+  font-weight: 500;
 }
 
-.edit-label-button:hover {
-  background: #e7f3ff;
-  transform: scale(1.1);
+.edit-button:hover {
+  background: #9ec5fe;
+  border-color: #6ea8fe;
+  transform: translateY(-1px);
 }
 
-.edit-label-button:active {
-  transform: scale(0.95);
-}
-
-.device-label-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.edit-button:active {
+  transform: translateY(0);
 }
 
 .badge-active {
@@ -186,23 +211,7 @@
   color: #6c757d;
 }
 
-.process-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
 
-.detail-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-  color: #555;
-}
-
-.detail-icon {
-  font-size: 1rem;
-}
 
 .empty-state {
   text-align: center;

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Process List Demo</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+        sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    
+    .process-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 1rem;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    
+    .process-item {
+      position: relative;
+      padding: 1rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      background: #fafafa;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      overflow: hidden;
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .process-item:hover {
+      border-color: #667eea;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+    }
+    
+    .process-content {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    /* Table-like row layout */
+    .process-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1rem;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .process-row:last-child {
+      border-bottom: none;
+    }
+    
+    /* Row 1 specific styling */
+    .process-row-1 {
+      font-weight: 600;
+    }
+    
+    /* Cell alignment */
+    .process-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      color: #555;
+    }
+    
+    .process-cell-center {
+      justify-content: center;
+    }
+    
+    .process-cell-right {
+      justify-content: flex-end;
+    }
+    
+    .process-id {
+      font-weight: 600;
+      color: #333;
+      font-size: 1.05rem;
+    }
+    
+    .process-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    
+    .badge-active {
+      background: #d4edda;
+      color: #28a745;
+    }
+    
+    .badge-completed {
+      background: #e2e3e5;
+      color: #6c757d;
+    }
+    
+    .delete-button {
+      background: #f8d7da;
+      border: 1px solid #f5c2c7;
+      color: #842029;
+      font-size: 0.85rem;
+      cursor: pointer;
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 500;
+    }
+    
+    .delete-button:hover {
+      background: #f1aeb5;
+      border-color: #ea868f;
+      transform: translateY(-1px);
+    }
+    
+    .complete-button {
+      background: #d1e7dd;
+      border: 1px solid #badbcc;
+      color: #0f5132;
+      font-size: 0.85rem;
+      cursor: pointer;
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 500;
+      margin-left: 0.5rem;
+    }
+    
+    .complete-button:hover {
+      background: #a3cfbb;
+      border-color: #75b798;
+      transform: translateY(-1px);
+    }
+    
+    .edit-button {
+      background: #cfe2ff;
+      border: 1px solid #b6d4fe;
+      color: #084298;
+      font-size: 0.85rem;
+      cursor: pointer;
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 500;
+    }
+    
+    .edit-button:hover {
+      background: #9ec5fe;
+      border-color: #6ea8fe;
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+<body>
+  <h1>Charging Process Items - New Layout</h1>
+  
+  <div class="process-list">
+    <!-- Completed Process with Device -->
+    <div class="process-item">
+      <div class="process-content">
+        <!-- Row 1: Process ID | State + Complete Button | Delete Button -->
+        <div class="process-row process-row-1">
+          <div class="process-cell">
+            <span class="process-id">Process #1</span>
+          </div>
+          <div class="process-cell process-cell-center">
+            <span class="process-badge badge-completed">Completed</span>
+          </div>
+          <div class="process-cell process-cell-right">
+            <button class="delete-button">Delete</button>
+          </div>
+        </div>
+        
+        <!-- Row 2: Charger | Device + Edit Button -->
+        <div class="process-row process-row-2">
+          <div class="process-cell">
+            <span>Charger: Office Charger</span>
+          </div>
+          <div class="process-cell">
+            <span>Device: iPhone 13</span>
+          </div>
+          <div class="process-cell process-cell-right">
+            <button class="edit-button">Edit</button>
+          </div>
+        </div>
+        
+        <!-- Row 3: Start datetime | Duration | Power consumption -->
+        <div class="process-row process-row-3">
+          <div class="process-cell">
+            <span>1/10/2024, 2:30:00 PM</span>
+          </div>
+          <div class="process-cell">
+            <span>135m 0s</span>
+          </div>
+          <div class="process-cell">
+            <span>11.23 Wh</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Active Process -->
+    <div class="process-item">
+      <div class="process-content">
+        <!-- Row 1: Process ID | State + Complete Button | Delete Button -->
+        <div class="process-row process-row-1">
+          <div class="process-cell">
+            <span class="process-id">Process #2</span>
+          </div>
+          <div class="process-cell process-cell-center">
+            <span class="process-badge badge-active">Active</span>
+            <button class="complete-button">Set to complete</button>
+          </div>
+          <div class="process-cell process-cell-right">
+            <button class="delete-button">Delete</button>
+          </div>
+        </div>
+        
+        <!-- Row 2: Charger | Device + Edit Button -->
+        <div class="process-row process-row-2">
+          <div class="process-cell">
+            <span>Charger: Kitchen Charger</span>
+          </div>
+          <div class="process-cell">
+            <span>Device: -</span>
+          </div>
+          <div class="process-cell process-cell-right">
+          </div>
+        </div>
+        
+        <!-- Row 3: Start datetime | Duration | Power consumption -->
+        <div class="process-row process-row-3">
+          <div class="process-cell">
+            <span>1/11/2024, 9:15:00 AM</span>
+          </div>
+          <div class="process-cell">
+            <span>In progress</span>
+          </div>
+          <div class="process-cell">
+            <span>56.70 Wh</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Completed Process with Device -->
+    <div class="process-item">
+      <div class="process-content">
+        <!-- Row 1: Process ID | State + Complete Button | Delete Button -->
+        <div class="process-row process-row-1">
+          <div class="process-cell">
+            <span class="process-id">Process #3</span>
+          </div>
+          <div class="process-cell process-cell-center">
+            <span class="process-badge badge-completed">Completed</span>
+          </div>
+          <div class="process-cell process-cell-right">
+            <button class="delete-button">Delete</button>
+          </div>
+        </div>
+        
+        <!-- Row 2: Charger | Device + Edit Button -->
+        <div class="process-row process-row-2">
+          <div class="process-cell">
+            <span>Charger: Office Charger</span>
+          </div>
+          <div class="process-cell">
+            <span>Device: iPad Pro</span>
+          </div>
+          <div class="process-cell process-cell-right">
+            <button class="edit-button">Edit</button>
+          </div>
+        </div>
+        
+        <!-- Row 3: Start datetime | Duration | Power consumption -->
+        <div class="process-row process-row-3">
+          <div class="process-cell">
+            <span>1/9/2024, 10:00:00 AM</span>
+          </div>
+          <div class="process-cell">
+            <span>90m 0s</span>
+          </div>
+          <div class="process-cell">
+            <span>10.95 Wh</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
