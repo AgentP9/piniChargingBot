@@ -45,18 +45,18 @@ function runPatternAnalysis() {
   console.log(`Pattern analysis complete. Found ${chargingPatterns.length} patterns.`);
 }
 
-// Current state of each device
-const deviceStates = {};
+// Current state of each charger (physical charging device like ShellyPlug)
+const chargerStates = {};
 
 // MQTT Configuration
 const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || 'mqtt://localhost:1883';
 const MQTT_USERNAME = process.env.MQTT_USERNAME || '';
 const MQTT_PASSWORD = process.env.MQTT_PASSWORD || '';
 
-// Parse device configurations
+// Parse charger configurations (physical charging devices like ShellyPlugs)
 // New format: "Name:topic,Name2:topic2" (e.g., "Office Charger:shellies/shellyplug07")
-// Legacy format: "deviceId,deviceId2" (backward compatible)
-const parseDeviceConfig = (configString) => {
+// Legacy format: "chargerId,chargerId2" (backward compatible)
+const parseChargerConfig = (configString) => {
   if (!configString) return [];
   
   return configString.split(',').map(item => {
@@ -66,17 +66,17 @@ const parseDeviceConfig = (configString) => {
       const [name, topic] = trimmed.split(':').map(s => s.trim());
       return { name, topic, id: topic.replace(/\//g, '_') };
     } else {
-      // Legacy format: just device ID (topic = deviceId)
+      // Legacy format: just charger ID (topic = chargerId)
       return { name: trimmed, topic: trimmed, id: trimmed };
     }
   });
 };
 
-const MQTT_DEVICES = parseDeviceConfig(process.env.MQTT_DEVICES);
+const MQTT_CHARGERS = parseChargerConfig(process.env.MQTT_DEVICES);
 
 console.log('Starting backend server...');
 console.log('MQTT Broker:', MQTT_BROKER_URL);
-console.log('Configured devices:', MQTT_DEVICES.map(d => `${d.name} (${d.topic})`).join(', '));
+console.log('Configured chargers:', MQTT_CHARGERS.map(d => `${d.name} (${d.topic})`).join(', '));
 
 // MQTT Client setup
 const mqttOptions = {
@@ -94,35 +94,35 @@ if (MQTT_PASSWORD) {
 
 const mqttClient = mqtt.connect(MQTT_BROKER_URL, mqttOptions);
 
-// Subscribe to topics for all configured devices
+// Subscribe to topics for all configured chargers
 mqttClient.on('connect', () => {
   console.log('Connected to MQTT broker');
   
-  MQTT_DEVICES.forEach(device => {
+  MQTT_CHARGERS.forEach(charger => {
     // Subscribe to power on/off topic
-    const powerTopic = `${device.topic}/relay/0`;
+    const powerTopic = `${charger.topic}/relay/0`;
     mqttClient.subscribe(powerTopic, (err) => {
       if (err) {
         console.error(`Failed to subscribe to ${powerTopic}:`, err);
       } else {
-        console.log(`Subscribed to ${powerTopic} for device "${device.name}"`);
+        console.log(`Subscribed to ${powerTopic} for charger "${charger.name}"`);
       }
     });
     
     // Subscribe to power consumption topic
-    const consumptionTopic = `${device.topic}/relay/0/power`;
+    const consumptionTopic = `${charger.topic}/relay/0/power`;
     mqttClient.subscribe(consumptionTopic, (err) => {
       if (err) {
         console.error(`Failed to subscribe to ${consumptionTopic}:`, err);
       } else {
-        console.log(`Subscribed to ${consumptionTopic} for device "${device.name}"`);
+        console.log(`Subscribed to ${consumptionTopic} for charger "${charger.name}"`);
       }
     });
     
-    // Initialize device state with unique ID and name
-    deviceStates[device.id] = {
-      name: device.name,
-      topic: device.topic,
+    // Initialize charger state with unique ID and name
+    chargerStates[charger.id] = {
+      name: charger.name,
+      topic: charger.topic,
       isOn: false,
       power: 0,
       currentProcessId: null
@@ -140,20 +140,20 @@ mqttClient.on('message', (topic, message) => {
   
   console.log(`Received message on ${topic}: ${messageStr}`);
   
-  // Find device by matching topic prefix
-  let deviceId = null;
-  let deviceConfig = null;
+  // Find charger by matching topic prefix
+  let chargerId = null;
+  let chargerConfig = null;
   
-  for (const [id, state] of Object.entries(deviceStates)) {
+  for (const [id, state] of Object.entries(chargerStates)) {
     if (topic.startsWith(state.topic + '/')) {
-      deviceId = id;
-      deviceConfig = state;
+      chargerId = id;
+      chargerConfig = state;
       break;
     }
   }
   
-  if (!deviceId || !deviceConfig) {
-    console.warn(`Received message for unknown device on topic: ${topic}`);
+  if (!chargerId || !chargerConfig) {
+    console.warn(`Received message for unknown charger on topic: ${topic}`);
     return;
   }
   
@@ -161,13 +161,14 @@ mqttClient.on('message', (topic, message) => {
   if (topic.endsWith('/relay/0')) {
     const isOn = messageStr.toLowerCase() === 'on' || messageStr === '1' || messageStr === 'true';
     
-    if (isOn && !deviceStates[deviceId].isOn) {
+    if (isOn && !chargerStates[chargerId].isOn) {
       // Start new charging process
       const processId = processIdCounter++;
       const newProcess = {
         id: processId,
-        deviceId: deviceId,
-        deviceName: deviceConfig.name,
+        chargerId: chargerId,
+        chargerName: chargerConfig.name,
+        deviceName: null, // Will be set by pattern recognition after charging completes
         startTime: timestamp,
         endTime: null,
         events: [
@@ -180,17 +181,17 @@ mqttClient.on('message', (topic, message) => {
       };
       
       chargingProcesses.push(newProcess);
-      deviceStates[deviceId].currentProcessId = processId;
-      deviceStates[deviceId].isOn = true;
+      chargerStates[chargerId].currentProcessId = processId;
+      chargerStates[chargerId].isOn = true;
       
       // Persist to storage
       storage.saveProcesses(chargingProcesses);
       storage.saveProcessCounter(processIdCounter);
       
-      console.log(`Started charging process ${processId} for device "${deviceConfig.name}"`);
-    } else if (!isOn && deviceStates[deviceId].isOn) {
+      console.log(`Started charging process ${processId} on charger "${chargerConfig.name}"`);
+    } else if (!isOn && chargerStates[chargerId].isOn) {
       // End current charging process
-      const processId = deviceStates[deviceId].currentProcessId;
+      const processId = chargerStates[chargerId].currentProcessId;
       const process = chargingProcesses.find(p => p.id === processId);
       
       if (process) {
@@ -204,15 +205,15 @@ mqttClient.on('message', (topic, message) => {
         // Persist to storage
         storage.saveProcesses(chargingProcesses);
         
-        console.log(`Ended charging process ${processId} for device "${deviceConfig.name}"`);
+        console.log(`Ended charging process ${processId} on charger "${chargerConfig.name}"`);
         
         // Run pattern analysis after completing a process
         // This helps identify device patterns immediately
         setTimeout(() => runPatternAnalysis(), 1000);
       }
       
-      deviceStates[deviceId].isOn = false;
-      deviceStates[deviceId].currentProcessId = null;
+      chargerStates[chargerId].isOn = false;
+      chargerStates[chargerId].currentProcessId = null;
     }
   }
   
@@ -221,10 +222,10 @@ mqttClient.on('message', (topic, message) => {
     const power = parseFloat(messageStr);
     
     if (!isNaN(power)) {
-      deviceStates[deviceId].power = power;
+      chargerStates[chargerId].power = power;
       
       // Add to current process if one is active
-      const processId = deviceStates[deviceId].currentProcessId;
+      const processId = chargerStates[chargerId].currentProcessId;
       if (processId !== null) {
         const process = chargingProcesses.find(p => p.id === processId);
         if (process) {
@@ -249,17 +250,31 @@ app.get('/api/processes', (req, res) => {
   res.json(chargingProcesses);
 });
 
-// Get charging processes for a specific device
-app.get('/api/processes/device/:deviceId', (req, res) => {
-  const { deviceId } = req.params;
-  const deviceProcesses = chargingProcesses.filter(p => p.deviceId === deviceId);
-  res.json(deviceProcesses);
+// Get charging processes for a specific charger
+app.get('/api/processes/charger/:chargerId', (req, res) => {
+  const { chargerId } = req.params;
+  const chargerProcesses = chargingProcesses.filter(p => p.chargerId === chargerId);
+  res.json(chargerProcesses);
 });
 
-// Get active (incomplete) processes for a specific device
+// Backward compatibility: old endpoint name
+app.get('/api/processes/device/:deviceId', (req, res) => {
+  const { deviceId } = req.params;
+  const chargerProcesses = chargingProcesses.filter(p => p.chargerId === deviceId);
+  res.json(chargerProcesses);
+});
+
+// Get active (incomplete) processes for a specific charger
+app.get('/api/chargers/:chargerId/active-processes', (req, res) => {
+  const { chargerId } = req.params;
+  const activeProcesses = chargingProcesses.filter(p => p.chargerId === chargerId && p.endTime === null);
+  res.json(activeProcesses);
+});
+
+// Backward compatibility: old endpoint name
 app.get('/api/devices/:deviceId/active-processes', (req, res) => {
   const { deviceId } = req.params;
-  const activeProcesses = chargingProcesses.filter(p => p.deviceId === deviceId && p.endTime === null);
+  const activeProcesses = chargingProcesses.filter(p => p.chargerId === deviceId && p.endTime === null);
   res.json(activeProcesses);
 });
 
@@ -329,13 +344,13 @@ app.put('/api/processes/:id/complete', (req, res) => {
     value: false
   });
   
-  // Clear current process reference if this device is tracking it
-  const deviceState = Object.values(deviceStates).find(
+  // Clear current process reference if this charger is tracking it
+  const chargerState = Object.values(chargerStates).find(
     state => state.currentProcessId === processId
   );
-  if (deviceState) {
-    deviceState.isOn = false;
-    deviceState.currentProcessId = null;
+  if (chargerState) {
+    chargerState.isOn = false;
+    chargerState.currentProcessId = null;
   }
   
   // Persist the change to storage
@@ -349,9 +364,9 @@ app.put('/api/processes/:id/complete', (req, res) => {
   res.json({ success: true, message: 'Process marked as complete', process });
 });
 
-// Get current device states
-app.get('/api/devices', (req, res) => {
-  const devices = Object.entries(deviceStates).map(([id, state]) => ({
+// Get current charger states
+app.get('/api/chargers', (req, res) => {
+  const chargers = Object.entries(chargerStates).map(([id, state]) => ({
     id,
     name: state.name,
     topic: state.topic,
@@ -360,13 +375,46 @@ app.get('/api/devices', (req, res) => {
     currentProcessId: state.currentProcessId
   }));
   
-  res.json(devices);
+  res.json(chargers);
 });
 
-// Get state of a specific device
+// Backward compatibility: old endpoint name
+app.get('/api/devices', (req, res) => {
+  const chargers = Object.entries(chargerStates).map(([id, state]) => ({
+    id,
+    name: state.name,
+    topic: state.topic,
+    isOn: state.isOn,
+    power: state.power,
+    currentProcessId: state.currentProcessId
+  }));
+  
+  res.json(chargers);
+});
+
+// Get state of a specific charger
+app.get('/api/chargers/:chargerId', (req, res) => {
+  const { chargerId } = req.params;
+  const state = chargerStates[chargerId];
+  
+  if (state) {
+    res.json({
+      id: chargerId,
+      name: state.name,
+      topic: state.topic,
+      isOn: state.isOn,
+      power: state.power,
+      currentProcessId: state.currentProcessId
+    });
+  } else {
+    res.status(404).json({ error: 'Charger not found' });
+  }
+});
+
+// Backward compatibility: old endpoint name
 app.get('/api/devices/:deviceId', (req, res) => {
   const { deviceId } = req.params;
-  const state = deviceStates[deviceId];
+  const state = chargerStates[deviceId];
   
   if (state) {
     res.json({
@@ -387,7 +435,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     mqttConnected: mqttClient.connected,
-    devices: MQTT_DEVICES,
+    chargers: MQTT_CHARGERS,
     timestamp: new Date().toISOString()
   });
 });
@@ -399,11 +447,18 @@ app.get('/api/patterns', (req, res) => {
   res.json(chargingPatterns);
 });
 
-// Get patterns for a specific device
+// Get patterns for a specific charger
+app.get('/api/patterns/charger/:chargerId', (req, res) => {
+  const { chargerId } = req.params;
+  const chargerPatterns = chargingPatterns.filter(p => p.chargerId === chargerId);
+  res.json(chargerPatterns);
+});
+
+// Backward compatibility: old endpoint name
 app.get('/api/patterns/device/:deviceId', (req, res) => {
   const { deviceId } = req.params;
-  const devicePatterns = chargingPatterns.filter(p => p.deviceId === deviceId);
-  res.json(devicePatterns);
+  const chargerPatterns = chargingPatterns.filter(p => p.chargerId === deviceId);
+  res.json(chargerPatterns);
 });
 
 // Trigger pattern analysis manually
@@ -476,7 +531,8 @@ app.get('/api/patterns/debug', (req, res) => {
     
     return {
       id: p.id,
-      deviceName: p.deviceName || p.deviceId,
+      chargerName: p.chargerName || p.chargerId,
+      deviceName: p.deviceName || 'Unknown',
       completed: !!p.endTime,
       powerEventsCount: powerEvents.length,
       hasProfile: profile !== null,

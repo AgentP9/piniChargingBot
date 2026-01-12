@@ -233,8 +233,9 @@ function analyzePatterns(processes) {
       const patternId = `pattern_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       patterns.push({
         id: patternId,
-        deviceId: process.deviceId,
-        deviceName: process.deviceName || process.deviceId,
+        chargerId: process.chargerId,
+        chargerName: process.chargerName || process.chargerId,
+        deviceName: process.deviceName || process.chargerId, // Will be set by user via label management
         count: 1,
         processIds: [process.id],
         averageProfile: { ...profile },

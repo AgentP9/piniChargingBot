@@ -47,7 +47,7 @@ function ProcessFilters({ filters, onFilterChange, devices, patterns }) {
     ].filter(Boolean).length;
   }, [filters]);
 
-  // Get unique chargers (physical charging devices) using a Map for O(n) complexity
+  // Get unique chargers (physical charging devices like ShellyPlugs) using a Map for O(n) complexity
   // Memoized to avoid recalculation on every render
   const uniqueChargers = useMemo(() => {
     const uniqueChargersMap = new Map();
@@ -59,7 +59,7 @@ function ProcessFilters({ filters, onFilterChange, devices, patterns }) {
     return Array.from(uniqueChargersMap.values());
   }, [devices]);
 
-  // Get unique device names from patterns (charged devices like Hugo, Egon, etc.)
+  // Get unique device names from patterns (charged devices like iPhones, TonieBoxes, etc.)
   // Memoized to avoid recalculation on every render
   const uniqueDeviceNames = useMemo(() => {
     if (!patterns || patterns.length === 0) return [];
