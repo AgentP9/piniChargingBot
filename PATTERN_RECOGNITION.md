@@ -130,9 +130,11 @@ Get the matching pattern for a specific charging process.
 
 Pattern analysis runs automatically in the following scenarios:
 
-1. **On Server Startup**: Analyzes all existing completed processes
+1. **On Server Startup**: After a 2-second delay, analyzes all existing completed processes (the delay allows the server to fully initialize before analysis begins)
 2. **When a Process Completes**: Immediately after a charging session ends
 3. **Periodically**: Every 1 hour to catch any updates
+
+> **Note**: Because of the 2-second startup delay, patterns might not appear immediately after the server starts. This is expected behavior.
 
 ## Data Storage
 

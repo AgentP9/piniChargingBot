@@ -307,7 +307,7 @@ Each charger will be monitored independently, and the UI will display all charge
 ### No data showing in frontend
 - Verify backend is running: `docker-compose logs backend`
 - Check backend health through frontend proxy: http://localhost:1818/api/health
-- Ensure chargers are publishing to the correct MQTT topics
+- Ensure chargers (physical charging devices like ShellyPlugs) are publishing to the correct MQTT topics
 
 ### Frontend can't connect to backend
 - Check that both frontend and backend containers are running: `docker-compose ps`

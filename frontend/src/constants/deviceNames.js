@@ -1,6 +1,7 @@
 // Friendly names for pattern-identified devices being charged
 // Used for displaying device names in the UI and for filtering
 // These represent actual devices like iPhones, TonieBoxes, etc.
+// IMPORTANT: This array must be kept in sync with backend/patternAnalyzer.js
 export const FRIENDLY_DEVICE_NAMES = [
   'Hugo', 
   'Egon', 

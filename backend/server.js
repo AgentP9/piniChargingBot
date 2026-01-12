@@ -38,11 +38,31 @@ function scheduleSave() {
 }
 
 // Function to run pattern analysis
-function runPatternAnalysis() {
+async function runPatternAnalysis() {
   console.log('Running pattern analysis...');
-  chargingPatterns = patternAnalyzer.analyzePatterns(chargingProcesses);
-  patternAnalyzer.savePatterns(chargingPatterns);
-  console.log(`Pattern analysis complete. Found ${chargingPatterns.length} patterns.`);
+  try {
+    chargingPatterns = patternAnalyzer.analyzePatterns(chargingProcesses);
+    patternAnalyzer.savePatterns(chargingPatterns);
+    console.log(`Pattern analysis complete. Found ${chargingPatterns.length} patterns.`);
+  } catch (error) {
+    console.error('Error during pattern analysis:', error);
+  }
+}
+
+// Schedule periodic pattern analysis
+let patternAnalysisInProgress = false;
+async function schedulePatternAnalysis() {
+  if (patternAnalysisInProgress) {
+    console.log('Pattern analysis already in progress, skipping...');
+    return;
+  }
+  
+  patternAnalysisInProgress = true;
+  try {
+    await runPatternAnalysis();
+  } finally {
+    patternAnalysisInProgress = false;
+  }
 }
 
 // Current state of each charger (physical charging device like ShellyPlug)
@@ -53,7 +73,7 @@ const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || 'mqtt://localhost:1883';
 const MQTT_USERNAME = process.env.MQTT_USERNAME || '';
 const MQTT_PASSWORD = process.env.MQTT_PASSWORD || '';
 
-// Parse charger configurations (physical charging devices like ShellyPlugs)
+// Parse charger configurations (for physical charging devices like ShellyPlugs)
 // New format: "Name:topic,Name2:topic2" (e.g., "Office Charger:shellies/shellyplug07")
 // Legacy format: "chargerId,chargerId2" (backward compatible)
 const parseChargerConfig = (configString) => {
@@ -608,6 +628,9 @@ app.put('/api/patterns/:patternId/label', (req, res) => {
       pattern.processIds.forEach(processId => {
         const process = chargingProcesses.find(p => p.id === processId);
         if (process) {
+          // Update deviceName to reflect the charged device (e.g., "iPhone", "TonieBox")
+          // Note: deviceName historically meant charger name (backward compatibility), 
+          // but is now being repurposed to mean the device being charged
           process.deviceName = trimmedLabel;
         }
       });
@@ -653,6 +676,9 @@ app.post('/api/patterns/merge', (req, res) => {
     targetPattern.processIds.forEach(processId => {
       const process = chargingProcesses.find(p => p.id === processId);
       if (process) {
+        // Update deviceName to reflect the charged device (e.g., "iPhone", "TonieBox")
+        // Note: deviceName historically meant charger name (backward compatibility), 
+        // but is now being repurposed to mean the device being charged
         process.deviceName = targetPattern.deviceName;
       }
     });
@@ -701,13 +727,14 @@ app.listen(PORT, () => {
   // Run initial pattern analysis on startup
   if (chargingProcesses.length > 0) {
     console.log('Running initial pattern analysis...');
-    setTimeout(() => runPatternAnalysis(), 2000);
+    setTimeout(() => schedulePatternAnalysis(), 2000);
   }
   
   // Schedule periodic pattern analysis (every 1 hour)
+  // Uses a safer approach that waits for completion before next run
   setInterval(() => {
     console.log('Running scheduled pattern analysis...');
-    runPatternAnalysis();
+    schedulePatternAnalysis();
   }, 60 * 60 * 1000);
 });
 

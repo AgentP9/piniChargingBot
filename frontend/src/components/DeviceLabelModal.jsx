@@ -5,10 +5,12 @@ function DeviceLabelModal({ pattern, patterns, onClose, onSave, onMerge }) {
   const [newLabel, setNewLabel] = useState(pattern?.deviceName || '');
   const [shouldRenameAll, setShouldRenameAll] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (pattern) {
       setNewLabel(pattern.deviceName || '');
+      setError('');
     }
   }, [pattern]);
 
@@ -23,7 +25,7 @@ function DeviceLabelModal({ pattern, patterns, onClose, onSave, onMerge }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!newLabel.trim()) {
-      alert('Please enter a device name');
+      setError('Please enter a device name');
       return;
     }
 
@@ -67,6 +69,7 @@ function DeviceLabelModal({ pattern, patterns, onClose, onSave, onMerge }) {
 
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
+            {error && <div className="error-message">{error}</div>}
             <div className="form-group">
               <label htmlFor="device-label">Device Name:</label>
               <div className="input-container">
@@ -77,6 +80,7 @@ function DeviceLabelModal({ pattern, patterns, onClose, onSave, onMerge }) {
                   onChange={(e) => {
                     setNewLabel(e.target.value);
                     setShowDropdown(true);
+                    setError(''); // Clear error on change
                   }}
                   onFocus={() => setShowDropdown(true)}
                   placeholder="Enter device name"
@@ -85,7 +89,7 @@ function DeviceLabelModal({ pattern, patterns, onClose, onSave, onMerge }) {
                 />
                 
                 {showDropdown && filteredSuggestions.length > 0 && (
-                  <div className="dropdown-menu">
+                  <div className="dropdown-menu" onClick={(e) => e.stopPropagation()}>
                     <div className="dropdown-header">Existing devices:</div>
                     {filteredSuggestions.map((name, index) => (
                       <div
