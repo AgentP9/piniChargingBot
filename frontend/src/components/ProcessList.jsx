@@ -230,7 +230,7 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
                     title="Mark this process as complete"
                     aria-label={`Mark charging process #${process.id} as complete`}
                   >
-                    Set to complete
+                    ✓
                   </button>
                 )}
               </div>
@@ -241,7 +241,7 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
                   title="Delete this charging process"
                   aria-label={`Delete charging process #${process.id}`}
                 >
-                  Delete
+                  🗑️
                 </button>
               </div>
             </div>
@@ -266,7 +266,7 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
                     title="Edit device label"
                     aria-label="Edit device label"
                   >
-                    Edit
+                    ✏️
                   </button>
                 )}
               </div>

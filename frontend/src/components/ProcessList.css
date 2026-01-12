@@ -126,79 +126,72 @@
 }
 
 .delete-button {
-  background: #f8d7da;
-  border: 1px solid #f5c2c7;
-  color: #842029;
-  font-size: 0.85rem;
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
   cursor: pointer;
-  padding: 0.25rem 0.75rem;
+  padding: 0.25rem 0.5rem;
   border-radius: 4px;
   transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-weight: 500;
 }
 
 .delete-button:hover {
-  background: #f1aeb5;
-  border-color: #ea868f;
-  transform: translateY(-1px);
+  background: #fee;
+  transform: scale(1.1);
 }
 
 .delete-button:active {
-  transform: translateY(0);
+  transform: scale(0.95);
 }
 
 .complete-button {
-  background: #d1e7dd;
-  border: 1px solid #badbcc;
-  color: #0f5132;
-  font-size: 0.85rem;
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
   cursor: pointer;
-  padding: 0.25rem 0.75rem;
+  padding: 0.25rem 0.5rem;
   border-radius: 4px;
   transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-weight: 500;
+  color: #28a745;
+  font-weight: bold;
   margin-left: 0.5rem;
 }
 
 .complete-button:hover {
-  background: #a3cfbb;
-  border-color: #75b798;
-  transform: translateY(-1px);
+  background: #d4edda;
+  transform: scale(1.1);
 }
 
 .complete-button:active {
-  transform: translateY(0);
+  transform: scale(0.95);
 }
 
 .edit-button {
-  background: #cfe2ff;
-  border: 1px solid #b6d4fe;
-  color: #084298;
-  font-size: 0.85rem;
+  background: transparent;
+  border: none;
+  font-size: 1rem;
   cursor: pointer;
-  padding: 0.25rem 0.75rem;
+  padding: 0.25rem 0.5rem;
   border-radius: 4px;
   transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-weight: 500;
 }
 
 .edit-button:hover {
-  background: #9ec5fe;
-  border-color: #6ea8fe;
-  transform: translateY(-1px);
+  background: #e7f3ff;
+  transform: scale(1.1);
 }
 
 .edit-button:active {
-  transform: translateY(0);
+  transform: scale(0.95);
 }
 
 .badge-active {
