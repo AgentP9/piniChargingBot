@@ -214,9 +214,12 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
           {process.endTime && <ChartPreview process={process} />}
           
           <div className="process-content">
-            <div className="process-header">
-              <span className="process-id">Process #{process.id}</span>
-              <div className="process-header-actions">
+            {/* Row 1: Process ID | State + Complete Button | Delete Button */}
+            <div className="process-row process-row-1">
+              <div className="process-cell">
+                <span className="process-id">Process #{process.id}</span>
+              </div>
+              <div className="process-cell process-cell-center">
                 <span className={`process-badge ${process.endTime ? 'badge-completed' : 'badge-active'}`}>
                   {process.endTime ? 'Completed' : 'Active'}
                 </span>
@@ -230,6 +233,8 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
                     ✓
                   </button>
                 )}
+              </div>
+              <div className="process-cell process-cell-right">
                 <button 
                   className="delete-button"
                   onClick={(e) => handleDelete(e, process.id)}
@@ -241,41 +246,41 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
               </div>
             </div>
             
-            <div className="process-details">
-              <div className="detail-item">
-                <span className="detail-icon">🔌</span>
+            {/* Row 2: Charger | Device + Edit Button */}
+            <div className="process-row process-row-2">
+              <div className="process-cell">
                 <span>Charger: {process.chargerName || process.deviceName || process.chargerId || process.deviceId}</span>
               </div>
-              
-              {getAssumedDevice(process) && (
-                <div className="detail-item device-label-row">
-                  <span className="detail-icon">📱</span>
+              <div className="process-cell">
+                {getAssumedDevice(process) ? (
                   <span>Device: {getAssumedDevice(process)}</span>
-                  {process.endTime && (
-                    <button
-                      className="edit-label-button"
-                      onClick={(e) => handleEditDevice(e, process)}
-                      title="Edit device label"
-                      aria-label="Edit device label"
-                    >
-                      ✏️
-                    </button>
-                  )}
-                </div>
-              )}
-              
-              <div className="detail-item">
-                <span className="detail-icon">🕐</span>
+                ) : (
+                  <span>Device: -</span>
+                )}
+              </div>
+              <div className="process-cell process-cell-right">
+                {getAssumedDevice(process) && process.endTime && (
+                  <button
+                    className="edit-button"
+                    onClick={(e) => handleEditDevice(e, process)}
+                    title="Edit device label"
+                    aria-label="Edit device label"
+                  >
+                    ✏️
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            {/* Row 3: Start datetime | Duration | Power consumption */}
+            <div className="process-row process-row-3">
+              <div className="process-cell">
                 <span>{formatDate(process.startTime)}</span>
               </div>
-              
-              <div className="detail-item">
-                <span className="detail-icon">⏱️</span>
+              <div className="process-cell">
                 <span>{formatDuration(process.startTime, process.endTime)}</span>
               </div>
-              
-              <div className="detail-item">
-                <span className="detail-icon">⚡</span>
+              <div className="process-cell">
                 <span>{calculateTotalEnergy(process)} Wh</span>
               </div>
             </div>
