@@ -168,7 +168,7 @@ mqttClient.on('message', (topic, message) => {
         id: processId,
         chargerId: chargerId,
         chargerName: chargerConfig.name,
-        deviceName: null, // Will be set by pattern recognition after charging completes
+        deviceName: null, // Will be set by pattern recognition to identify the charged item (iPhone, TonieBox, etc.)
         startTime: timestamp,
         endTime: null,
         events: [
