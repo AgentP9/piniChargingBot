@@ -243,9 +243,10 @@ function analyzePatterns(processes) {
       
       patterns.push({
         id: patternId,
-        chargerId: process.chargerId,
-        chargerName: process.chargerName || process.chargerId,
-        deviceName: process.deviceName || friendlyName, // Use friendly name as default
+        deviceId: process.chargerId || process.deviceId, // Backward compatibility
+        chargerId: process.chargerId || process.deviceId,
+        chargerName: process.chargerName || process.deviceName || process.chargerId || process.deviceId,
+        deviceName: friendlyName, // Use friendly name as default for charged device
         count: 1,
         processIds: [process.id],
         averageProfile: { ...profile },

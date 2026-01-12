@@ -138,7 +138,11 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
     if (filters?.state === 'completed' && !isCompleted) return false;
 
     // Charger filter (physical charging device like ShellyPlug)
-    if (filters?.charger && filters.charger !== 'all' && process.chargerId !== filters.charger) return false;
+    // Check both chargerId and deviceId for backward compatibility
+    if (filters?.charger && filters.charger !== 'all') {
+      const processChargerId = process.chargerId || process.deviceId;
+      if (processChargerId !== filters.charger) return false;
+    }
 
     // Device filter (charged device from pattern recognition)
     // Note: Only completed processes can be filtered by device since pattern recognition
@@ -248,7 +252,7 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
             <div className="process-details">
               <div className="detail-item">
                 <span className="detail-icon">🔌</span>
-                <span>Charger: {process.chargerName || process.chargerId}</span>
+                <span>Charger: {process.chargerName || process.deviceName || process.chargerId || process.deviceId}</span>
               </div>
               
               {getAssumedDevice(process) && (

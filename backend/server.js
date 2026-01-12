@@ -166,9 +166,10 @@ mqttClient.on('message', (topic, message) => {
       const processId = processIdCounter++;
       const newProcess = {
         id: processId,
+        deviceId: chargerId, // Backward compatibility: keep old field name
         chargerId: chargerId,
+        deviceName: chargerConfig.name, // Backward compatibility: this was the charger name
         chargerName: chargerConfig.name,
-        deviceName: null, // Will be set by pattern recognition to identify the charged item (iPhone, TonieBox, etc.)
         startTime: timestamp,
         endTime: null,
         events: [
@@ -253,28 +254,40 @@ app.get('/api/processes', (req, res) => {
 // Get charging processes for a specific charger
 app.get('/api/processes/charger/:chargerId', (req, res) => {
   const { chargerId } = req.params;
-  const chargerProcesses = chargingProcesses.filter(p => p.chargerId === chargerId);
+  // Check both fields for backward compatibility
+  const chargerProcesses = chargingProcesses.filter(p => 
+    p.chargerId === chargerId || p.deviceId === chargerId
+  );
   res.json(chargerProcesses);
 });
 
 // Backward compatibility: old endpoint name
 app.get('/api/processes/device/:deviceId', (req, res) => {
   const { deviceId } = req.params;
-  const chargerProcesses = chargingProcesses.filter(p => p.chargerId === deviceId);
+  // Check both fields for backward compatibility
+  const chargerProcesses = chargingProcesses.filter(p => 
+    p.chargerId === deviceId || p.deviceId === deviceId
+  );
   res.json(chargerProcesses);
 });
 
 // Get active (incomplete) processes for a specific charger
 app.get('/api/chargers/:chargerId/active-processes', (req, res) => {
   const { chargerId } = req.params;
-  const activeProcesses = chargingProcesses.filter(p => p.chargerId === chargerId && p.endTime === null);
+  // Check both fields for backward compatibility
+  const activeProcesses = chargingProcesses.filter(p => 
+    (p.chargerId === chargerId || p.deviceId === chargerId) && p.endTime === null
+  );
   res.json(activeProcesses);
 });
 
 // Backward compatibility: old endpoint name
 app.get('/api/devices/:deviceId/active-processes', (req, res) => {
   const { deviceId } = req.params;
-  const activeProcesses = chargingProcesses.filter(p => p.chargerId === deviceId && p.endTime === null);
+  // Check both fields for backward compatibility
+  const activeProcesses = chargingProcesses.filter(p => 
+    (p.chargerId === deviceId || p.deviceId === deviceId) && p.endTime === null
+  );
   res.json(activeProcesses);
 });
 
@@ -450,14 +463,20 @@ app.get('/api/patterns', (req, res) => {
 // Get patterns for a specific charger
 app.get('/api/patterns/charger/:chargerId', (req, res) => {
   const { chargerId } = req.params;
-  const chargerPatterns = chargingPatterns.filter(p => p.chargerId === chargerId);
+  // Check both fields for backward compatibility
+  const chargerPatterns = chargingPatterns.filter(p => 
+    p.chargerId === chargerId || p.deviceId === chargerId
+  );
   res.json(chargerPatterns);
 });
 
 // Backward compatibility: old endpoint name
 app.get('/api/patterns/device/:deviceId', (req, res) => {
   const { deviceId } = req.params;
-  const chargerPatterns = chargingPatterns.filter(p => p.chargerId === deviceId);
+  // Check both fields for backward compatibility
+  const chargerPatterns = chargingPatterns.filter(p => 
+    p.chargerId === deviceId || p.deviceId === deviceId
+  );
   res.json(chargerPatterns);
 });
 
@@ -531,8 +550,8 @@ app.get('/api/patterns/debug', (req, res) => {
     
     return {
       id: p.id,
-      chargerName: p.chargerName || p.chargerId,
-      deviceName: p.deviceName || 'Unknown',
+      chargerName: p.chargerName || p.deviceName || p.chargerId || p.deviceId,
+      deviceName: 'Unknown', // Will be set if pattern matches
       completed: !!p.endTime,
       powerEventsCount: powerEvents.length,
       hasProfile: profile !== null,
