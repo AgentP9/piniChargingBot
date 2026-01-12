@@ -221,6 +221,8 @@ function analyzePatterns(processes, existingPatterns = []) {
   
   // Group similar processes into patterns
   const patterns = [];
+  // Track which existing pattern IDs have been restored to avoid duplicates
+  const restoredPatternIds = new Set();
   
   processesWithProfiles.forEach(({ process, profile, duration }) => {
     // First, check if this process was in an existing pattern (to preserve user customizations)
@@ -266,10 +268,12 @@ function analyzePatterns(processes, existingPatterns = []) {
       // Check if we should restore from existing pattern to preserve user customizations
       let patternId, deviceName;
       
-      if (existingPatternForProcess) {
+      if (existingPatternForProcess && !restoredPatternIds.has(existingPatternForProcess.id)) {
         // Reuse the existing pattern's ID and deviceName to preserve user customizations
+        // Only do this if we haven't already restored this pattern ID
         patternId = existingPatternForProcess.id;
         deviceName = existingPatternForProcess.deviceName;
+        restoredPatternIds.add(patternId);
         console.log(`Pattern analysis: Restoring pattern ${patternId} with device name "${deviceName}"`);
       } else {
         // Generate unique pattern ID with high-resolution timestamp and random string
