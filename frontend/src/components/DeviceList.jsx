@@ -1,13 +1,14 @@
 import React from 'react';
 import './DeviceList.css';
 
+// DeviceList displays connected chargers (physical charging devices like ShellyPlugs)
 function DeviceList({ devices, selectedDeviceId, onSelectDevice }) {
   if (devices.length === 0) {
-    return <div className="empty-state">No devices configured</div>;
+    return <div className="empty-state">No chargers configured</div>;
   }
 
   const handleDeviceClick = (deviceId) => {
-    // If clicking the already selected device, deselect it
+    // If clicking the already selected charger, deselect it
     if (selectedDeviceId === deviceId) {
       onSelectDevice(null);
     } else {

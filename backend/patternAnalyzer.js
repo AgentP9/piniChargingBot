@@ -1,6 +1,13 @@
 const fs = require('fs');
 const path = require('path');
 
+// Friendly names for pattern-identified devices being charged
+// These represent actual devices like iPhones, TonieBoxes, etc.
+const FRIENDLY_DEVICE_NAMES = [
+  'Hugo', 'Egon', 'Tom', 'Jerry', 'Alice', 
+  'Bob', 'Charlie', 'Diana', 'Emma', 'Frank'
+];
+
 // Data directory for persistent storage
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const PATTERNS_FILE = path.join(DATA_DIR, 'charging-patterns.json');
@@ -231,10 +238,15 @@ function analyzePatterns(processes) {
     } else {
       // Create new pattern
       const patternId = `pattern_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const patternIndex = patterns.length;
+      const friendlyName = FRIENDLY_DEVICE_NAMES[patternIndex % FRIENDLY_DEVICE_NAMES.length];
+      
       patterns.push({
         id: patternId,
-        deviceId: process.deviceId,
-        deviceName: process.deviceName || process.deviceId,
+        deviceId: process.chargerId || process.deviceId, // Backward compatibility
+        chargerId: process.chargerId || process.deviceId,
+        chargerName: process.chargerName || process.deviceName || process.chargerId || process.deviceId,
+        deviceName: friendlyName, // Use friendly name as default for charged device
         count: 1,
         processIds: [process.id],
         averageProfile: { ...profile },
