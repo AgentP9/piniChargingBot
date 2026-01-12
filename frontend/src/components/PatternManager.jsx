@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { FRIENDLY_DEVICE_NAMES } from '../constants/deviceNames';
 import './PatternManager.css';
 
 function PatternManager({ patterns, selectedPatternId, onPatternUpdate, onSelectPattern }) {
@@ -30,11 +29,8 @@ function PatternManager({ patterns, selectedPatternId, onPatternUpdate, onSelect
     );
   }
 
-  // Create a mapping of pattern IDs to friendly names
-  const patternNames = {};
-  patterns.forEach((pattern, index) => {
-    patternNames[pattern.id] = FRIENDLY_DEVICE_NAMES[index % FRIENDLY_DEVICE_NAMES.length];
-  });
+  // Display name from pattern.deviceName instead of mapping
+  const getDisplayName = (pattern) => pattern.deviceName;
 
   const handlePatternClick = (patternId) => {
     // If clicking the already selected pattern, deselect it
@@ -50,7 +46,7 @@ function PatternManager({ patterns, selectedPatternId, onPatternUpdate, onSelect
       <h3>Recognized Devices ({patterns.length})</h3>
       <div className="pattern-list">
         {patterns.map((pattern, index) => {
-          const displayName = patternNames[pattern.id];
+          const displayName = getDisplayName(pattern);
           const isExpanded = expandedPattern === pattern.id;
           const isSelected = selectedPatternId === pattern.id;
 

@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import ChartPreview from './ChartPreview';
 import DeviceLabelModal from './DeviceLabelModal';
-import { FRIENDLY_DEVICE_NAMES } from '../constants/deviceNames';
 import './ProcessList.css';
 
 function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, onDeleteProcess, onCompleteProcess, filters, onPatternUpdate }) {
@@ -59,12 +58,12 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
     setEditingPattern(null);
   };
   
-  // Create a mapping of pattern IDs to friendly names (memoized)
+  // Create a mapping of pattern IDs to device names (memoized)
   const patternNames = useMemo(() => {
     const names = {};
     if (patterns && patterns.length > 0) {
-      patterns.forEach((pattern, index) => {
-        names[pattern.id] = FRIENDLY_DEVICE_NAMES[index % FRIENDLY_DEVICE_NAMES.length];
+      patterns.forEach((pattern) => {
+        names[pattern.id] = pattern.deviceName;
       });
     }
     return names;
