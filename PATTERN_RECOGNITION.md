@@ -2,7 +2,14 @@
 
 ## Overview
 
-The pattern recognition feature automatically analyzes completed charging processes to identify patterns and group similar charging sessions. This enables the system to recognize the same devices being charged based on their power consumption characteristics, even without explicit device identification.
+The pattern recognition feature automatically analyzes completed charging processes to identify patterns and group similar charging sessions. This enables the system to recognize the same **devices being charged** (like iPhones, TonieBoxes) based on their power consumption characteristics, even without explicit device identification.
+
+## Key Terminology
+
+- **Charger**: Physical charging device (e.g., ShellyPlug) that provides power
+- **Device**: Item being charged (e.g., iPhone, TonieBox, etc.)
+- **Charging Process**: A session when a device is connected to a charger
+- **Pattern**: A unique fingerprint of a device's charging behavior
 
 ## How It Works
 
@@ -51,8 +58,9 @@ Get all identified charging patterns.
 [
   {
     "id": "pattern_xxx",
-    "deviceId": "device_id",
-    "deviceName": "Device Name",
+    "chargerId": "charger_id",
+    "chargerName": "Office Charger",
+    "deviceName": "Hugo",
     "count": 4,
     "processIds": [1, 3, 7, 9],
     "averageProfile": {
@@ -83,11 +91,11 @@ Get all identified charging patterns.
 ]
 ```
 
-### GET /api/patterns/device/:deviceId
+### GET /api/patterns/charger/:chargerId
 
-Get patterns for a specific device (charging port).
+Get patterns for a specific charger (charging port).
 
-**Example:** `GET /api/patterns/device/kitchen_charger`
+**Example:** `GET /api/patterns/charger/kitchen_charger`
 
 ### POST /api/patterns/analyze
 

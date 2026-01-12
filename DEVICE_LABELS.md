@@ -2,7 +2,14 @@
 
 ## Overview
 
-The device label management feature allows you to manage the labels (names) assigned to recognized charging device patterns. Each pattern represents a unique device that has been identified through its power consumption fingerprint.
+The device label management feature allows you to manage the labels (names) assigned to recognized charging **device** patterns. Each pattern represents a unique **device being charged** (like an iPhone, TonieBox, etc.) that has been identified through its power consumption fingerprint.
+
+## Key Terminology
+
+- **Charger**: Physical charging device (e.g., ShellyPlug) - the hardware providing power
+- **Device**: Item being charged (e.g., iPhone, TonieBox) - what's getting charged
+- **Pattern**: A unique fingerprint identifying a specific device's charging behavior
+- **Device Label**: The name assigned to a pattern (e.g., "Hugo", "Alice's iPhone")
 
 ## Features
 
@@ -81,6 +88,7 @@ Appears when clicking the edit button (✏️) on a device label:
 2. After charging completes, pattern analysis identifies the device based on its "fingerprint"
 3. Similar charging sessions are automatically grouped into patterns
 4. Each pattern is assigned a default label (e.g., Hugo, Egon, Tom, Jerry)
+5. You can rename these labels to meaningful names like "Alice's iPhone" or "Kitchen TonieBox"
 
 ### Label Management Flow
 
@@ -176,8 +184,9 @@ Stored in: `backend/data/charging-patterns.json`
 
 Contains:
 - Pattern ID
-- Device name (label)
-- Device ID (physical charger)
+- Charger ID (physical charger like ShellyPlug)
+- Charger Name (e.g., "Office Charger")
+- Device Name (label for the charged device, e.g., "Alice's iPhone")
 - Process IDs (linked charging sessions)
 - Average power profile
 - Statistics (duration, sessions, etc.)
@@ -187,17 +196,18 @@ Stored in: `backend/data/charging-processes.json`
 
 Contains:
 - Process ID
-- Device ID (physical charger)
-- Device name (label from pattern)
+- Charger ID (physical charger)
+- Charger Name (e.g., "Office Charger")
+- Device Name (label from pattern, e.g., "Alice's iPhone")
 - Start/end times
 - Power consumption events
 
 ## Best Practices
 
 ### Naming Conventions
-- Use descriptive, unique names: "John's iPhone", "Kitchen TonieBox"
+- Use descriptive, unique names: "John's iPhone", "Kitchen TonieBox", "Kids Tablet"
 - Avoid generic names: "Device 1", "Phone"
-- Consider the device owner: "Alice's iPad", "Bob's Laptop"
+- Consider the device owner or location: "Alice's iPad", "Bob's Laptop", "Living Room Speaker"
 
 ### When to Merge
 Merge patterns when:

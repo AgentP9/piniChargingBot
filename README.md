@@ -2,15 +2,24 @@
 
 A Docker-based application for monitoring device charging via MQTT-compatible power plugs (e.g., Shelly Plug S).
 
+## Overview
+
+This application tracks charging sessions for your devices (iPhones, TonieBoxes, etc.) through physical chargers (ShellyPlugs). It uses pattern recognition to automatically identify which device is being charged based on power consumption characteristics.
+
+**Key Concepts:**
+- **Charger**: Physical charging device like a ShellyPlug that connects to power
+- **Device**: The item being charged (iPhone, TonieBox, etc.)
+- **Charging Process**: A session when a device is connected to a charger and is being charged
+
 ## Features
 
-- **Real-time MQTT Monitoring**: Connects to MQTT broker and subscribes to configurable device topics
+- **Real-time MQTT Monitoring**: Connects to MQTT broker and subscribes to configurable charger topics
 - **Charging Process Tracking**: Automatically tracks charging sessions based on power on/off events
 - **Power Consumption Logging**: Records power consumption data with timestamps
 - **Pattern Recognition**: AI-powered device fingerprinting that identifies charged devices based on power consumption characteristics
 - **Device Label Management**: Edit, merge, and manage device labels for recognized charging patterns
 - **Modern Responsive UI**: Web interface with real-time updates and interactive charts
-- **Multi-Device Support**: Monitor multiple devices simultaneously
+- **Multi-Charger Support**: Monitor multiple chargers simultaneously
 - **Progressive Web App (PWA)**: Add to your iPhone/Android home screen for a native app experience
 - **Docker Deployment**: Easy deployment with Docker Compose
 
@@ -36,7 +45,7 @@ The application consists of two main components:
 ## Prerequisites
 
 - Docker and Docker Compose installed (or Portainer for web-based management)
-- MQTT-compatible power plugs (e.g., Shelly Plug S) configured to publish to MQTT
+- MQTT-compatible power plugs (e.g., Shelly Plug S) configured to publish to MQTT - these are your **chargers**
 - An existing MQTT broker (or use the optional built-in Mosquitto broker)
 
 ## Quick Start
@@ -54,7 +63,7 @@ The application consists of two main components:
    cp .env.example .env
    ```
    
-   Edit `.env` and configure your MQTT broker and devices:
+   Edit `.env` and configure your MQTT broker and chargers:
    ```env
    # Use your existing MQTT broker
    MQTT_BROKER_URL=mqtt://192.168.1.100:1883
@@ -110,7 +119,7 @@ All configuration can be managed via environment variables (through `.env` file 
 - `MQTT_BROKER_URL`: MQTT broker URL (e.g., `mqtt://your-broker:1883`)
 - `MQTT_USERNAME`: MQTT username (optional)
 - `MQTT_PASSWORD`: MQTT password (optional)
-- `MQTT_DEVICES`: Device configurations in the format `Name:topic` or legacy format `deviceId`
+- `MQTT_DEVICES`: Charger configurations in the format `Name:topic` or legacy format `chargerId`
   - New format: `Office Charger:shellies/shellyplug07,Kitchen:shellies/shellyplug02`
   - Legacy format (backward compatible): `shellyplug-s-12345,shellyplug-s-67890`
 
@@ -148,11 +157,11 @@ If you don't have an MQTT broker, you can use the included Mosquitto:
 
 ### MQTT Topics
 
-For each device configuration, the backend subscribes to:
+For each charger configuration, the backend subscribes to:
 - `{topic}/relay/0` - Power on/off events
 - `{topic}/relay/0/power` - Power consumption in Watts
 
-Example for device configured as "Office Charger:shellies/shellyplug07":
+Example for charger configured as "Office Charger:shellies/shellyplug07":
 - Subscribes to: `shellies/shellyplug07/relay/0` - Receives "on" or "off"
 - Subscribes to: `shellies/shellyplug07/relay/0/power` - Receives power value (e.g., "15.5")
 - Displays as: "Office Charger" in the UI
@@ -203,22 +212,22 @@ The application is a fully functional Progressive Web App that can be installed 
 
 ## API Endpoints
 
-### Device & Process Management
+### Charger & Process Management
 
 - `GET /api/health` - Health check and MQTT connection status
-- `GET /api/devices` - Get all device states
-- `GET /api/devices/:deviceId` - Get specific device state
-- `GET /api/devices/:deviceId/active-processes` - Get active (incomplete) processes for a device
+- `GET /api/chargers` - Get all charger states
+- `GET /api/chargers/:chargerId` - Get specific charger state
+- `GET /api/chargers/:chargerId/active-processes` - Get active (incomplete) processes for a charger
 - `GET /api/processes` - Get all charging processes
 - `GET /api/processes/:id` - Get specific charging process
-- `GET /api/processes/device/:deviceId` - Get processes for a device
+- `GET /api/processes/charger/:chargerId` - Get processes for a charger
 - `PUT /api/processes/:id/complete` - Manually mark a process as complete
 - `DELETE /api/processes/:id` - Delete a specific charging process
 
 ### Pattern Recognition
 
-- `GET /api/patterns` - Get all identified charging patterns
-- `GET /api/patterns/device/:deviceId` - Get patterns for a specific device
+- `GET /api/patterns` - Get all identified charging patterns (device fingerprints)
+- `GET /api/patterns/charger/:chargerId` - Get patterns for a specific charger
 - `POST /api/patterns/analyze` - Manually trigger pattern analysis
 - `GET /api/processes/:id/pattern` - Get matching pattern for a charging process
 - `GET /api/patterns/debug` - Diagnostic endpoint for troubleshooting pattern issues
@@ -272,9 +281,9 @@ The data is stored in JSON format and includes:
 - Power consumption events with timestamps
 - Process ID counter for unique identification
 
-## Monitoring Multiple Devices
+## Monitoring Multiple Chargers
 
-Configure multiple devices with custom names and topics using the `MQTT_DEVICES` environment variable:
+Configure multiple chargers with custom names and topics using the `MQTT_DEVICES` environment variable:
 
 ```env
 MQTT_DEVICES=Living Room:shellies/living-room-plug,Bedroom:shellies/bedroom-plug,Garage:home/garage-plug
@@ -286,7 +295,7 @@ Or use the legacy format (backward compatible):
 MQTT_DEVICES=living-room-plug,bedroom-plug,garage-plug
 ```
 
-Each device will be monitored independently, and the UI will display all devices with their custom names and their charging processes.
+Each charger will be monitored independently, and the UI will display all chargers with their custom names and their charging processes.
 
 ## Troubleshooting
 
@@ -298,7 +307,7 @@ Each device will be monitored independently, and the UI will display all devices
 ### No data showing in frontend
 - Verify backend is running: `docker-compose logs backend`
 - Check backend health through frontend proxy: http://localhost:1818/api/health
-- Ensure devices are publishing to the correct MQTT topics
+- Ensure chargers are publishing to the correct MQTT topics
 
 ### Frontend can't connect to backend
 - Check that both frontend and backend containers are running: `docker-compose ps`
