@@ -34,23 +34,23 @@ This guide explains how to deploy and configure the Pini Charging Monitor using 
    | `MQTT_BROKER_URL` | MQTT broker connection URL | `mqtt://192.168.1.100:1883` |
    | `MQTT_USERNAME` | MQTT broker username (optional) | `myuser` |
    | `MQTT_PASSWORD` | MQTT broker password (optional) | `mypassword` |
-   | `MQTT_DEVICES` | Device configurations (see below) | `Office:shellies/plug07,Kitchen:shellies/plug02` |
+   | `MQTT_DEVICES` | Charger configurations (see below) | `Office:shellies/plug07,Kitchen:shellies/plug02` |
 
-   **Device Configuration Format:**
+   **Charger Configuration Format:**
    
    **New format (recommended):** `Name:topic,Name2:topic2`
    - Example: `Office Charger:shellies/shellyplug07,Kitchen Charger:shellies/shellyplug02`
    - Allows custom friendly names and full MQTT topic paths
    
-   **Legacy format (backward compatible):** `deviceId,deviceId2`
+   **Legacy format (backward compatible):** `chargerId,chargerId2`
    - Example: `shellyplug-living-room,shellyplug-garage`
-   - Uses device ID as both name and topic
+   - Uses charger ID as both name and topic
 
    **Default deployment (using external MQTT broker):**
    - `MQTT_BROKER_URL`: Set to your existing broker (e.g., `mqtt://192.168.1.100:1883`)
    - `MQTT_USERNAME`: Your broker username (if required)
    - `MQTT_PASSWORD`: Your broker password (if required)
-   - `MQTT_DEVICES`: Your device configurations (e.g., `Office Charger:shellies/plug07`)
+   - `MQTT_DEVICES`: Your charger configurations (e.g., `Office Charger:shellies/plug07`)
    
    **To use the built-in Mosquitto broker (optional):**
    - `MQTT_BROKER_URL`: `mqtt://mosquitto:1883`
@@ -256,9 +256,9 @@ To view volumes in Portainer:
 1. Check backend logs for MQTT subscriptions:
    - Should see "Subscribed to {device}/relay/0" messages
 
-2. Verify device IDs match exactly:
+2. Verify charger IDs match exactly:
    - **Stacks** → **Editor** → Check `MQTT_DEVICES`
-   - Device IDs are case-sensitive
+   - Charger IDs are case-sensitive
 
 3. Test MQTT messages:
    - Use `mosquitto_pub` or MQTT Explorer to send test messages
@@ -307,9 +307,9 @@ For easier deployment, you can create a Portainer App Template:
     },
     {
       "name": "MQTT_DEVICES",
-      "label": "Device IDs",
+      "label": "Charger IDs",
       "default": "shellyplug-s-12345,shellyplug-s-67890",
-      "description": "Comma-separated list of device IDs to monitor"
+      "description": "Comma-separated list of charger IDs to monitor"
     }
   ]
 }
