@@ -318,7 +318,7 @@ Each charger will be monitored independently, and the UI will display all charge
 
 ## License
 
-ISC
+MIT
 
 ## Contributing
 
