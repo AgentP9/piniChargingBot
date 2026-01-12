@@ -10,12 +10,12 @@
 }
 
 .stat-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--bg-header);
+  color: var(--text-on-primary);
   padding: 1rem;
   border-radius: 8px;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px var(--shadow-light);
 }
 
 .stat-label {
@@ -30,16 +30,16 @@
 }
 
 .chart-container {
-  background: white;
+  background: var(--bg-secondary);
   padding: 1rem;
   border-radius: 8px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--border-primary);
 }
 
 .chart-empty {
   text-align: center;
   padding: 3rem;
-  color: #999;
+  color: var(--text-muted);
   font-style: italic;
 }
 

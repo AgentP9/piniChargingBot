@@ -19,6 +19,7 @@ This application tracks charging sessions for your devices (iPhones, TonieBoxes,
 - **Pattern Recognition**: AI-powered device fingerprinting that identifies charged devices based on power consumption characteristics
 - **Device Label Management**: Edit, merge, and manage device labels for recognized charging patterns
 - **Modern Responsive UI**: Web interface with real-time updates and interactive charts
+- **Dark Mode / Light Mode**: Toggle between dark and light themes with persistent preference - see [DARK_MODE.md](DARK_MODE.md)
 - **Multi-Charger Support**: Monitor multiple chargers simultaneously
 - **Progressive Web App (PWA)**: Add to your iPhone/Android home screen for a native app experience
 - **Docker Deployment**: Easy deployment with Docker Compose

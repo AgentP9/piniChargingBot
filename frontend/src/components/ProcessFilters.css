@@ -1,9 +1,9 @@
 .process-filters {
   margin-bottom: 1rem;
   padding: 0;
-  background: #f8f9fa;
+  background: var(--info-bg);
   border-radius: 8px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--border-primary);
 }
 
 .filter-header {
@@ -22,18 +22,18 @@
   gap: 0.5rem;
   font-size: 1rem;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   transition: background-color 0.2s ease;
   text-align: left;
 }
 
 .filter-toggle-button:hover {
-  background-color: rgba(102, 126, 234, 0.05);
+  background-color: var(--shadow-accent);
 }
 
 .toggle-icon {
   font-size: 0.75rem;
-  color: #667eea;
+  color: var(--border-secondary);
 }
 
 .toggle-text {
@@ -47,8 +47,8 @@
   min-width: 1.5rem;
   height: 1.5rem;
   padding: 0 0.5rem;
-  background: #667eea;
-  color: white;
+  background: var(--border-secondary);
+  color: var(--text-on-primary);
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 600;
@@ -56,8 +56,8 @@
 
 /* Subtle style when no filters are active (count is 0) */
 .active-filters-badge.no-filters {
-  background: #e0e0e0;
-  color: #666;
+  background: var(--border-primary);
+  color: var(--text-tertiary);
 }
 
 .filter-row {
@@ -90,35 +90,36 @@
 .filter-group label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #555;
+  color: var(--text-secondary);
 }
 
 .filter-select,
 .filter-input {
   padding: 0.5rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-primary);
   border-radius: 4px;
   font-size: 0.9rem;
-  background: white;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   transition: border-color 0.2s ease;
 }
 
 .filter-select:hover,
 .filter-input:hover {
-  border-color: #667eea;
+  border-color: var(--border-secondary);
 }
 
 .filter-select:focus,
 .filter-input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--border-secondary);
+  box-shadow: 0 0 0 3px var(--shadow-accent);
 }
 
 .clear-filters-button {
   padding: 0.5rem 1rem;
-  background: #667eea;
-  color: white;
+  background: var(--border-secondary);
+  color: var(--text-on-primary);
   border: none;
   border-radius: 4px;
   font-size: 0.9rem;
@@ -129,9 +130,9 @@
 }
 
 .clear-filters-button:hover {
-  background: #5568d3;
+  opacity: 0.9;
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 4px var(--shadow-accent);
 }
 
 .clear-filters-button:active {
