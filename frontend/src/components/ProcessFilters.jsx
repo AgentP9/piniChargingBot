@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from 'react';
-import { FRIENDLY_DEVICE_NAMES } from '../constants/deviceNames';
 import './ProcessFilters.css';
 
 function ProcessFilters({ filters, onFilterChange, devices, patterns }) {
@@ -64,9 +63,9 @@ function ProcessFilters({ filters, onFilterChange, devices, patterns }) {
   const uniqueDeviceNames = useMemo(() => {
     if (!patterns || patterns.length === 0) return [];
     
-    const deviceNames = patterns.map((pattern, index) => ({
+    const deviceNames = patterns.map((pattern) => ({
       id: pattern.id,
-      name: FRIENDLY_DEVICE_NAMES[index % FRIENDLY_DEVICE_NAMES.length]
+      name: pattern.deviceName
     }));
     
     return deviceNames;
