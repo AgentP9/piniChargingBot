@@ -41,7 +41,7 @@ function scheduleSave() {
 async function runPatternAnalysis() {
   console.log('Running pattern analysis...');
   try {
-    chargingPatterns = patternAnalyzer.analyzePatterns(chargingProcesses);
+    chargingPatterns = patternAnalyzer.analyzePatterns(chargingProcesses, chargingPatterns);
     patternAnalyzer.savePatterns(chargingPatterns);
     console.log(`Pattern analysis complete. Found ${chargingPatterns.length} patterns.`);
   } catch (error) {

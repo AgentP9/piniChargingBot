@@ -176,9 +176,10 @@ function calculateProfileSimilarity(profile1, profile2) {
  * Analyze charging processes and identify patterns
  * Groups similar charging sessions together to identify the same devices
  * @param {Array} processes - Array of all charging processes
+ * @param {Array} existingPatterns - Optional array of existing patterns to preserve user customizations
  * @returns {Array} Array of identified patterns with grouped processes
  */
-function analyzePatterns(processes) {
+function analyzePatterns(processes, existingPatterns = []) {
   console.log(`Pattern analysis: Starting with ${processes.length} total processes`);
   
   // Only analyze completed processes with power data
@@ -208,11 +209,26 @@ function analyzePatterns(processes) {
     return [];
   }
   
+  // Create a map of processId -> existing pattern for quick lookup
+  const processToExistingPattern = new Map();
+  existingPatterns.forEach(pattern => {
+    if (pattern.processIds) {
+      pattern.processIds.forEach(processId => {
+        processToExistingPattern.set(processId, pattern);
+      });
+    }
+  });
+  
   // Group similar processes into patterns
   const patterns = [];
+  // Track which existing pattern IDs have been restored to avoid duplicates
+  const restoredPatternIds = new Set();
   
   processesWithProfiles.forEach(({ process, profile, duration }) => {
-    // Find existing pattern that matches
+    // First, check if this process was in an existing pattern (to preserve user customizations)
+    const existingPatternForProcess = processToExistingPattern.get(process.id);
+    
+    // Find existing pattern that matches in the new patterns array
     let matchedPattern = null;
     let maxSimilarity = 0;
     
@@ -249,22 +265,33 @@ function analyzePatterns(processes) {
       }
     } else {
       // Create new pattern
-      // Generate unique pattern ID with high-resolution timestamp and random string
-      // The combination of timestamp (millisecond precision) and random string
-      // provides sufficient uniqueness for pattern IDs in normal usage
-      const timestamp = Date.now();
-      const random = Math.random().toString(36).substr(2, 9);
-      const patternId = `pattern_${timestamp}_${random}`;
-      const patternIndex = patterns.length;
+      // Check if we should restore from existing pattern to preserve user customizations
+      let patternId, deviceName;
       
-      // Generate unique friendly name - append number if we've exhausted the base names
-      let friendlyName;
-      if (patternIndex < FRIENDLY_DEVICE_NAMES.length) {
-        friendlyName = FRIENDLY_DEVICE_NAMES[patternIndex];
+      if (existingPatternForProcess && !restoredPatternIds.has(existingPatternForProcess.id)) {
+        // Reuse the existing pattern's ID and deviceName to preserve user customizations
+        // Only do this if we haven't already restored this pattern ID
+        patternId = existingPatternForProcess.id;
+        deviceName = existingPatternForProcess.deviceName;
+        restoredPatternIds.add(patternId);
+        console.log(`Pattern analysis: Restoring pattern ${patternId} with device name "${deviceName}"`);
       } else {
-        const baseNameIndex = patternIndex % FRIENDLY_DEVICE_NAMES.length;
-        const suffix = Math.floor(patternIndex / FRIENDLY_DEVICE_NAMES.length) + 1;
-        friendlyName = `${FRIENDLY_DEVICE_NAMES[baseNameIndex]} ${suffix}`;
+        // Generate unique pattern ID with high-resolution timestamp and random string
+        // The combination of timestamp (millisecond precision) and random string
+        // provides sufficient uniqueness for pattern IDs in normal usage
+        const timestamp = Date.now();
+        const random = Math.random().toString(36).substring(2, 11);
+        patternId = `pattern_${timestamp}_${random}`;
+        const patternIndex = patterns.length;
+        
+        // Generate unique friendly name - append number if we've exhausted the base names
+        if (patternIndex < FRIENDLY_DEVICE_NAMES.length) {
+          deviceName = FRIENDLY_DEVICE_NAMES[patternIndex];
+        } else {
+          const baseNameIndex = patternIndex % FRIENDLY_DEVICE_NAMES.length;
+          const suffix = Math.floor(patternIndex / FRIENDLY_DEVICE_NAMES.length) + 1;
+          deviceName = `${FRIENDLY_DEVICE_NAMES[baseNameIndex]} ${suffix}`;
+        }
       }
       
       patterns.push({
@@ -272,7 +299,7 @@ function analyzePatterns(processes) {
         deviceId: process.chargerId || process.deviceId, // Backward compatibility
         chargerId: process.chargerId || process.deviceId,
         chargerName: process.chargerName || process.deviceName || process.chargerId || process.deviceId,
-        deviceName: friendlyName, // Use friendly name as default for charged device
+        deviceName: deviceName, // Use preserved name or friendly name as default for charged device
         count: 1,
         processIds: [process.id],
         averageProfile: { ...profile },
