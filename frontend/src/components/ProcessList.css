@@ -1,13 +1,31 @@
 .process-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 1rem;
   max-height: 600px;
   overflow-y: auto;
+  /* Ensure scrollbar is always visible for better UX */
+  scrollbar-width: thin; /* For Firefox */
+  scrollbar-color: #888 #f1f1f1; /* For Firefox */
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+  .process-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Responsive adjustments for medium screens (tablets) */
+/* Use smaller minmax for better fit on tablet screens */
+@media (min-width: 769px) and (max-width: 1200px) {
+  .process-list {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
 }
 
 .process-list::-webkit-scrollbar {
-  width: 8px;
+  width: 10px; /* Slightly wider for better visibility */
 }
 
 .process-list::-webkit-scrollbar-track {
@@ -33,6 +51,9 @@
   cursor: pointer;
   transition: all 0.3s ease;
   overflow: hidden;
+  min-height: 200px; /* Ensure all content is visible including chart preview and device labels */
+  display: flex;
+  flex-direction: column;
 }
 
 .process-item:hover {
@@ -49,6 +70,9 @@
 .process-content {
   position: relative;
   z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .process-header {
@@ -121,6 +145,35 @@
 
 .complete-button:active {
   transform: scale(0.95);
+}
+
+.edit-label-button {
+  background: transparent;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+}
+
+.edit-label-button:hover {
+  background: #e7f3ff;
+  transform: scale(1.1);
+}
+
+.edit-label-button:active {
+  transform: scale(0.95);
+}
+
+.device-label-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .badge-active {

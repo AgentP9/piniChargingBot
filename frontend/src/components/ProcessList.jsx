@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import ChartPreview from './ChartPreview';
+import DeviceLabelModal from './DeviceLabelModal';
+import { FRIENDLY_DEVICE_NAMES } from '../constants/deviceNames';
 import './ProcessList.css';
 
-function ProcessList({ processes, selectedProcess, onSelectProcess, onDeleteProcess, onCompleteProcess }) {
+function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, onDeleteProcess, onCompleteProcess, filters, onPatternUpdate }) {
+  const [editingPattern, setEditingPattern] = useState(null);
   const handleDelete = (e, processId) => {
     e.stopPropagation(); // Prevent selecting the process when clicking delete
     
@@ -19,12 +22,152 @@ function ProcessList({ processes, selectedProcess, onSelectProcess, onDeleteProc
     }
   };
 
+  const handleEditDevice = (e, process) => {
+    e.stopPropagation(); // Prevent selecting the process when clicking edit
+    
+    // Find pattern that contains this process ID
+    const matchingPattern = patterns.find(pattern => 
+      pattern.processIds && pattern.processIds.includes(process.id)
+    );
+    
+    if (matchingPattern) {
+      setEditingPattern(matchingPattern);
+    }
+  };
+
+  const handleSaveLabel = async (patternId, newLabel, shouldRenameAll) => {
+    try {
+      await onPatternUpdate('updateLabel', { patternId, newLabel, shouldRenameAll });
+      setEditingPattern(null);
+    } catch (error) {
+      console.error('Error updating label:', error);
+      alert('Failed to update device label. Please try again.');
+    }
+  };
+
+  const handleMergePatterns = async (sourcePatternId, targetPatternId) => {
+    try {
+      await onPatternUpdate('merge', { sourcePatternId, targetPatternId });
+      setEditingPattern(null);
+    } catch (error) {
+      console.error('Error merging patterns:', error);
+      alert('Failed to merge patterns. Please try again.');
+    }
+  };
+  
+  const handleCloseModal = () => {
+    setEditingPattern(null);
+  };
+  
+  // Create a mapping of pattern IDs to friendly names (memoized)
+  const patternNames = useMemo(() => {
+    const names = {};
+    if (patterns && patterns.length > 0) {
+      patterns.forEach((pattern, index) => {
+        names[pattern.id] = FRIENDLY_DEVICE_NAMES[index % FRIENDLY_DEVICE_NAMES.length];
+      });
+    }
+    return names;
+  }, [patterns]);
+  
+  // Get the assumed device name for a process based on pattern matching
+  const getAssumedDevice = (process) => {
+    if (!process.endTime || !patterns || patterns.length === 0) {
+      return null; // No pattern for active processes or if no patterns available
+    }
+    
+    // Find pattern that contains this process ID
+    const matchingPattern = patterns.find(pattern => 
+      pattern.processIds && pattern.processIds.includes(process.id)
+    );
+    
+    if (matchingPattern && patternNames[matchingPattern.id]) {
+      return patternNames[matchingPattern.id];
+    }
+    
+    return null;
+  };
+
   if (processes.length === 0) {
     return <div className="empty-state">No charging processes yet</div>;
   }
 
+  // Parse filter dates once to avoid repeated parsing in the filter function
+  const filterStartDate = useMemo(() => {
+    if (!filters?.startDate) return null;
+    const date = new Date(filters.startDate);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }, [filters?.startDate]);
+
+  const filterEndDate = useMemo(() => {
+    if (!filters?.endDate) return null;
+    const date = new Date(filters.endDate);
+    date.setHours(23, 59, 59, 999);
+    return date;
+  }, [filters?.endDate]);
+
+  // Pre-compute process ID to pattern ID mapping for O(1) lookup during filtering
+  const processIdToPatternId = useMemo(() => {
+    if (!patterns || patterns.length === 0) return {};
+    
+    const mapping = {};
+    patterns.forEach(pattern => {
+      if (pattern.processIds) {
+        pattern.processIds.forEach(processId => {
+          mapping[processId] = pattern.id;
+        });
+      }
+    });
+    return mapping;
+  }, [patterns]);
+
+  // Apply filters
+  const filteredProcesses = processes.filter(process => {
+    // State filter - A process is completed if it has an endTime, active otherwise
+    const isCompleted = process.endTime !== null && process.endTime !== undefined;
+    if (filters?.state === 'active' && isCompleted) return false;
+    if (filters?.state === 'completed' && !isCompleted) return false;
+
+    // Charger filter (physical charging device like ShellyPlug)
+    // Check both chargerId and deviceId for backward compatibility
+    if (filters?.charger && filters.charger !== 'all') {
+      const processChargerId = process.chargerId || process.deviceId;
+      if (processChargerId !== filters.charger) return false;
+    }
+
+    // Device filter (charged device from pattern recognition)
+    // Note: Only completed processes can be filtered by device since pattern recognition
+    // requires a complete charging session to identify the device
+    if (filters?.device && filters.device !== 'all') {
+      // Use pre-computed mapping for O(1) lookup
+      const patternId = processIdToPatternId[process.id];
+      if (!patternId || patternId !== filters.device) {
+        return false;
+      }
+    }
+
+    // Start date filter
+    if (filterStartDate) {
+      const processDate = new Date(process.startTime);
+      if (processDate < filterStartDate) return false;
+    }
+
+    // End date filter
+    if (filterEndDate) {
+      const processDate = new Date(process.startTime);
+      if (processDate > filterEndDate) return false;
+    }
+
+    return true;
+  });
+
+  if (filteredProcesses.length === 0) {
+    return <div className="empty-state">No charging processes match the current filters</div>;
+  }
+
   // Sort processes by start time (most recent first)
-  const sortedProcesses = [...processes].sort((a, b) => 
+  const sortedProcesses = [...filteredProcesses].sort((a, b) => 
     new Date(b.startTime) - new Date(a.startTime)
   );
 
@@ -101,8 +244,25 @@ function ProcessList({ processes, selectedProcess, onSelectProcess, onDeleteProc
             <div className="process-details">
               <div className="detail-item">
                 <span className="detail-icon">🔌</span>
-                <span>{process.deviceName || process.deviceId}</span>
+                <span>Charger: {process.chargerName || process.deviceName || process.chargerId || process.deviceId}</span>
               </div>
+              
+              {getAssumedDevice(process) && (
+                <div className="detail-item device-label-row">
+                  <span className="detail-icon">📱</span>
+                  <span>Device: {getAssumedDevice(process)}</span>
+                  {process.endTime && (
+                    <button
+                      className="edit-label-button"
+                      onClick={(e) => handleEditDevice(e, process)}
+                      title="Edit device label"
+                      aria-label="Edit device label"
+                    >
+                      ✏️
+                    </button>
+                  )}
+                </div>
+              )}
               
               <div className="detail-item">
                 <span className="detail-icon">🕐</span>
@@ -122,6 +282,16 @@ function ProcessList({ processes, selectedProcess, onSelectProcess, onDeleteProc
           </div>
         </div>
       ))}
+
+      {editingPattern && (
+        <DeviceLabelModal
+          pattern={editingPattern}
+          patterns={patterns}
+          onClose={handleCloseModal}
+          onSave={handleSaveLabel}
+          onMerge={handleMergePatterns}
+        />
+      )}
     </div>
   );
 }

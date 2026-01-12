@@ -1,15 +1,39 @@
 import React from 'react';
 import './DeviceList.css';
 
-function DeviceList({ devices }) {
+// DeviceList displays connected chargers (physical charging devices like ShellyPlugs)
+function DeviceList({ devices, selectedDeviceId, onSelectDevice }) {
   if (devices.length === 0) {
-    return <div className="empty-state">No devices configured</div>;
+    return <div className="empty-state">No chargers configured</div>;
   }
+
+  const handleDeviceClick = (deviceId) => {
+    // If clicking the already selected charger, deselect it
+    if (selectedDeviceId === deviceId) {
+      onSelectDevice(null);
+    } else {
+      onSelectDevice(deviceId);
+    }
+  };
 
   return (
     <div className="device-list">
       {devices.map(device => (
-        <div key={device.id} className="device-item">
+        <div 
+          key={device.id} 
+          className={`device-item ${selectedDeviceId === device.id ? 'selected' : ''}`}
+          onClick={() => handleDeviceClick(device.id)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleDeviceClick(device.id);
+            }
+          }}
+          aria-pressed={selectedDeviceId === device.id}
+          aria-label={`Select ${device.name}`}
+        >
           <div className="device-header">
             <h3 className="device-name">{device.name}</h3>
             <span className={`device-status ${device.isOn ? 'status-on' : 'status-off'}`}>

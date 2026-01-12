@@ -2,7 +2,9 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import DeviceList from './components/DeviceList';
 import ProcessList from './components/ProcessList';
+import ProcessFilters from './components/ProcessFilters';
 import ChargingChart from './components/ChargingChart';
+import PatternManager from './components/PatternManager';
 import './App.css';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -10,9 +12,19 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 function App() {
   const [devices, setDevices] = useState([]);
   const [processes, setProcesses] = useState([]);
+  const [patterns, setPatterns] = useState([]);
   const [selectedProcess, setSelectedProcess] = useState(null);
+  const [selectedDeviceId, setSelectedDeviceId] = useState(null);
+  const [selectedPatternId, setSelectedPatternId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filters, setFilters] = useState({
+    state: 'all',
+    charger: 'all',
+    device: 'all',
+    startDate: '',
+    endDate: ''
+  });
   
   // Use ref to track the currently selected process ID
   const selectedProcessIdRef = useRef(null);
@@ -24,13 +36,15 @@ function App() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [devicesRes, processesRes] = await Promise.all([
+      const [devicesRes, processesRes, patternsRes] = await Promise.all([
         axios.get(`${API_URL}/devices`),
-        axios.get(`${API_URL}/processes`)
+        axios.get(`${API_URL}/processes`),
+        axios.get(`${API_URL}/patterns`)
       ]);
       
       setDevices(devicesRes.data);
       setProcesses(processesRes.data);
+      setPatterns(patternsRes.data);
       
       // Update selected process with fresh data if one is selected
       // Note: selectedProcessIdRef.current is intentionally not in the dependency array
@@ -104,6 +118,82 @@ function App() {
     }
   };
 
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+    // If the charger filter changed and doesn't match the selected device, clear device selection
+    if (newFilters.charger !== filters.charger && newFilters.charger !== selectedDeviceId) {
+      setSelectedDeviceId(null);
+    }
+    // If the device filter changed and doesn't match the selected pattern, clear pattern selection
+    if (newFilters.device !== filters.device && newFilters.device !== selectedPatternId) {
+      setSelectedPatternId(null);
+    }
+  };
+
+  const handleDeviceSelect = (deviceId) => {
+    setSelectedDeviceId(deviceId);
+    // Clear pattern selection when selecting a charger device
+    setSelectedPatternId(null);
+    // Update the charger filter to match the selected device
+    setFilters({
+      ...filters,
+      charger: deviceId || 'all',
+      device: 'all' // Reset device filter when selecting charger
+    });
+  };
+
+  const handlePatternSelect = (patternId) => {
+    setSelectedPatternId(patternId);
+    // Clear charger selection when selecting a pattern
+    setSelectedDeviceId(null);
+    // Update the device filter to match the selected pattern
+    setFilters({
+      ...filters,
+      device: patternId || 'all',
+      charger: 'all' // Reset charger filter when selecting pattern
+    });
+  };
+
+  const handlePatternUpdate = async (action, data) => {
+    try {
+      if (action === 'updateLabel') {
+        const { patternId, newLabel, shouldRenameAll } = data;
+        await axios.put(`${API_URL}/patterns/${patternId}/label`, {
+          newLabel,
+          shouldRenameAll
+        });
+        
+        // Refresh data to reflect changes
+        await fetchData();
+      } else if (action === 'merge') {
+        const { sourcePatternId, targetPatternId } = data;
+        await axios.post(`${API_URL}/patterns/merge`, {
+          sourcePatternId,
+          targetPatternId
+        });
+        
+        // Refresh data to reflect changes
+        await fetchData();
+      } else if (action === 'delete') {
+        const { patternId } = data;
+        await axios.delete(`${API_URL}/patterns/${patternId}`);
+        
+        // Refresh data to reflect changes
+        await fetchData();
+      }
+    } catch (err) {
+      console.error(`Error performing pattern action ${action}:`, err);
+      
+      // Check if it's a merge conflict (409 status)
+      if (err.response?.status === 409 && err.response?.data?.shouldMerge) {
+        // The backend detected that merging is needed, but let the modal handle it
+        throw err;
+      }
+      
+      throw new Error(err.response?.data?.error || 'Failed to update pattern');
+    }
+  };
+
   return (
     <div className="app">
       <header className="app-header">
@@ -120,18 +210,37 @@ function App() {
           <>
             <div className="dashboard-grid">
               <section className="card devices-section">
-                <h2>Connected Devices</h2>
-                <DeviceList devices={devices} />
+                <h2>Connected Chargers</h2>
+                <DeviceList 
+                  devices={devices}
+                  selectedDeviceId={selectedDeviceId}
+                  onSelectDevice={handleDeviceSelect}
+                />
+                <PatternManager 
+                  patterns={patterns}
+                  selectedPatternId={selectedPatternId}
+                  onPatternUpdate={handlePatternUpdate}
+                  onSelectPattern={handlePatternSelect}
+                />
               </section>
 
               <section className="card processes-section">
                 <h2>Charging Processes</h2>
+                <ProcessFilters 
+                  filters={filters}
+                  onFilterChange={handleFilterChange}
+                  devices={devices}
+                  patterns={patterns}
+                />
                 <ProcessList 
-                  processes={processes} 
+                  processes={processes}
+                  patterns={patterns}
                   selectedProcess={selectedProcess}
                   onSelectProcess={handleProcessSelect}
                   onDeleteProcess={handleProcessDelete}
                   onCompleteProcess={handleProcessComplete}
+                  onPatternUpdate={handlePatternUpdate}
+                  filters={filters}
                 />
               </section>
             </div>
