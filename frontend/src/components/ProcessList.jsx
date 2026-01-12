@@ -59,13 +59,16 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
     setEditingPattern(null);
   };
   
-  // Create a mapping of pattern IDs to friendly names
-  const patternNames = {};
-  if (patterns && patterns.length > 0) {
-    patterns.forEach((pattern, index) => {
-      patternNames[pattern.id] = FRIENDLY_DEVICE_NAMES[index % FRIENDLY_DEVICE_NAMES.length];
-    });
-  }
+  // Create a mapping of pattern IDs to friendly names (memoized)
+  const patternNames = useMemo(() => {
+    const names = {};
+    if (patterns && patterns.length > 0) {
+      patterns.forEach((pattern, index) => {
+        names[pattern.id] = FRIENDLY_DEVICE_NAMES[index % FRIENDLY_DEVICE_NAMES.length];
+      });
+    }
+    return names;
+  }, [patterns]);
   
   // Get the assumed device name for a process based on pattern matching
   const getAssumedDevice = (process) => {
@@ -103,17 +106,6 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
     date.setHours(23, 59, 59, 999);
     return date;
   }, [filters?.endDate]);
-
-  // Pre-compute pattern ID to device name mapping for O(1) lookup during filtering
-  const patternIdToDeviceName = useMemo(() => {
-    if (!patterns || patterns.length === 0) return {};
-    
-    const mapping = {};
-    patterns.forEach((pattern, index) => {
-      mapping[pattern.id] = FRIENDLY_DEVICE_NAMES[index % FRIENDLY_DEVICE_NAMES.length];
-    });
-    return mapping;
-  }, [patterns]);
 
   // Pre-compute process ID to pattern ID mapping for O(1) lookup during filtering
   const processIdToPatternId = useMemo(() => {

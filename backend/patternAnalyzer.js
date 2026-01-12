@@ -3,10 +3,15 @@ const path = require('path');
 
 // Friendly names for pattern-identified devices being charged
 // These represent actual devices like iPhones, TonieBoxes, etc.
+// IMPORTANT: This array must be kept in sync with frontend/src/constants/deviceNames.js
 const FRIENDLY_DEVICE_NAMES = [
   'Hugo', 'Egon', 'Tom', 'Jerry', 'Alice', 
   'Bob', 'Charlie', 'Diana', 'Emma', 'Frank'
 ];
+
+// Similarity threshold for pattern matching
+// Processes with similarity > this threshold are considered the same device
+const SIMILARITY_THRESHOLD = 0.65;
 
 // Data directory for persistent storage
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
@@ -136,7 +141,15 @@ function calculateProfileSimilarity(profile1, profile2) {
   
   // Compare standard deviation
   const stdDevDiff = Math.abs(profile1.stdDev - profile2.stdDev);
-  const stdDevSimilarity = Math.max(0, 1 - stdDevDiff / Math.max(profile1.stdDev, profile2.stdDev, 1));
+  // Handle zero standard deviation case explicitly - if both are zero, they're similar
+  let stdDevSimilarity;
+  if (profile1.stdDev === 0 && profile2.stdDev === 0) {
+    stdDevSimilarity = 1.0; // Both have no variance - perfectly similar
+  } else if (profile1.stdDev === 0 || profile2.stdDev === 0) {
+    stdDevSimilarity = 0; // One has variance, the other doesn't - not similar
+  } else {
+    stdDevSimilarity = Math.max(0, 1 - stdDevDiff / Math.max(profile1.stdDev, profile2.stdDev));
+  }
   totalSimilarity += stdDevSimilarity * weights.stdDev;
   
   // Compare peak power ratio
@@ -197,7 +210,6 @@ function analyzePatterns(processes) {
   
   // Group similar processes into patterns
   const patterns = [];
-  const similarityThreshold = 0.65; // Processes with similarity > 0.65 are considered the same device
   
   processesWithProfiles.forEach(({ process, profile, duration }) => {
     // Find existing pattern that matches
@@ -206,7 +218,7 @@ function analyzePatterns(processes) {
     
     for (const pattern of patterns) {
       const similarity = calculateProfileSimilarity(profile, pattern.averageProfile);
-      if (similarity > maxSimilarity && similarity >= similarityThreshold) {
+      if (similarity > maxSimilarity && similarity >= SIMILARITY_THRESHOLD) {
         maxSimilarity = similarity;
         matchedPattern = pattern;
       }
@@ -237,9 +249,23 @@ function analyzePatterns(processes) {
       }
     } else {
       // Create new pattern
-      const patternId = `pattern_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Generate unique pattern ID with high-resolution timestamp and random string
+      // The combination of timestamp (millisecond precision) and random string
+      // provides sufficient uniqueness for pattern IDs in normal usage
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substr(2, 9);
+      const patternId = `pattern_${timestamp}_${random}`;
       const patternIndex = patterns.length;
-      const friendlyName = FRIENDLY_DEVICE_NAMES[patternIndex % FRIENDLY_DEVICE_NAMES.length];
+      
+      // Generate unique friendly name - append number if we've exhausted the base names
+      let friendlyName;
+      if (patternIndex < FRIENDLY_DEVICE_NAMES.length) {
+        friendlyName = FRIENDLY_DEVICE_NAMES[patternIndex];
+      } else {
+        const baseNameIndex = patternIndex % FRIENDLY_DEVICE_NAMES.length;
+        const suffix = Math.floor(patternIndex / FRIENDLY_DEVICE_NAMES.length) + 1;
+        friendlyName = `${FRIENDLY_DEVICE_NAMES[baseNameIndex]} ${suffix}`;
+      }
       
       patterns.push({
         id: patternId,
@@ -312,13 +338,21 @@ function loadPatterns() {
 function savePatterns(patterns) {
   ensureDataDirectory();
   
+  const tempFile = `${PATTERNS_FILE}.tmp`;
   try {
-    const tempFile = `${PATTERNS_FILE}.tmp`;
     fs.writeFileSync(tempFile, JSON.stringify(patterns, null, 2), 'utf8');
     fs.renameSync(tempFile, PATTERNS_FILE);
     console.log(`Saved ${patterns.length} charging patterns to storage`);
   } catch (error) {
     console.error('Error saving patterns to file:', error);
+    // Best-effort cleanup of temporary file if rename or write failed
+    try {
+      if (fs.existsSync(tempFile)) {
+        fs.unlinkSync(tempFile);
+      }
+    } catch (cleanupError) {
+      console.warn('Failed to clean up temporary patterns file:', cleanupError);
+    }
   }
 }
 
@@ -336,11 +370,10 @@ function findMatchingPattern(process, patterns) {
   
   let bestMatch = null;
   let bestSimilarity = 0;
-  const similarityThreshold = 0.65;
   
   for (const pattern of patterns) {
     const similarity = calculateProfileSimilarity(profile, pattern.averageProfile);
-    if (similarity > bestSimilarity && similarity >= similarityThreshold) {
+    if (similarity > bestSimilarity && similarity >= SIMILARITY_THRESHOLD) {
       bestSimilarity = similarity;
       bestMatch = {
         pattern,
@@ -457,6 +490,9 @@ function mergePatterns(patterns, sourcePatternId, targetPatternId) {
       sourcePattern.statistics.maxDuration
     );
     targetPattern.statistics.totalSessions = totalWeight;
+    // We cannot reliably compute a merged median without raw durations,
+    // so set medianDuration to null to indicate it's unavailable after merging.
+    targetPattern.statistics.medianDuration = null;
   }
   
   // Remove source pattern
