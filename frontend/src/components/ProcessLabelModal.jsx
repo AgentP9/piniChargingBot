@@ -16,9 +16,7 @@ function ProcessLabelModal({ process, patterns, onClose, onSave }) {
   if (!process) return null;
 
   // Get all unique device names from patterns
-  const allDeviceNames = patterns
-    .map(p => p.deviceName)
-    .filter((name, index, self) => self.indexOf(name) === index); // unique names
+  const allDeviceNames = [...new Set(patterns.map(p => p.deviceName))];
 
   const handleSubmit = (e) => {
     e.preventDefault();

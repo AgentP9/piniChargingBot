@@ -404,7 +404,7 @@ app.put('/api/processes/:id/device-name', (req, res) => {
   const { newDeviceName } = req.body;
   
   // Validate that the ID is a valid number
-  if (isNaN(processId)) {
+  if (Number.isNaN(processId) || !Number.isInteger(processId)) {
     return res.status(400).json({ error: 'Invalid process ID' });
   }
   
