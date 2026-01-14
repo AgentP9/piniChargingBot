@@ -7,11 +7,15 @@ The Pini Charging Bot stores all charging processes, patterns, and user modifica
 ## Storage Location
 
 - **Container Path**: `/app/data`
-- **Docker Volume**: `backend-data` (named volume)
+- **Docker Volume**: `backend-data` (named volume in docker-compose.yml)
+- **Actual Volume Name**: Docker Compose prefixes with project name (e.g., `piniChargingBot_backend-data`)
 - **Files Stored**:
   - `charging-processes.json` - All charging session data
   - `charging-patterns.json` - Recognized device patterns
   - `process-counter.json` - Process ID counter
+
+> **Find Your Volume Name:**
+> Run `docker volume ls | grep backend-data` to see the actual volume name on your system.
 
 ## Important: Data Persists Across Updates
 
@@ -61,9 +65,12 @@ docker-compose logs backend | grep "Loaded"
 # This removes volumes and will delete all your data!
 docker-compose down -v
 
-# This also removes the volume
-docker volume rm piniChargingBot_backend-data
+# This also removes the volume (use the actual volume name from 'docker volume ls')
+docker volume rm $(docker-compose config --services | head -1 | xargs docker volume ls | grep backend-data | awk '{print $2}')
 ```
+
+> **Note:** Docker Compose prefixes volume names with the project directory name. 
+> Use `docker volume ls` to see the actual volume name (e.g., `piniChargingBot_backend-data`).
 
 ## Verifying Data Persistence
 
@@ -86,14 +93,17 @@ If you see `Loaded 0`, your data may have been lost (see recovery below).
 To create a backup of your data:
 
 ```bash
+# Find your volume name
+VOLUME_NAME=$(docker volume ls | grep backend-data | awk '{print $2}')
+
 # Create backup directory
 mkdir -p backups/$(date +%Y%m%d)
 
-# Copy data from Docker volume
+# Option 1: Copy directly from container
 docker cp pini-backend:/app/data/. backups/$(date +%Y%m%d)/
 
-# Or use docker run
-docker run --rm -v piniChargingBot_backend-data:/data -v $(pwd)/backups:/backup \
+# Option 2: Use docker run with volume
+docker run --rm -v $VOLUME_NAME:/data -v $(pwd)/backups:/backup \
   alpine tar czf /backup/data-$(date +%Y%m%d).tar.gz -C /data .
 ```
 
@@ -102,11 +112,14 @@ docker run --rm -v piniChargingBot_backend-data:/data -v $(pwd)/backups:/backup 
 If you accidentally lost data:
 
 ```bash
+# Find your volume name
+VOLUME_NAME=$(docker volume ls | grep backend-data | awk '{print $2}')
+
 # Stop the backend
 docker-compose stop backend
 
 # Restore data to volume
-docker run --rm -v piniChargingBot_backend-data:/data -v $(pwd)/backups:/backup \
+docker run --rm -v $VOLUME_NAME:/data -v $(pwd)/backups:/backup \
   alpine tar xzf /backup/data-YYYYMMDD.tar.gz -C /data
 
 # Start the backend
@@ -139,11 +152,14 @@ The following manual changes are stored in the data files and will persist:
 
 **Check:**
 ```bash
+# Find your volume name
+VOLUME_NAME=$(docker volume ls | grep backend-data | awk '{print $2}')
+
 # Inspect volume
-docker volume inspect piniChargingBot_backend-data
+docker volume inspect $VOLUME_NAME
 
 # Check files in volume
-docker run --rm -v piniChargingBot_backend-data:/data alpine ls -lah /data
+docker run --rm -v $VOLUME_NAME:/data alpine ls -lah /data
 ```
 
 If files are present but not loading, check backend logs for errors.
@@ -181,24 +197,33 @@ volumes:
 This creates a persistent volume managed by Docker that survives container recreation.
 
 **Location on host** (varies by OS):
-- Linux: `/var/lib/docker/volumes/piniChargingBot_backend-data/_data`
+- Linux: `/var/lib/docker/volumes/<PROJECT_NAME>_backend-data/_data`
+  - Where `<PROJECT_NAME>` is your directory name (usually `piniChargingBot`)
 - Docker Desktop (Mac/Windows): Inside Docker VM
+
+> Use `docker volume inspect` to see the exact mount point.
 
 ## Migration Between Hosts
 
 To move data to a new host:
 
 ```bash
+# Find your volume name
+VOLUME_NAME=$(docker volume ls | grep backend-data | awk '{print $2}')
+
 # On old host: Create backup
-docker run --rm -v piniChargingBot_backend-data:/data -v $(pwd):/backup \
+docker run --rm -v $VOLUME_NAME:/data -v $(pwd):/backup \
   alpine tar czf /backup/data-migration.tar.gz -C /data .
 
 # Copy data-migration.tar.gz to new host
 
-# On new host: Restore
+# On new host: Get new volume name
+VOLUME_NAME=$(docker volume ls | grep backend-data | awk '{print $2}')
+
+# Restore
 docker-compose up -d  # Creates volume
 docker-compose stop backend
-docker run --rm -v piniChargingBot_backend-data:/data -v $(pwd):/backup \
+docker run --rm -v $VOLUME_NAME:/data -v $(pwd):/backup \
   alpine tar xzf /backup/data-migration.tar.gz -C /data
 docker-compose start backend
 ```
