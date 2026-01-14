@@ -859,11 +859,12 @@ app.delete('/api/patterns/:patternId', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   
-  // Run initial pattern analysis on startup
-  if (chargingProcesses.length > 0) {
-    console.log('Running initial pattern analysis...');
-    setTimeout(() => schedulePatternAnalysis(), 2000);
-  }
+  // Note: Pattern analysis is NOT run on startup to preserve user customizations
+  // Patterns are loaded from disk and used as-is
+  // Pattern analysis only runs:
+  // 1. When explicitly triggered via /api/patterns/rerun endpoint
+  // 2. On scheduled interval (every 1 hour) to catch new processes
+  // 3. When a process completes (to assign it to a pattern)
   
   // Schedule periodic pattern analysis (every 1 hour)
   // Uses a safer approach that waits for completion before next run
