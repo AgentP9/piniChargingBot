@@ -20,10 +20,36 @@ function PatternManager({ patterns, selectedPatternId, onPatternUpdate, onSelect
     }
   };
 
+  const handleRerunRecognition = async () => {
+    const confirmed = window.confirm(
+      `Are you sure you want to rerun device recognition?\n\n` +
+      `This will clear all existing patterns and reanalyze all charging processes from scratch.\n` +
+      `Only patterns that have been manually renamed will be preserved.`
+    );
+
+    if (confirmed) {
+      try {
+        await onPatternUpdate('rerun', {});
+      } catch (error) {
+        console.error('Error rerunning recognition:', error);
+        alert('Failed to rerun device recognition. Please try again.');
+      }
+    }
+  };
+
   if (!patterns || patterns.length === 0) {
     return (
       <div className="pattern-manager">
-        <h3>Recognized Devices</h3>
+        <div className="pattern-header-row">
+          <h3>Recognized Devices</h3>
+          <button 
+            className="rerun-button"
+            onClick={handleRerunRecognition}
+            title="Rerun device recognition from scratch"
+          >
+            🔄 Rerun Recognition
+          </button>
+        </div>
         <p className="empty-message">No device patterns have been identified yet. Complete some charging sessions to start recognizing devices.</p>
       </div>
     );
@@ -43,7 +69,16 @@ function PatternManager({ patterns, selectedPatternId, onPatternUpdate, onSelect
 
   return (
     <div className="pattern-manager">
-      <h3>Recognized Devices ({patterns.length})</h3>
+      <div className="pattern-header-row">
+        <h3>Recognized Devices ({patterns.length})</h3>
+        <button 
+          className="rerun-button"
+          onClick={handleRerunRecognition}
+          title="Rerun device recognition from scratch"
+        >
+          🔄 Rerun Recognition
+        </button>
+      </div>
       <div className="pattern-list">
         {patterns.map((pattern, index) => {
           const displayName = getDisplayName(pattern);

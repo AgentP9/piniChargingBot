@@ -2,10 +2,42 @@
   margin-top: 1rem;
 }
 
+.pattern-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
 .pattern-manager h3 {
-  margin: 0 0 1rem 0;
+  margin: 0;
   color: var(--text-primary);
   font-size: 1.2rem;
+}
+
+.rerun-button {
+  background: var(--border-secondary);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rerun-button:hover {
+  background: var(--info-accent);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px var(--shadow-accent);
+}
+
+.rerun-button:active {
+  transform: translateY(0);
 }
 
 .empty-message {

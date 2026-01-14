@@ -182,6 +182,11 @@ function App() {
         
         // Refresh data to reflect changes
         await fetchData();
+      } else if (action === 'rerun') {
+        await axios.post(`${API_URL}/patterns/rerun`);
+        
+        // Refresh data to reflect changes
+        await fetchData();
       }
     } catch (err) {
       console.error(`Error performing pattern action ${action}:`, err);
@@ -193,6 +198,23 @@ function App() {
       }
       
       throw new Error(err.response?.data?.error || 'Failed to update pattern');
+    }
+  };
+
+  const handleProcessUpdate = async (action, data) => {
+    try {
+      if (action === 'updateDeviceName') {
+        const { processId, newLabel } = data;
+        await axios.put(`${API_URL}/processes/${processId}/device-name`, {
+          newDeviceName: newLabel
+        });
+        
+        // Refresh data to reflect changes
+        await fetchData();
+      }
+    } catch (err) {
+      console.error(`Error performing process action ${action}:`, err);
+      throw new Error(err.response?.data?.error || 'Failed to update process');
     }
   };
 
@@ -250,6 +272,7 @@ function App() {
                   onDeleteProcess={handleProcessDelete}
                   onCompleteProcess={handleProcessComplete}
                   onPatternUpdate={handlePatternUpdate}
+                  onProcessUpdate={handleProcessUpdate}
                   filters={filters}
                 />
               </section>

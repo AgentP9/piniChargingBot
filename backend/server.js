@@ -397,6 +397,113 @@ app.put('/api/processes/:id/complete', (req, res) => {
   res.json({ success: true, message: 'Process marked as complete', process });
 });
 
+// Update device name for a single process
+// This can split a pattern if the process is being renamed differently from its pattern
+app.put('/api/processes/:id/device-name', (req, res) => {
+  const processId = parseInt(req.params.id);
+  const { newDeviceName } = req.body;
+  
+  // Validate that the ID is a valid number
+  if (isNaN(processId)) {
+    return res.status(400).json({ error: 'Invalid process ID' });
+  }
+  
+  if (!newDeviceName || typeof newDeviceName !== 'string' || newDeviceName.trim() === '') {
+    return res.status(400).json({ error: 'Invalid device name' });
+  }
+  
+  const process = chargingProcesses.find(p => p.id === processId);
+  
+  if (!process) {
+    return res.status(404).json({ error: 'Process not found' });
+  }
+  
+  const trimmedName = newDeviceName.trim();
+  const oldDeviceName = process.deviceName;
+  
+  // Update the process's device name
+  process.deviceName = trimmedName;
+  storage.saveProcesses(chargingProcesses);
+  
+  // Find the pattern that currently contains this process
+  const currentPattern = chargingPatterns.find(pattern => 
+    pattern.processIds && pattern.processIds.includes(processId)
+  );
+  
+  if (currentPattern) {
+    // Remove this process from the current pattern
+    currentPattern.processIds = currentPattern.processIds.filter(id => id !== processId);
+    currentPattern.count = currentPattern.processIds.length;
+    
+    // If the pattern is now empty, remove it
+    if (currentPattern.count === 0) {
+      const patternIndex = chargingPatterns.findIndex(p => p.id === currentPattern.id);
+      if (patternIndex !== -1) {
+        chargingPatterns.splice(patternIndex, 1);
+        console.log(`Removed empty pattern ${currentPattern.id}`);
+      }
+    }
+    
+    // Check if there's an existing pattern with the new device name
+    const targetPattern = chargingPatterns.find(p => p.deviceName === trimmedName);
+    
+    if (targetPattern) {
+      // Add this process to the existing pattern
+      if (!targetPattern.processIds.includes(processId)) {
+        targetPattern.processIds.push(processId);
+        targetPattern.count = targetPattern.processIds.length;
+        console.log(`Added process ${processId} to existing pattern ${targetPattern.id}`);
+      }
+    } else {
+      // Create a new pattern for this process
+      const profile = patternAnalyzer.calculatePowerProfile(process);
+      const duration = patternAnalyzer.calculateDuration(process);
+      
+      if (profile && duration) {
+        const timestamp = Date.now();
+        const random = Math.random().toString(36).substring(2, 11);
+        const newPatternId = `pattern_${timestamp}_${random}`;
+        
+        const newPattern = {
+          id: newPatternId,
+          deviceId: process.chargerId || process.deviceId,
+          chargerId: process.chargerId || process.deviceId,
+          chargerName: process.chargerName || process.deviceName || process.chargerId || process.deviceId,
+          deviceName: trimmedName,
+          count: 1,
+          processIds: [processId],
+          averageProfile: { ...profile },
+          statistics: {
+            averageDuration: parseFloat(duration.toFixed(2)),
+            minDuration: parseFloat(duration.toFixed(2)),
+            maxDuration: parseFloat(duration.toFixed(2)),
+            medianDuration: parseFloat(duration.toFixed(2)),
+            totalSessions: 1
+          },
+          firstSeen: process.startTime,
+          lastSeen: process.endTime
+        };
+        
+        chargingPatterns.push(newPattern);
+        console.log(`Created new pattern ${newPatternId} with device name "${trimmedName}"`);
+      }
+    }
+    
+    // Save updated patterns
+    patternAnalyzer.savePatterns(chargingPatterns);
+  }
+  
+  console.log(`Updated process ${processId} device name from "${oldDeviceName}" to "${trimmedName}"`);
+  
+  res.json({
+    success: true,
+    message: 'Process device name updated',
+    processId,
+    oldDeviceName,
+    newDeviceName: trimmedName
+  });
+});
+
 // Get current charger states
 app.get('/api/chargers', (req, res) => {
   const chargers = Object.entries(chargerStates).map(([id, state]) => ({
@@ -517,6 +624,34 @@ app.post('/api/patterns/analyze', (req, res) => {
     res.status(500).json({ 
       success: false, 
       error: 'Failed to run pattern analysis' 
+    });
+  }
+});
+
+// Rerun pattern recognition - clears all patterns and reanalyzes from scratch
+app.post('/api/patterns/rerun', (req, res) => {
+  try {
+    console.log('Rerun pattern recognition triggered via API');
+    
+    // Clear all existing patterns - this will cause all patterns to be recreated
+    chargingPatterns = [];
+    
+    // Run pattern analysis from scratch
+    // This will create new patterns based on all completed processes
+    runPatternAnalysis();
+    
+    res.json({ 
+      success: true, 
+      message: 'Pattern recognition rerun completed',
+      patternsFound: chargingPatterns.length,
+      totalProcesses: chargingProcesses.length,
+      completedProcesses: chargingProcesses.filter(p => p.endTime).length
+    });
+  } catch (error) {
+    console.error('Error rerunning pattern recognition:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to rerun pattern recognition' 
     });
   }
 });

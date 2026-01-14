@@ -1,10 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import ChartPreview from './ChartPreview';
 import DeviceLabelModal from './DeviceLabelModal';
+import ProcessLabelModal from './ProcessLabelModal';
 import './ProcessList.css';
 
-function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, onDeleteProcess, onCompleteProcess, filters, onPatternUpdate }) {
+function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, onDeleteProcess, onCompleteProcess, filters, onPatternUpdate, onProcessUpdate }) {
   const [editingPattern, setEditingPattern] = useState(null);
+  const [editingProcess, setEditingProcess] = useState(null);
+  
   const handleDelete = (e, processId) => {
     e.stopPropagation(); // Prevent selecting the process when clicking delete
     
@@ -21,16 +24,21 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
     }
   };
 
-  const handleEditDevice = (e, process) => {
+  const handleEditDevice = (e, process, editAll) => {
     e.stopPropagation(); // Prevent selecting the process when clicking edit
     
-    // Find pattern that contains this process ID
-    const matchingPattern = patterns.find(pattern => 
-      pattern.processIds && pattern.processIds.includes(process.id)
-    );
-    
-    if (matchingPattern) {
-      setEditingPattern(matchingPattern);
+    if (editAll) {
+      // Edit the entire pattern
+      const matchingPattern = patterns.find(pattern => 
+        pattern.processIds && pattern.processIds.includes(process.id)
+      );
+      
+      if (matchingPattern) {
+        setEditingPattern(matchingPattern);
+      }
+    } else {
+      // Edit just this single process
+      setEditingProcess(process);
     }
   };
 
@@ -41,6 +49,16 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
     } catch (error) {
       console.error('Error updating label:', error);
       alert('Failed to update device label. Please try again.');
+    }
+  };
+
+  const handleSaveProcessLabel = async (processId, newLabel) => {
+    try {
+      await onProcessUpdate('updateDeviceName', { processId, newLabel });
+      setEditingProcess(null);
+    } catch (error) {
+      console.error('Error updating process label:', error);
+      alert('Failed to update process device name. Please try again.');
     }
   };
 
@@ -56,6 +74,7 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
   
   const handleCloseModal = () => {
     setEditingPattern(null);
+    setEditingProcess(null);
   };
   
   // Create a mapping of pattern IDs to device names (memoized)
@@ -245,7 +264,7 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
               </div>
             </div>
             
-            {/* Row 2: Charger | Device + Edit Button */}
+            {/* Row 2: Charger | Device + Edit Buttons */}
             <div className="process-row process-row-2">
               <div className="process-cell">
                 <span>Charger: {process.chargerName || process.deviceName || process.chargerId || process.deviceId}</span>
@@ -259,14 +278,24 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
               </div>
               <div className="process-cell process-cell-right">
                 {getAssumedDevice(process) && process.endTime && (
-                  <button
-                    className="edit-button"
-                    onClick={(e) => handleEditDevice(e, process)}
-                    title="Edit device label"
-                    aria-label="Edit device label"
-                  >
-                    ✏️
-                  </button>
+                  <div className="edit-buttons">
+                    <button
+                      className="edit-button"
+                      onClick={(e) => handleEditDevice(e, process, false)}
+                      title="Rename this process only"
+                      aria-label="Rename this process only"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      className="edit-button edit-all-button"
+                      onClick={(e) => handleEditDevice(e, process, true)}
+                      title="Rename all processes with this device"
+                      aria-label="Rename all processes with this device"
+                    >
+                      ✏️✏️
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -294,6 +323,15 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
           onClose={handleCloseModal}
           onSave={handleSaveLabel}
           onMerge={handleMergePatterns}
+        />
+      )}
+
+      {editingProcess && (
+        <ProcessLabelModal
+          process={editingProcess}
+          patterns={patterns}
+          onClose={handleCloseModal}
+          onSave={handleSaveProcessLabel}
         />
       )}
     </div>

@@ -172,6 +172,12 @@
   transform: scale(0.95);
 }
 
+.edit-buttons {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
 .edit-button {
   background: transparent;
   border: none;
@@ -192,6 +198,15 @@
 
 .edit-button:active {
   transform: scale(0.95);
+}
+
+.edit-all-button {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.edit-all-button:hover {
+  opacity: 1;
 }
 
 .badge-active {
