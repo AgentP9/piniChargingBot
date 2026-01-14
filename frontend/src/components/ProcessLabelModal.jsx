@@ -1,25 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import './DeviceLabelModal.css';
+import './DeviceLabelModal.css'; // Reuse the same styles
 
-function DeviceLabelModal({ pattern, patterns, onClose, onSave, onMerge }) {
-  const [newLabel, setNewLabel] = useState(pattern?.deviceName || '');
+function ProcessLabelModal({ process, patterns, onClose, onSave }) {
+  const [newLabel, setNewLabel] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (pattern) {
-      setNewLabel(pattern.deviceName || '');
+    if (process) {
+      setNewLabel(process.deviceName || '');
       setError('');
     }
-  }, [pattern]);
+  }, [process]);
 
-  if (!pattern) return null;
+  if (!process) return null;
 
-  // Get other device names (excluding current pattern)
-  const otherDeviceNames = patterns
-    .filter(p => p.id !== pattern.id)
-    .map(p => p.deviceName)
-    .filter((name, index, self) => self.indexOf(name) === index); // unique names
+  // Get all unique device names from patterns
+  const allDeviceNames = [...new Set(patterns.map(p => p.deviceName))];
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -29,25 +26,7 @@ function DeviceLabelModal({ pattern, patterns, onClose, onSave, onMerge }) {
     }
 
     const trimmedLabel = newLabel.trim();
-    
-    // Check if the new label matches an existing pattern
-    const existingPattern = patterns.find(p => p.id !== pattern.id && p.deviceName === trimmedLabel);
-    
-    if (existingPattern) {
-      // Ask user if they want to merge
-      const shouldMerge = window.confirm(
-        `A device named "${trimmedLabel}" already exists. Do you want to merge this pattern with the existing one?\n\n` +
-        `This will combine all charging sessions from both patterns.`
-      );
-      
-      if (shouldMerge) {
-        onMerge(pattern.id, existingPattern.id);
-      }
-    } else {
-      // New label or same label - just update
-      // Always rename all processes when editing from RDL
-      onSave(pattern.id, trimmedLabel, true);
-    }
+    onSave(process.id, trimmedLabel);
   };
 
   const handleDeviceSelect = (deviceName) => {
@@ -55,7 +34,7 @@ function DeviceLabelModal({ pattern, patterns, onClose, onSave, onMerge }) {
     setShowDropdown(false);
   };
 
-  const filteredSuggestions = otherDeviceNames.filter(name =>
+  const filteredSuggestions = allDeviceNames.filter(name =>
     name.toLowerCase().includes(newLabel.toLowerCase())
   );
 
@@ -63,13 +42,23 @@ function DeviceLabelModal({ pattern, patterns, onClose, onSave, onMerge }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Edit Device Label</h2>
+          <h2>Rename Charging Process</h2>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
             {error && <div className="error-message">{error}</div>}
+            
+            <div className="info-box" style={{ marginBottom: '1rem' }}>
+              <strong>Note:</strong>
+              <p>Renaming this individual charging process will remove it from its current pattern and either:</p>
+              <ul>
+                <li>Add it to an existing pattern with the same name, or</li>
+                <li>Create a new pattern if the name doesn't exist</li>
+              </ul>
+            </div>
+
             <div className="form-group">
               <label htmlFor="device-label">Device Name:</label>
               <div className="input-container">
@@ -104,16 +93,16 @@ function DeviceLabelModal({ pattern, patterns, onClose, onSave, onMerge }) {
                 )}
               </div>
               <small className="help-text">
-                Choose an existing device name to merge patterns, or enter a new name.
+                Choose an existing device name to add this process to that pattern, or enter a new name to create a new pattern.
               </small>
             </div>
 
             <div className="info-box">
-              <strong>Pattern Info:</strong>
+              <strong>Process Info:</strong>
               <ul>
-                <li>Sessions: {pattern.count}</li>
-                <li>Avg. Duration: {pattern.statistics?.averageDuration?.toFixed(1) ?? 'N/A'} min</li>
-                <li>Avg. Power: {pattern.averageProfile?.mean?.toFixed(1) ?? 'N/A'} W</li>
+                <li>Process ID: #{process.id}</li>
+                <li>Current Device: {process.deviceName || 'Unknown'}</li>
+                <li>Charger: {process.chargerName || process.chargerId}</li>
               </ul>
             </div>
           </div>
@@ -132,4 +121,4 @@ function DeviceLabelModal({ pattern, patterns, onClose, onSave, onMerge }) {
   );
 }
 
-export default DeviceLabelModal;
+export default ProcessLabelModal;

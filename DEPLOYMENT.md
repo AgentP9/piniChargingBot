@@ -165,6 +165,27 @@ For each device configuration:
 - `GET /api/processes/:id` - Get specific process details
 - `GET /api/processes/device/:deviceId` - Get processes for a device
 
+## Updating the Application
+
+### Safe Update Procedure (Preserves Data)
+
+When pulling the latest changes from GitHub, follow this procedure to keep your data:
+
+```bash
+# Pull latest code
+git pull origin main
+
+# Rebuild and restart (preserves backend-data volume)
+docker-compose up -d --build
+
+# Verify data was loaded
+docker-compose logs backend | grep "Loaded.*processes"
+```
+
+**Important:** Do NOT use `docker-compose down -v` as this removes volumes and deletes all data!
+
+For detailed instructions on data persistence, backups, and recovery, see [DATA_PERSISTENCE.md](DATA_PERSISTENCE.md).
+
 ## Data Model
 
 ### Data Persistence

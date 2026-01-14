@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import ChartPreview from './ChartPreview';
-import DeviceLabelModal from './DeviceLabelModal';
+import ProcessLabelModal from './ProcessLabelModal';
 import './ProcessList.css';
 
-function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, onDeleteProcess, onCompleteProcess, filters, onPatternUpdate }) {
-  const [editingPattern, setEditingPattern] = useState(null);
+function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, onDeleteProcess, onCompleteProcess, filters, onPatternUpdate, onProcessUpdate }) {
+  const [editingProcess, setEditingProcess] = useState(null);
+  
   const handleDelete = (e, processId) => {
     e.stopPropagation(); // Prevent selecting the process when clicking delete
     
@@ -21,41 +22,25 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
     }
   };
 
-  const handleEditDevice = (e, process) => {
+  const handleEditProcess = (e, process) => {
     e.stopPropagation(); // Prevent selecting the process when clicking edit
     
-    // Find pattern that contains this process ID
-    const matchingPattern = patterns.find(pattern => 
-      pattern.processIds && pattern.processIds.includes(process.id)
-    );
-    
-    if (matchingPattern) {
-      setEditingPattern(matchingPattern);
-    }
+    // Edit just this single process
+    setEditingProcess(process);
   };
 
-  const handleSaveLabel = async (patternId, newLabel, shouldRenameAll) => {
+  const handleSaveProcessLabel = async (processId, newLabel) => {
     try {
-      await onPatternUpdate('updateLabel', { patternId, newLabel, shouldRenameAll });
-      setEditingPattern(null);
+      await onProcessUpdate('updateDeviceName', { processId, newLabel });
+      setEditingProcess(null);
     } catch (error) {
-      console.error('Error updating label:', error);
-      alert('Failed to update device label. Please try again.');
-    }
-  };
-
-  const handleMergePatterns = async (sourcePatternId, targetPatternId) => {
-    try {
-      await onPatternUpdate('merge', { sourcePatternId, targetPatternId });
-      setEditingPattern(null);
-    } catch (error) {
-      console.error('Error merging patterns:', error);
-      alert('Failed to merge patterns. Please try again.');
+      console.error('Error updating process label:', error);
+      alert('Failed to update process device name. Please try again.');
     }
   };
   
   const handleCloseModal = () => {
-    setEditingPattern(null);
+    setEditingProcess(null);
   };
   
   // Create a mapping of pattern IDs to device names (memoized)
@@ -245,7 +230,7 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
               </div>
             </div>
             
-            {/* Row 2: Charger | Device + Edit Button */}
+            {/* Row 2: Charger | Device + Edit Buttons */}
             <div className="process-row process-row-2">
               <div className="process-cell">
                 <span>Charger: {process.chargerName || process.deviceName || process.chargerId || process.deviceId}</span>
@@ -261,9 +246,9 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
                 {getAssumedDevice(process) && process.endTime && (
                   <button
                     className="edit-button"
-                    onClick={(e) => handleEditDevice(e, process)}
-                    title="Edit device label"
-                    aria-label="Edit device label"
+                    onClick={(e) => handleEditProcess(e, process)}
+                    title="Rename this process"
+                    aria-label="Rename this process"
                   >
                     ✏️
                   </button>
@@ -287,13 +272,12 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
         </div>
       ))}
 
-      {editingPattern && (
-        <DeviceLabelModal
-          pattern={editingPattern}
+      {editingProcess && (
+        <ProcessLabelModal
+          process={editingProcess}
           patterns={patterns}
           onClose={handleCloseModal}
-          onSave={handleSaveLabel}
-          onMerge={handleMergePatterns}
+          onSave={handleSaveProcessLabel}
         />
       )}
     </div>

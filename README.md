@@ -272,15 +272,19 @@ See the Configuration section above for details on connecting to your existing M
 
 The application uses file-based persistent storage for charging processes:
 - Charging processes are automatically saved to disk
-- Data persists across container restarts
-- Storage location: `/app/data` in the container (mapped to a Docker volume)
+- **Data persists across container restarts and updates** (stored in Docker volume)
+- Storage location: `/app/data` in the container (mapped to `backend-data` volume)
 - Saves are throttled (max once per 5 seconds) to minimize disk I/O during high-frequency power readings
 - Graceful shutdown ensures all data is saved before the application exits
 
 The data is stored in JSON format and includes:
 - All charging processes with start/end times
 - Power consumption events with timestamps
+- Recognized device patterns with user customizations
 - Process ID counter for unique identification
+
+**Important for Updates:**
+When pulling the latest code and redeploying, your data (recognized devices, charging history, manual renames) is preserved in the `backend-data` Docker volume. See [DATA_PERSISTENCE.md](DATA_PERSISTENCE.md) for detailed information on safe updates, backups, and data recovery.
 
 ## Monitoring Multiple Chargers
 
