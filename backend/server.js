@@ -751,24 +751,34 @@ app.get('/api/processes/:id/guess', (req, res) => {
     });
   }
   
-  // Try to match against existing patterns
-  const match = patternAnalyzer.findMatchingPattern(process, chargingPatterns);
-  
-  if (match) {
-    res.json({
+  try {
+    // Try to match against existing patterns
+    const match = patternAnalyzer.findMatchingPattern(process, chargingPatterns);
+    
+    if (match) {
+      res.json({
+        processId: processId,
+        isActive: true,
+        hasGuess: true,
+        guessedDevice: match.pattern.deviceName,
+        confidence: match.similarity,
+        message: 'Educated guess based on power consumption profile'
+      });
+    } else {
+      res.json({
+        processId: processId,
+        isActive: true,
+        hasGuess: false,
+        message: 'Not enough data or no matching pattern found'
+      });
+    }
+  } catch (error) {
+    console.error(`Error finding pattern match for process ${processId}:`, error);
+    res.status(500).json({
+      error: 'Failed to generate educated guess',
       processId: processId,
       isActive: true,
-      hasGuess: true,
-      guessedDevice: match.pattern.deviceName,
-      confidence: match.similarity,
-      message: 'Educated guess based on power consumption profile'
-    });
-  } else {
-    res.json({
-      processId: processId,
-      isActive: true,
-      hasGuess: false,
-      message: 'Not enough data or no matching pattern found'
+      hasGuess: false
     });
   }
 });

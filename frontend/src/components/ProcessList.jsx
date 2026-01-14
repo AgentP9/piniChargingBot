@@ -12,14 +12,15 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
 
   // Fetch educated guesses for active processes
   useEffect(() => {
+    // Check for active processes first to avoid unnecessary work
+    const activeProcesses = processes.filter(p => !p.endTime);
+    
+    if (activeProcesses.length === 0) {
+      setProcessGuesses({});
+      return; // No interval needed
+    }
+    
     const fetchGuesses = async () => {
-      const activeProcesses = processes.filter(p => !p.endTime);
-      
-      if (activeProcesses.length === 0) {
-        setProcessGuesses({});
-        return;
-      }
-      
       const guesses = {};
       await Promise.all(
         activeProcesses.map(async (process) => {
@@ -39,13 +40,6 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
       
       setProcessGuesses(guesses);
     };
-    
-    // Only set up interval if there are active processes
-    const activeProcesses = processes.filter(p => !p.endTime);
-    if (activeProcesses.length === 0) {
-      setProcessGuesses({});
-      return;
-    }
     
     fetchGuesses();
     // Refresh guesses every 10 seconds while there are active processes

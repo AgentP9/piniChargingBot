@@ -10,14 +10,15 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice }) {
 
   // Fetch educated guesses for active processes
   useEffect(() => {
+    // Check for active devices first to avoid unnecessary work
+    const activeDevices = devices.filter(d => d.isOn && d.currentProcessId !== null);
+    
+    if (activeDevices.length === 0) {
+      setDeviceGuesses({});
+      return; // No interval needed
+    }
+    
     const fetchGuesses = async () => {
-      const activeDevices = devices.filter(d => d.isOn && d.currentProcessId !== null);
-      
-      if (activeDevices.length === 0) {
-        setDeviceGuesses({});
-        return;
-      }
-      
       const guesses = {};
       await Promise.all(
         activeDevices.map(async (device) => {
@@ -37,13 +38,6 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice }) {
       
       setDeviceGuesses(guesses);
     };
-    
-    // Only set up interval if there are active devices
-    const activeDevices = devices.filter(d => d.isOn && d.currentProcessId !== null);
-    if (activeDevices.length === 0) {
-      setDeviceGuesses({});
-      return;
-    }
     
     fetchGuesses();
     // Refresh guesses every 10 seconds while there are active devices
