@@ -17,6 +17,7 @@ This application tracks charging sessions for your devices (iPhones, TonieBoxes,
 - **Charging Process Tracking**: Automatically tracks charging sessions based on power on/off events
 - **Power Consumption Logging**: Records power consumption data with timestamps
 - **Pattern Recognition**: AI-powered device fingerprinting that identifies charged devices based on power consumption characteristics
+- **Educated Guesses**: Real-time predictions about which device is being charged during active sessions (non-persistent, for informational purposes only)
 - **Device Label Management**: Edit, merge, and manage device labels for recognized charging patterns
 - **Modern Responsive UI**: Web interface with real-time updates and interactive charts
 - **Dark Mode / Light Mode**: Toggle between dark and light themes with persistent preference - see [DARK_MODE.md](DARK_MODE.md)
@@ -221,6 +222,7 @@ The application is a fully functional Progressive Web App that can be installed 
 - `GET /api/chargers/:chargerId/active-processes` - Get active (incomplete) processes for a charger
 - `GET /api/processes` - Get all charging processes
 - `GET /api/processes/:id` - Get specific charging process
+- `GET /api/processes/:id/guess` - Get educated guess for an active process (non-persistent)
 - `GET /api/processes/charger/:chargerId` - Get processes for a charger
 - `PUT /api/processes/:id/complete` - Manually mark a process as complete
 - `DELETE /api/processes/:id` - Delete a specific charging process
