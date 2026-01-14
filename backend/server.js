@@ -883,6 +883,7 @@ function gracefulShutdown(signal) {
   }
   storage.saveProcesses(chargingProcesses);
   storage.saveProcessCounter(processIdCounter);
+  patternAnalyzer.savePatterns(chargingPatterns);
   
   // Close MQTT connection with timeout
   if (mqttClient && mqttClient.connected) {
