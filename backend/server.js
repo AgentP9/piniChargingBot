@@ -731,8 +731,8 @@ app.get('/api/patterns/debug', (req, res) => {
 app.get('/api/processes/:id/guess', (req, res) => {
   const processId = parseInt(req.params.id);
   
-  // Validate that the ID is a valid number
-  if (isNaN(processId)) {
+  // Validate that the ID is a valid positive integer
+  if (isNaN(processId) || processId <= 0 || !Number.isInteger(processId)) {
     return res.status(400).json({ error: 'Invalid process ID' });
   }
   
