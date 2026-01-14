@@ -1,10 +1,50 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import axios from 'axios';
 import ChartPreview from './ChartPreview';
 import ProcessLabelModal from './ProcessLabelModal';
 import './ProcessList.css';
 
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+
 function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, onDeleteProcess, onCompleteProcess, filters, onPatternUpdate, onProcessUpdate }) {
   const [editingProcess, setEditingProcess] = useState(null);
+  const [processGuesses, setProcessGuesses] = useState({});
+
+  // Fetch educated guesses for active processes
+  useEffect(() => {
+    const fetchGuesses = async () => {
+      const activeProcesses = processes.filter(p => !p.endTime);
+      
+      if (activeProcesses.length === 0) {
+        setProcessGuesses({});
+        return;
+      }
+      
+      const guesses = {};
+      await Promise.all(
+        activeProcesses.map(async (process) => {
+          try {
+            const response = await axios.get(`${API_URL}/processes/${process.id}/guess`);
+            if (response.data.hasGuess) {
+              guesses[process.id] = {
+                deviceName: response.data.guessedDevice,
+                confidence: response.data.confidence
+              };
+            }
+          } catch (error) {
+            console.error(`Error fetching guess for process ${process.id}:`, error);
+          }
+        })
+      );
+      
+      setProcessGuesses(guesses);
+    };
+    
+    fetchGuesses();
+    // Refresh guesses every 10 seconds while there are active processes
+    const interval = setInterval(fetchGuesses, 10000);
+    return () => clearInterval(interval);
+  }, [processes]);
   
   const handleDelete = (e, processId) => {
     e.stopPropagation(); // Prevent selecting the process when clicking delete
@@ -70,6 +110,15 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
     }
     
     return null;
+  };
+
+  // Get the educated guess for an active process
+  const getGuessedDevice = (process) => {
+    if (process.endTime) {
+      return null; // Only for active processes
+    }
+    
+    return processGuesses[process.id] || null;
   };
 
   if (processes.length === 0) {
@@ -238,6 +287,13 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
               <div className="process-cell">
                 {getAssumedDevice(process) ? (
                   <span>Device: {getAssumedDevice(process)}</span>
+                ) : getGuessedDevice(process) ? (
+                  <span className="device-guess">
+                    Device: {getGuessedDevice(process).deviceName}?
+                    <span className="guess-confidence">
+                      {Math.round(getGuessedDevice(process).confidence * 100)}%
+                    </span>
+                  </span>
                 ) : (
                   <span>Device: -</span>
                 )}

@@ -204,7 +204,23 @@
   color: var(--status-inactive);
 }
 
+.device-guess {
+  font-style: italic;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 
+.guess-confidence {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 8px;
+  background: var(--status-active-bg);
+  color: var(--status-active);
+  font-weight: 700;
+  font-style: normal;
+}
 
 .empty-state {
   text-align: center;

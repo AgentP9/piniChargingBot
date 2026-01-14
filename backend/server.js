@@ -725,6 +725,54 @@ app.get('/api/patterns/debug', (req, res) => {
   });
 });
 
+// Educated guess endpoint for active processes
+// Returns likely device matches based on current power consumption profile
+// Does NOT store anything or affect patterns - just provides real-time suggestions
+app.get('/api/processes/:id/guess', (req, res) => {
+  const processId = parseInt(req.params.id);
+  
+  // Validate that the ID is a valid number
+  if (isNaN(processId)) {
+    return res.status(400).json({ error: 'Invalid process ID' });
+  }
+  
+  const process = chargingProcesses.find(p => p.id === processId);
+  
+  if (!process) {
+    return res.status(404).json({ error: 'Process not found' });
+  }
+  
+  // Only provide guesses for active (incomplete) processes
+  if (process.endTime) {
+    return res.json({
+      processId: processId,
+      isActive: false,
+      message: 'Process is completed, no guess needed'
+    });
+  }
+  
+  // Try to match against existing patterns
+  const match = patternAnalyzer.findMatchingPattern(process, chargingPatterns);
+  
+  if (match) {
+    res.json({
+      processId: processId,
+      isActive: true,
+      hasGuess: true,
+      guessedDevice: match.pattern.deviceName,
+      confidence: match.similarity,
+      message: 'Educated guess based on power consumption profile'
+    });
+  } else {
+    res.json({
+      processId: processId,
+      isActive: true,
+      hasGuess: false,
+      message: 'Not enough data or no matching pattern found'
+    });
+  }
+});
+
 // Pattern Label Management Endpoints
 
 // Update device label for a pattern
