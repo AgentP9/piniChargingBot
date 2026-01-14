@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import DeviceLabelModal from './DeviceLabelModal';
 import './PatternManager.css';
 
 function PatternManager({ patterns, selectedPatternId, onPatternUpdate, onSelectPattern }) {
   const [expandedPattern, setExpandedPattern] = useState(null);
+  const [editingPattern, setEditingPattern] = useState(null);
 
   const handleDeletePattern = async (patternId, deviceName) => {
     const confirmed = window.confirm(
@@ -35,6 +37,35 @@ function PatternManager({ patterns, selectedPatternId, onPatternUpdate, onSelect
         alert('Failed to rerun device recognition. Please try again.');
       }
     }
+  };
+
+  const handleEditPattern = (e, pattern) => {
+    e.stopPropagation(); // Prevent card selection when clicking edit
+    setEditingPattern(pattern);
+  };
+
+  const handleSaveLabel = async (patternId, newLabel, shouldRenameAll) => {
+    try {
+      await onPatternUpdate('updateLabel', { patternId, newLabel, shouldRenameAll });
+      setEditingPattern(null);
+    } catch (error) {
+      console.error('Error updating label:', error);
+      alert('Failed to update device label. Please try again.');
+    }
+  };
+
+  const handleMergePatterns = async (sourcePatternId, targetPatternId) => {
+    try {
+      await onPatternUpdate('merge', { sourcePatternId, targetPatternId });
+      setEditingPattern(null);
+    } catch (error) {
+      console.error('Error merging patterns:', error);
+      alert('Failed to merge patterns. Please try again.');
+    }
+  };
+
+  const handleCloseModal = () => {
+    setEditingPattern(null);
   };
 
   if (!patterns || patterns.length === 0) {
@@ -118,6 +149,13 @@ function PatternManager({ patterns, selectedPatternId, onPatternUpdate, onSelect
                     {isExpanded ? '▼' : '▶'}
                   </button>
                   <button
+                    className="pattern-edit-btn"
+                    onClick={(e) => handleEditPattern(e, pattern)}
+                    title="Edit device name"
+                  >
+                    ✏️
+                  </button>
+                  <button
                     className="pattern-delete-btn"
                     onClick={(e) => {
                       e.stopPropagation(); // Prevent card selection when clicking delete
@@ -174,6 +212,16 @@ function PatternManager({ patterns, selectedPatternId, onPatternUpdate, onSelect
           );
         })}
       </div>
+
+      {editingPattern && (
+        <DeviceLabelModal
+          pattern={editingPattern}
+          patterns={patterns}
+          onClose={handleCloseModal}
+          onSave={handleSaveLabel}
+          onMerge={handleMergePatterns}
+        />
+      )}
     </div>
   );
 }

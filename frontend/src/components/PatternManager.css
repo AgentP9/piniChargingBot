@@ -109,6 +109,7 @@
 }
 
 .pattern-expand-btn,
+.pattern-edit-btn,
 .pattern-delete-btn {
   background: transparent;
   border: none;
@@ -126,7 +127,8 @@
   color: var(--border-secondary);
 }
 
-.pattern-expand-btn:hover {
+.pattern-expand-btn:hover,
+.pattern-edit-btn:hover {
   background: var(--bg-hover);
   transform: scale(1.1);
 }
@@ -137,6 +139,7 @@
 }
 
 .pattern-expand-btn:active,
+.pattern-edit-btn:active,
 .pattern-delete-btn:active {
   transform: scale(0.95);
 }
