@@ -11,6 +11,12 @@ RUN npm install --omit=dev
 # Copy application files
 COPY *.js ./
 
+# Create data directory for persistent storage
+RUN mkdir -p /app/data
+
+# Declare volume for data persistence
+VOLUME ["/app/data"]
+
 # Expose port
 EXPOSE 3000
 
