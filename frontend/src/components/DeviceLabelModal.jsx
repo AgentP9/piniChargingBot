@@ -3,7 +3,6 @@ import './DeviceLabelModal.css';
 
 function DeviceLabelModal({ pattern, patterns, onClose, onSave, onMerge }) {
   const [newLabel, setNewLabel] = useState(pattern?.deviceName || '');
-  const [shouldRenameAll, setShouldRenameAll] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
   const [error, setError] = useState('');
 
@@ -46,7 +45,8 @@ function DeviceLabelModal({ pattern, patterns, onClose, onSave, onMerge }) {
       }
     } else {
       // New label or same label - just update
-      onSave(pattern.id, trimmedLabel, shouldRenameAll);
+      // Always rename all processes when editing from RDL
+      onSave(pattern.id, trimmedLabel, true);
     }
   };
 
@@ -105,25 +105,6 @@ function DeviceLabelModal({ pattern, patterns, onClose, onSave, onMerge }) {
               </div>
               <small className="help-text">
                 Choose an existing device name to merge patterns, or enter a new name.
-              </small>
-            </div>
-
-            <div className="form-group">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={shouldRenameAll}
-                  onChange={(e) => setShouldRenameAll(e.target.checked)}
-                />
-                <span>
-                  Rename all charging sessions labeled "{pattern.deviceName}" to the new name
-                </span>
-              </label>
-              <small className="help-text">
-                {shouldRenameAll 
-                  ? `All ${pattern.count} charging sessions will be updated.`
-                  : 'Only the pattern label will be changed. Historical data will keep the old name.'
-                }
               </small>
             </div>
 
