@@ -38,6 +38,13 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice }) {
       setDeviceGuesses(guesses);
     };
     
+    // Only set up interval if there are active devices
+    const activeDevices = devices.filter(d => d.isOn && d.currentProcessId !== null);
+    if (activeDevices.length === 0) {
+      setDeviceGuesses({});
+      return;
+    }
+    
     fetchGuesses();
     // Refresh guesses every 10 seconds while there are active devices
     const interval = setInterval(fetchGuesses, 10000);
@@ -59,7 +66,10 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice }) {
 
   return (
     <div className="device-list">
-      {devices.map(device => (
+      {devices.map(device => {
+        const guess = deviceGuesses[device.id];
+        
+        return (
         <div 
           key={device.id} 
           className={`device-item ${selectedDeviceId === device.id ? 'selected' : ''}`}
@@ -92,20 +102,21 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice }) {
                 <span className="detail-value">#{device.currentProcessId}</span>
               </div>
             )}
-            {deviceGuesses[device.id] && (
+            {guess && (
               <div className="detail-row guess-row">
                 <span className="detail-label">Likely Device:</span>
                 <span className="detail-value guess-value">
-                  {deviceGuesses[device.id].deviceName} 
+                  {guess.deviceName} 
                   <span className="confidence-badge">
-                    {Math.round(deviceGuesses[device.id].confidence * 100)}%
+                    {Math.round(guess.confidence * 100)}%
                   </span>
                 </span>
               </div>
             )}
           </div>
         </div>
-      ))}
+      );
+      })}
     </div>
   );
 }

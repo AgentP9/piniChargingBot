@@ -40,6 +40,13 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
       setProcessGuesses(guesses);
     };
     
+    // Only set up interval if there are active processes
+    const activeProcesses = processes.filter(p => !p.endTime);
+    if (activeProcesses.length === 0) {
+      setProcessGuesses({});
+      return;
+    }
+    
     fetchGuesses();
     // Refresh guesses every 10 seconds while there are active processes
     const interval = setInterval(fetchGuesses, 10000);
@@ -238,7 +245,12 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
 
   return (
     <div className="process-list">
-      {sortedProcesses.map(process => (
+      {sortedProcesses.map(process => {
+        // Cache these values to avoid redundant function calls
+        const assumedDevice = getAssumedDevice(process);
+        const guessedDevice = getGuessedDevice(process);
+        
+        return (
         <div 
           key={process.id} 
           className={`process-item ${selectedProcess?.id === process.id ? 'selected' : ''} ${process.endTime ? 'has-preview' : ''}`}
@@ -285,13 +297,13 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
                 <span>Charger: {process.chargerName || process.deviceName || process.chargerId || process.deviceId}</span>
               </div>
               <div className="process-cell">
-                {getAssumedDevice(process) ? (
-                  <span>Device: {getAssumedDevice(process)}</span>
-                ) : getGuessedDevice(process) ? (
+                {assumedDevice ? (
+                  <span>Device: {assumedDevice}</span>
+                ) : guessedDevice ? (
                   <span className="device-guess">
-                    Device: {getGuessedDevice(process).deviceName}?
+                    Device: {guessedDevice.deviceName}?
                     <span className="guess-confidence">
-                      {Math.round(getGuessedDevice(process).confidence * 100)}%
+                      {Math.round(guessedDevice.confidence * 100)}%
                     </span>
                   </span>
                 ) : (
@@ -299,7 +311,7 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
                 )}
               </div>
               <div className="process-cell process-cell-right">
-                {getAssumedDevice(process) && process.endTime && (
+                {assumedDevice && process.endTime && (
                   <button
                     className="edit-button"
                     onClick={(e) => handleEditProcess(e, process)}
@@ -326,7 +338,8 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
             </div>
           </div>
         </div>
-      ))}
+      );
+      })}
 
       {editingProcess && (
         <ProcessLabelModal
