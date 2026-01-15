@@ -211,17 +211,35 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
   };
 
   const formatDuration = (startTime, endTime) => {
-    if (!endTime) return 'In progress';
+    const duration = endTime 
+      ? new Date(endTime) - new Date(startTime)
+      : Date.now() - new Date(startTime);
     
-    const duration = new Date(endTime) - new Date(startTime);
-    const minutes = Math.floor(duration / 60000);
+    const hours = Math.floor(duration / 3600000);
+    const minutes = Math.floor((duration % 3600000) / 60000);
     const seconds = Math.floor((duration % 60000) / 1000);
     
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
     if (minutes > 0) {
       return `${minutes}m ${seconds}s`;
     }
     return `${seconds}s`;
   };
+
+  // Update duration for active processes every second
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const hasActiveProcesses = processes.some(p => !p.endTime);
+    if (!hasActiveProcesses) return;
+    
+    const interval = setInterval(() => {
+      setTick(tick => tick + 1);
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [processes]);
 
   const calculateTotalEnergy = (process) => {
     const powerEvents = process.events.filter(e => e.type === 'power_consumption');
@@ -259,18 +277,20 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
                 <span className="process-id">Process #{process.id}</span>
               </div>
               <div className="process-cell process-cell-center">
-                <span className={`process-badge ${process.endTime ? 'badge-completed' : 'badge-active'}`}>
-                  {process.endTime ? 'Completed' : 'Active'}
-                </span>
                 {!process.endTime && (
-                  <button 
-                    className="complete-button"
-                    onClick={(e) => handleComplete(e, process.id)}
-                    title="Mark this process as complete"
-                    aria-label={`Mark charging process #${process.id} as complete`}
-                  >
-                    ✓
-                  </button>
+                  <>
+                    <div className="charging-animation" title="Charging in progress">
+                      <div className="charging-bolt">⚡</div>
+                    </div>
+                    <button 
+                      className="complete-button"
+                      onClick={(e) => handleComplete(e, process.id)}
+                      title="Mark this process as complete"
+                      aria-label={`Mark charging process #${process.id} as complete`}
+                    >
+                      ✓
+                    </button>
+                  </>
                 )}
               </div>
               <div className="process-cell process-cell-right">
@@ -288,20 +308,22 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
             {/* Row 2: Charger | Device + Edit Buttons */}
             <div className="process-row process-row-2">
               <div className="process-cell">
-                <span>Charger: {process.chargerName || process.deviceName || process.chargerId || process.deviceId}</span>
+                <span className="info-icon">🔌</span>
+                <span>{process.chargerName || process.deviceName || process.chargerId || process.deviceId}</span>
               </div>
               <div className="process-cell">
+                <span className="info-icon">📱</span>
                 {assumedDevice ? (
-                  <span>Device: {assumedDevice}</span>
+                  <span>{assumedDevice}</span>
                 ) : guessedDevice ? (
                   <span className="device-guess">
-                    Device: {guessedDevice.deviceName}?
+                    {guessedDevice.deviceName}?
                     <span className="guess-confidence">
                       {Math.round(guessedDevice.confidence * 100)}%
                     </span>
                   </span>
                 ) : (
-                  <span>Device: -</span>
+                  <span>-</span>
                 )}
               </div>
               <div className="process-cell process-cell-right">
