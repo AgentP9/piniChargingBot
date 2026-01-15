@@ -227,10 +227,6 @@ mqttClient.on('message', (topic, message) => {
         storage.saveProcesses(chargingProcesses);
         
         console.log(`Ended charging process ${processId} on charger "${chargerConfig.name}"`);
-        
-        // Run pattern analysis after completing a process
-        // This helps identify device patterns immediately
-        setTimeout(() => runPatternAnalysis(), 1000);
       }
       
       chargerStates[chargerId].isOn = false;
@@ -390,9 +386,6 @@ app.put('/api/processes/:id/complete', (req, res) => {
   storage.saveProcesses(chargingProcesses);
   
   console.log(`Manually completed charging process ${processId}`);
-  
-  // Run pattern analysis after manual completion
-  setTimeout(() => runPatternAnalysis(), 1000);
   
   res.json({ success: true, message: 'Process marked as complete', process });
 });
@@ -917,19 +910,11 @@ app.delete('/api/patterns/:patternId', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   
-  // Note: Pattern analysis is NOT run on startup to preserve user customizations
+  // Note: Pattern analysis is NOT run automatically
   // Patterns are loaded from disk and used as-is
-  // Pattern analysis only runs:
-  // 1. When explicitly triggered via /api/patterns/rerun endpoint
-  // 2. On scheduled interval (every 1 hour) to catch new processes
-  // 3. When a process completes (to assign it to a pattern)
-  
-  // Schedule periodic pattern analysis (every 1 hour)
-  // Uses a safer approach that waits for completion before next run
-  setInterval(() => {
-    console.log('Running scheduled pattern analysis...');
-    schedulePatternAnalysis();
-  }, 60 * 60 * 1000);
+  // Pattern analysis only runs when explicitly triggered via API endpoints:
+  // - POST /api/patterns/analyze - Manually trigger pattern analysis
+  // - POST /api/patterns/rerun - Clear all patterns and reanalyze from scratch
 });
 
 // Graceful shutdown handler to save data before exit
