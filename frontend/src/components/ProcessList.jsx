@@ -350,6 +350,7 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
                 )}
               </div>
               <div className="process-cell process-cell-right">
+                {/* Show edit button for completed processes or interrupted processes ready to complete */}
                 {(process.endTime || showCompleteButton) && (
                   <button
                     className="edit-button"
