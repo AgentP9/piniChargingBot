@@ -298,13 +298,14 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
                 <span className="process-id">Process #{process.id}</span>
               </div>
               <div className="process-cell process-cell-center">
-                {!process.endTime && (
+                {/* Empty center cell */}
+              </div>
+              <div className="process-cell process-cell-right">
+                {!process.endTime && !shouldShowCompleteButton(process) && (
                   <div className="charging-animation" title="Charging in progress">
                     <div className="charging-bolt">⚡</div>
                   </div>
                 )}
-              </div>
-              <div className="process-cell process-cell-right">
                 {shouldShowCompleteButton(process) && (
                   <button 
                     className="complete-button"
