@@ -239,7 +239,7 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
     if (activeProcessCount === 0) return;
     
     const interval = setInterval(() => {
-      setTick(Date.now());
+      setTick(prev => prev + 1);
     }, 1000);
     
     return () => clearInterval(interval);
