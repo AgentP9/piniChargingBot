@@ -128,13 +128,12 @@ Get the matching pattern for a specific charging process.
 
 ## Automatic Analysis
 
-Pattern analysis runs automatically in the following scenarios:
+Pattern analysis does NOT run automatically. Users must manually trigger pattern analysis using the API endpoints:
 
-1. **On Server Startup**: After a 2-second delay, analyzes all existing completed processes (the delay allows the server to fully initialize before analysis begins)
-2. **When a Process Completes**: Immediately after a charging session ends
-3. **Periodically**: Every 1 hour to catch any updates
+1. **Manual Analysis**: POST /api/patterns/analyze - Analyzes all completed processes and updates patterns
+2. **Rerun Analysis**: POST /api/patterns/rerun - Clears all patterns and reanalyzes from scratch
 
-> **Note**: Because of the 2-second startup delay, patterns might not appear immediately after the server starts. This is expected behavior.
+This ensures users have full control over when pattern recognition occurs and prevents automatic changes to manually customized patterns.
 
 ## Data Storage
 
