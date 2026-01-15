@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import ChartPreview from './ChartPreview';
 import ProcessLabelModal from './ProcessLabelModal';
@@ -260,7 +260,7 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
   };
 
   // Check if last MQTT update is older than one hour
-  const isLastUpdateOlderThanOneHour = (process) => {
+  const isLastUpdateOlderThanOneHour = useCallback((process) => {
     if (!process.events || process.events.length === 0) return false;
     
     // Get the most recent event timestamp
@@ -269,7 +269,12 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     
     return lastUpdateTime < oneHourAgo;
-  };
+  }, []);
+
+  // Determine if complete button should be shown
+  const shouldShowCompleteButton = useCallback((process) => {
+    return !process.endTime && isLastUpdateOlderThanOneHour(process);
+  }, [isLastUpdateOlderThanOneHour]);
 
   return (
     <div className="process-list">
@@ -300,7 +305,7 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
                 )}
               </div>
               <div className="process-cell process-cell-right">
-                {!process.endTime && isLastUpdateOlderThanOneHour(process) && (
+                {shouldShowCompleteButton(process) && (
                   <button 
                     className="complete-button"
                     onClick={(e) => handleComplete(e, process.id)}
