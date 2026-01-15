@@ -94,6 +94,30 @@
   color: var(--text-primary);
 }
 
+.guess-row {
+  border-top: 1px dashed var(--border-primary);
+  padding-top: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.guess-value {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
+.confidence-badge {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 8px;
+  background: var(--status-active-bg);
+  color: var(--status-active);
+  font-weight: 700;
+  font-style: normal;
+}
+
 .empty-state {
   text-align: center;
   padding: 2rem;

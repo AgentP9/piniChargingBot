@@ -49,22 +49,6 @@ async function runPatternAnalysis() {
   }
 }
 
-// Schedule periodic pattern analysis
-let patternAnalysisInProgress = false;
-async function schedulePatternAnalysis() {
-  if (patternAnalysisInProgress) {
-    console.log('Pattern analysis already in progress, skipping...');
-    return;
-  }
-  
-  patternAnalysisInProgress = true;
-  try {
-    await runPatternAnalysis();
-  } finally {
-    patternAnalysisInProgress = false;
-  }
-}
-
 // Current state of each charger (physical charging device like ShellyPlug)
 const chargerStates = {};
 
@@ -227,10 +211,6 @@ mqttClient.on('message', (topic, message) => {
         storage.saveProcesses(chargingProcesses);
         
         console.log(`Ended charging process ${processId} on charger "${chargerConfig.name}"`);
-        
-        // Run pattern analysis after completing a process
-        // This helps identify device patterns immediately
-        setTimeout(() => runPatternAnalysis(), 1000);
       }
       
       chargerStates[chargerId].isOn = false;
@@ -390,9 +370,6 @@ app.put('/api/processes/:id/complete', (req, res) => {
   storage.saveProcesses(chargingProcesses);
   
   console.log(`Manually completed charging process ${processId}`);
-  
-  // Run pattern analysis after manual completion
-  setTimeout(() => runPatternAnalysis(), 1000);
   
   res.json({ success: true, message: 'Process marked as complete', process });
 });
@@ -608,10 +585,10 @@ app.get('/api/patterns/device/:deviceId', (req, res) => {
 });
 
 // Trigger pattern analysis manually
-app.post('/api/patterns/analyze', (req, res) => {
+app.post('/api/patterns/analyze', async (req, res) => {
   try {
     console.log('Manual pattern analysis triggered via API');
-    runPatternAnalysis();
+    await runPatternAnalysis();
     res.json({ 
       success: true, 
       message: 'Pattern analysis completed',
@@ -629,7 +606,7 @@ app.post('/api/patterns/analyze', (req, res) => {
 });
 
 // Rerun pattern recognition - clears all patterns and reanalyzes from scratch
-app.post('/api/patterns/rerun', (req, res) => {
+app.post('/api/patterns/rerun', async (req, res) => {
   try {
     console.log('Rerun pattern recognition triggered via API');
     
@@ -638,7 +615,7 @@ app.post('/api/patterns/rerun', (req, res) => {
     
     // Run pattern analysis from scratch
     // This will create new patterns based on all completed processes
-    runPatternAnalysis();
+    await runPatternAnalysis();
     
     res.json({ 
       success: true, 
@@ -723,6 +700,64 @@ app.get('/api/patterns/debug', (req, res) => {
     totalPatterns: chargingPatterns.length,
     processDetails: processDetails
   });
+});
+
+// Educated guess endpoint for active processes
+// Returns likely device matches based on current power consumption profile
+// Does NOT store anything or affect patterns - just provides real-time suggestions
+app.get('/api/processes/:id/guess', (req, res) => {
+  const processId = parseInt(req.params.id);
+  
+  // Validate that the ID is a valid positive integer
+  if (isNaN(processId) || processId <= 0 || !Number.isInteger(processId)) {
+    return res.status(400).json({ error: 'Invalid process ID' });
+  }
+  
+  const process = chargingProcesses.find(p => p.id === processId);
+  
+  if (!process) {
+    return res.status(404).json({ error: 'Process not found' });
+  }
+  
+  // Only provide guesses for active (incomplete) processes
+  if (process.endTime) {
+    return res.json({
+      processId: processId,
+      isActive: false,
+      message: 'Process is completed, no guess needed'
+    });
+  }
+  
+  try {
+    // Try to match against existing patterns
+    const match = patternAnalyzer.findMatchingPattern(process, chargingPatterns);
+    
+    if (match) {
+      res.json({
+        processId: processId,
+        isActive: true,
+        hasGuess: true,
+        guessedDevice: match.pattern.deviceName,
+        confidence: match.similarity,
+        message: 'Educated guess based on power consumption profile'
+      });
+    } else {
+      res.json({
+        processId: processId,
+        isActive: true,
+        hasGuess: false,
+        message: 'Not enough data or no matching pattern found'
+      });
+    }
+  } catch (error) {
+    console.error(`Error finding pattern match for process ${processId}:`, error);
+    res.status(500).json({
+      error: 'Failed to generate educated guess',
+      processId: processId,
+      isActive: true,
+      hasGuess: false
+    });
+  }
 });
 
 // Pattern Label Management Endpoints
@@ -859,19 +894,11 @@ app.delete('/api/patterns/:patternId', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   
-  // Note: Pattern analysis is NOT run on startup to preserve user customizations
+  // Note: Pattern analysis is NOT run automatically
   // Patterns are loaded from disk and used as-is
-  // Pattern analysis only runs:
-  // 1. When explicitly triggered via /api/patterns/rerun endpoint
-  // 2. On scheduled interval (every 1 hour) to catch new processes
-  // 3. When a process completes (to assign it to a pattern)
-  
-  // Schedule periodic pattern analysis (every 1 hour)
-  // Uses a safer approach that waits for completion before next run
-  setInterval(() => {
-    console.log('Running scheduled pattern analysis...');
-    schedulePatternAnalysis();
-  }, 60 * 60 * 1000);
+  // Pattern analysis only runs when explicitly triggered via API endpoints:
+  // - POST /api/patterns/analyze - Manually trigger pattern analysis
+  // - POST /api/patterns/rerun - Clear all patterns and reanalyze from scratch
 });
 
 // Graceful shutdown handler to save data before exit
