@@ -259,6 +259,18 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
     return (avgPower * duration / 1000 / 3600).toFixed(2);
   };
 
+  // Check if last MQTT update is older than one hour
+  const isLastUpdateOlderThanOneHour = (process) => {
+    if (!process.events || process.events.length === 0) return false;
+    
+    // Get the most recent event timestamp
+    const lastEvent = process.events[process.events.length - 1];
+    const lastUpdateTime = new Date(lastEvent.timestamp);
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    
+    return lastUpdateTime < oneHourAgo;
+  };
+
   return (
     <div className="process-list">
       {sortedProcesses.map(process => {
@@ -282,22 +294,22 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
               </div>
               <div className="process-cell process-cell-center">
                 {!process.endTime && (
-                  <>
-                    <div className="charging-animation" title="Charging in progress">
-                      <div className="charging-bolt">⚡</div>
-                    </div>
-                    <button 
-                      className="complete-button"
-                      onClick={(e) => handleComplete(e, process.id)}
-                      title="Mark this process as complete"
-                      aria-label={`Mark charging process #${process.id} as complete`}
-                    >
-                      ✓
-                    </button>
-                  </>
+                  <div className="charging-animation" title="Charging in progress">
+                    <div className="charging-bolt">⚡</div>
+                  </div>
                 )}
               </div>
               <div className="process-cell process-cell-right">
+                {!process.endTime && isLastUpdateOlderThanOneHour(process) && (
+                  <button 
+                    className="complete-button"
+                    onClick={(e) => handleComplete(e, process.id)}
+                    title="Mark this process as complete (last update > 1 hour ago)"
+                    aria-label={`Mark charging process #${process.id} as complete`}
+                  >
+                    ✓
+                  </button>
+                )}
                 <button 
                   className="delete-button"
                   onClick={(e) => handleDelete(e, process.id)}
