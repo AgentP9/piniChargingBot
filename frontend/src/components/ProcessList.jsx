@@ -230,20 +230,20 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
 
   // Update duration for active processes every second
   const [, setTick] = useState(0);
-  const activeProcessCount = useMemo(() => 
-    processes.filter(p => !p.endTime).length,
+  const hasActiveProcesses = useMemo(() => 
+    processes.some(p => !p.endTime),
     [processes]
   );
   
   useEffect(() => {
-    if (activeProcessCount === 0) return;
+    if (!hasActiveProcesses) return;
     
     const interval = setInterval(() => {
       setTick(prev => prev + 1);
     }, 1000);
     
     return () => clearInterval(interval);
-  }, [activeProcessCount]);
+  }, [hasActiveProcesses]);
 
   const calculateTotalEnergy = (process) => {
     const powerEvents = process.events.filter(e => e.type === 'power_consumption');
