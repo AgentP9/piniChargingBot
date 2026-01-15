@@ -585,10 +585,10 @@ app.get('/api/patterns/device/:deviceId', (req, res) => {
 });
 
 // Trigger pattern analysis manually
-app.post('/api/patterns/analyze', (req, res) => {
+app.post('/api/patterns/analyze', async (req, res) => {
   try {
     console.log('Manual pattern analysis triggered via API');
-    runPatternAnalysis();
+    await runPatternAnalysis();
     res.json({ 
       success: true, 
       message: 'Pattern analysis completed',
@@ -606,7 +606,7 @@ app.post('/api/patterns/analyze', (req, res) => {
 });
 
 // Rerun pattern recognition - clears all patterns and reanalyzes from scratch
-app.post('/api/patterns/rerun', (req, res) => {
+app.post('/api/patterns/rerun', async (req, res) => {
   try {
     console.log('Rerun pattern recognition triggered via API');
     
@@ -615,7 +615,7 @@ app.post('/api/patterns/rerun', (req, res) => {
     
     // Run pattern analysis from scratch
     // This will create new patterns based on all completed processes
-    runPatternAnalysis();
+    await runPatternAnalysis();
     
     res.json({ 
       success: true, 
