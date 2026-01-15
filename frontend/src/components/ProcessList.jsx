@@ -282,6 +282,7 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
         // Cache these values to avoid redundant function calls
         const assumedDevice = getAssumedDevice(process);
         const guessedDevice = getGuessedDevice(process);
+        const showCompleteButton = shouldShowCompleteButton(process);
         
         return (
         <div 
@@ -301,12 +302,12 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
                 {/* Empty center cell */}
               </div>
               <div className="process-cell process-cell-right">
-                {!process.endTime && !shouldShowCompleteButton(process) && (
+                {!process.endTime && !showCompleteButton && (
                   <div className="charging-animation" title="Charging in progress">
                     <div className="charging-bolt">⚡</div>
                   </div>
                 )}
-                {shouldShowCompleteButton(process) && (
+                {showCompleteButton && (
                   <button 
                     className="complete-button"
                     onClick={(e) => handleComplete(e, process.id)}
@@ -349,7 +350,7 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
                 )}
               </div>
               <div className="process-cell process-cell-right">
-                {assumedDevice && process.endTime && (
+                {(process.endTime || showCompleteButton) && (
                   <button
                     className="edit-button"
                     onClick={(e) => handleEditProcess(e, process)}
