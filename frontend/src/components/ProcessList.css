@@ -125,6 +125,47 @@
   font-weight: 600;
 }
 
+.charging-animation {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  background: var(--status-active-bg);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.charging-bolt {
+  font-size: 1.2rem;
+  animation: bolt-flash 1.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 2px var(--status-active));
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes bolt-flash {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.info-icon {
+  font-size: 1.1rem;
+  margin-right: 0.25rem;
+}
+
 .delete-button {
   background: transparent;
   border: none;

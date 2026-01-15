@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import ChartPreview from './ChartPreview';
 import ProcessLabelModal from './ProcessLabelModal';
@@ -211,17 +211,39 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
   };
 
   const formatDuration = (startTime, endTime) => {
-    if (!endTime) return 'In progress';
+    const duration = endTime 
+      ? new Date(endTime) - new Date(startTime)
+      : Date.now() - new Date(startTime);
     
-    const duration = new Date(endTime) - new Date(startTime);
-    const minutes = Math.floor(duration / 60000);
+    const hours = Math.floor(duration / 3600000);
+    const minutes = Math.floor((duration % 3600000) / 60000);
     const seconds = Math.floor((duration % 60000) / 1000);
     
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
     if (minutes > 0) {
       return `${minutes}m ${seconds}s`;
     }
     return `${seconds}s`;
   };
+
+  // Update duration for active processes every second
+  const [, setTick] = useState(0);
+  const hasActiveProcesses = useMemo(() => 
+    processes.some(p => !p.endTime),
+    [processes]
+  );
+  
+  useEffect(() => {
+    if (!hasActiveProcesses) return;
+    
+    const interval = setInterval(() => {
+      setTick(prev => prev + 1);
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [hasActiveProcesses]);
 
   const calculateTotalEnergy = (process) => {
     const powerEvents = process.events.filter(e => e.type === 'power_consumption');
@@ -236,6 +258,23 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
     // Convert to Wh (duration in ms / 1000 / 3600 = hours)
     return (avgPower * duration / 1000 / 3600).toFixed(2);
   };
+
+  // Check if last MQTT update is older than one hour
+  const isLastUpdateOlderThanOneHour = useCallback((process) => {
+    if (!process.events || process.events.length === 0) return false;
+    
+    // Get the most recent event timestamp
+    const lastEvent = process.events[process.events.length - 1];
+    const lastUpdateTime = new Date(lastEvent.timestamp);
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    
+    return lastUpdateTime < oneHourAgo;
+  }, []);
+
+  // Determine if complete button should be shown
+  const shouldShowCompleteButton = useCallback((process) => {
+    return !process.endTime && isLastUpdateOlderThanOneHour(process);
+  }, [isLastUpdateOlderThanOneHour]);
 
   return (
     <div className="process-list">
@@ -259,21 +298,24 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
                 <span className="process-id">Process #{process.id}</span>
               </div>
               <div className="process-cell process-cell-center">
-                <span className={`process-badge ${process.endTime ? 'badge-completed' : 'badge-active'}`}>
-                  {process.endTime ? 'Completed' : 'Active'}
-                </span>
-                {!process.endTime && (
+                {/* Empty center cell */}
+              </div>
+              <div className="process-cell process-cell-right">
+                {!process.endTime && !shouldShowCompleteButton(process) && (
+                  <div className="charging-animation" title="Charging in progress">
+                    <div className="charging-bolt">⚡</div>
+                  </div>
+                )}
+                {shouldShowCompleteButton(process) && (
                   <button 
                     className="complete-button"
                     onClick={(e) => handleComplete(e, process.id)}
-                    title="Mark this process as complete"
+                    title="Mark this process as complete (last update > 1 hour ago)"
                     aria-label={`Mark charging process #${process.id} as complete`}
                   >
                     ✓
                   </button>
                 )}
-              </div>
-              <div className="process-cell process-cell-right">
                 <button 
                   className="delete-button"
                   onClick={(e) => handleDelete(e, process.id)}
@@ -288,20 +330,22 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
             {/* Row 2: Charger | Device + Edit Buttons */}
             <div className="process-row process-row-2">
               <div className="process-cell">
-                <span>Charger: {process.chargerName || process.deviceName || process.chargerId || process.deviceId}</span>
+                <span className="info-icon">🔌</span>
+                <span>{process.chargerName || process.deviceName || process.chargerId || process.deviceId}</span>
               </div>
               <div className="process-cell">
+                <span className="info-icon">📱</span>
                 {assumedDevice ? (
-                  <span>Device: {assumedDevice}</span>
+                  <span>{assumedDevice}</span>
                 ) : guessedDevice ? (
                   <span className="device-guess">
-                    Device: {guessedDevice.deviceName}?
+                    {guessedDevice.deviceName}?
                     <span className="guess-confidence">
                       {Math.round(guessedDevice.confidence * 100)}%
                     </span>
                   </span>
                 ) : (
-                  <span>Device: -</span>
+                  <span>-</span>
                 )}
               </div>
               <div className="process-cell process-cell-right">
