@@ -5,5 +5,3 @@ dist/
 mosquitto/data/*
 mosquitto/log/*
 backend/data/*
-backend/data/
-backend/.env
