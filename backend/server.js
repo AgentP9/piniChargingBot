@@ -49,22 +49,6 @@ async function runPatternAnalysis() {
   }
 }
 
-// Schedule periodic pattern analysis
-let patternAnalysisInProgress = false;
-async function schedulePatternAnalysis() {
-  if (patternAnalysisInProgress) {
-    console.log('Pattern analysis already in progress, skipping...');
-    return;
-  }
-  
-  patternAnalysisInProgress = true;
-  try {
-    await runPatternAnalysis();
-  } finally {
-    patternAnalysisInProgress = false;
-  }
-}
-
 // Current state of each charger (physical charging device like ShellyPlug)
 const chargerStates = {};
 
