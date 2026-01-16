@@ -795,9 +795,12 @@ app.put('/api/patterns/:patternId/label', (req, res) => {
   if (shouldRenameAll) {
     const pattern = chargingPatterns.find(p => p.id === patternId);
     if (pattern && pattern.processIds) {
+      // Create a Map for O(1) process lookup to avoid O(n*m) complexity
+      const processMap = new Map(chargingProcesses.map(p => [p.id, p]));
+      
       let updatedCount = 0;
       pattern.processIds.forEach(processId => {
-        const process = chargingProcesses.find(p => p.id === processId);
+        const process = processMap.get(processId);
         if (process) {
           // Update deviceName to reflect the charged device (e.g., "iPhone", "TonieBox")
           // Note: deviceName historically meant charger name (backward compatibility), 
