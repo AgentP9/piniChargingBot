@@ -2,6 +2,9 @@ import React, { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import './ChargingChart.css';
 
+// Color palette for multiple processes
+const PROCESS_COLORS = ['#667eea', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#30cfd0'];
+
 function ChargingChart({ processes }) {
   // Support both single process (for backward compatibility) and multiple processes
   const processList = Array.isArray(processes) ? processes : [processes].filter(Boolean);
@@ -26,7 +29,6 @@ function ChargingChart({ processes }) {
     } else {
       // Multiple processes - use time from start (seconds) on x-axis
       const allDataPoints = [];
-      const processColors = ['#667eea', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#30cfd0'];
       
       processList.forEach((process, processIndex) => {
         if (!process || !process.events) return;
@@ -40,6 +42,9 @@ function ChargingChart({ processes }) {
           const eventTime = new Date(e.timestamp).getTime();
           const secondsFromStart = Math.floor((eventTime - startTime) / 1000);
           
+          // Skip events that occurred before the process start time (data inconsistencies)
+          if (secondsFromStart < 0) return;
+          
           // Find or create data point for this second
           let dataPoint = allDataPoints.find(d => d.seconds === secondsFromStart);
           if (!dataPoint) {
@@ -49,7 +54,6 @@ function ChargingChart({ processes }) {
           
           // Add power value for this process
           dataPoint[`process${process.id}`] = e.value;
-          dataPoint[`process${process.id}Color`] = processColors[processIndex % processColors.length];
         });
       });
       
@@ -99,7 +103,6 @@ function ChargingChart({ processes }) {
   }
 
   const isMultiProcess = processList.length > 1;
-  const processColors = ['#667eea', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#30cfd0'];
 
   return (
     <div className="charging-chart">
@@ -184,7 +187,7 @@ function ChargingChart({ processes }) {
                   key={process.id}
                   type="monotone" 
                   dataKey={`process${process.id}`}
-                  stroke={processColors[index % processColors.length]}
+                  stroke={PROCESS_COLORS[index % PROCESS_COLORS.length]}
                   strokeWidth={2}
                   dot={false}
                   name={`Process #${process.id}${process.deviceName ? ` (${process.deviceName})` : ''}`}
