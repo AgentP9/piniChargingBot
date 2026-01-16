@@ -77,6 +77,30 @@ function App() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
+  // Sync device filter when selected pattern's device name changes
+  // This handles the case when a pattern is renamed while selected
+  useEffect(() => {
+    if (selectedPatternId) {
+      const selectedPattern = patterns.find(p => p.id === selectedPatternId);
+      if (selectedPattern && selectedPattern.deviceName) {
+        // Only update if the filter doesn't match the current pattern's device name
+        if (filters.device !== selectedPattern.deviceName) {
+          setFilters(prevFilters => ({
+            ...prevFilters,
+            device: selectedPattern.deviceName
+          }));
+        }
+      } else if (!selectedPattern) {
+        // Pattern was deleted, clear selection
+        setSelectedPatternId(null);
+        setFilters(prevFilters => ({
+          ...prevFilters,
+          device: 'all'
+        }));
+      }
+    }
+  }, [patterns, selectedPatternId, filters.device]);
+
   const handleProcessSelect = (process) => {
     setSelectedProcess(process);
   };
