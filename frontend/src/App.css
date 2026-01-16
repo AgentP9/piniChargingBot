@@ -113,8 +113,8 @@
 
 .select-all-toggle-button {
   flex-shrink: 0;
-  width: 44px;
-  height: 44px;
+  width: 50px;
+  height: 50px;
   padding: 0;
   background: var(--border-secondary);
   color: var(--text-on-primary);
