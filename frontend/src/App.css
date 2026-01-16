@@ -101,8 +101,14 @@
 .filters-and-select-container {
   display: flex;
   align-items: flex-start;
-  gap: 0.5rem;
+  justify-content: space-between;
+  gap: 1rem;
   margin-bottom: 1rem;
+}
+
+.filters-and-select-container > :first-child {
+  flex: 1;
+  min-width: 0;
 }
 
 .select-all-toggle-button {
