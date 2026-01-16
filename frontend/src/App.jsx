@@ -126,9 +126,14 @@ function App() {
     if (newFilters.charger !== filters.charger && newFilters.charger !== selectedDeviceId) {
       setSelectedDeviceId(null);
     }
-    // If the device filter changed and doesn't match the selected pattern, clear pattern selection
-    if (newFilters.device !== filters.device && newFilters.device !== selectedPatternId) {
-      setSelectedPatternId(null);
+    // If the device filter changed, check if it matches the selected pattern's device name
+    // If not, clear the pattern selection
+    if (newFilters.device !== filters.device) {
+      const selectedPattern = patterns.find(p => p.id === selectedPatternId);
+      const selectedPatternDeviceName = selectedPattern?.deviceName;
+      if (newFilters.device !== selectedPatternDeviceName) {
+        setSelectedPatternId(null);
+      }
     }
   };
 
@@ -148,10 +153,21 @@ function App() {
     setSelectedPatternId(patternId);
     // Clear charger selection when selecting a pattern
     setSelectedDeviceId(null);
-    // Update the device filter to match the selected pattern
+    
+    // Find the pattern and use its deviceName for the filter
+    // This ensures compatibility with the device name-based filtering
+    let deviceFilterValue = 'all';
+    if (patternId) {
+      const pattern = patterns.find(p => p.id === patternId);
+      if (pattern && pattern.deviceName) {
+        deviceFilterValue = pattern.deviceName;
+      }
+    }
+    
+    // Update the device filter to match the selected pattern's device name
     setFilters({
       ...filters,
-      device: patternId || 'all',
+      device: deviceFilterValue,
       charger: 'all' // Reset charger filter when selecting pattern
     });
   };
