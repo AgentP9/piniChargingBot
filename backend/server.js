@@ -813,7 +813,9 @@ app.put('/api/patterns/:patternId/label', (req, res) => {
       if (updatedCount > 0) {
         // Only save if we actually updated some processes (avoids unnecessary I/O)
         storage.saveProcesses(chargingProcesses);
-        console.log(`Updated deviceName for ${updatedCount} processes to "${trimmedLabel}"`);
+        // Sanitize label for safe logging (replace newlines and control characters)
+        const sanitizedLabel = trimmedLabel.replace(/[\r\n\t]/g, ' ');
+        console.log(`Updated deviceName for ${updatedCount} processes to "${sanitizedLabel}"`);
       }
     }
   }
@@ -821,7 +823,10 @@ app.put('/api/patterns/:patternId/label', (req, res) => {
   // Save updated patterns after process updates to maintain consistency
   patternAnalyzer.savePatterns(chargingPatterns);
   
-  console.log(`Updated pattern ${patternId} label from "${result.oldLabel}" to "${trimmedLabel}"`);
+  // Sanitize labels for safe logging (replace newlines and control characters)
+  const sanitizedOldLabel = result.oldLabel ? result.oldLabel.replace(/[\r\n\t]/g, ' ') : 'undefined';
+  const sanitizedNewLabel = trimmedLabel.replace(/[\r\n\t]/g, ' ');
+  console.log(`Updated pattern ${patternId} label from "${sanitizedOldLabel}" to "${sanitizedNewLabel}"`);
   
   res.json({ 
     success: true, 
