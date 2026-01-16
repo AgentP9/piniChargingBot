@@ -42,25 +42,6 @@ services:
     networks:
       - pini-network
 
-  mosquitto:
-    image: eclipse-mosquitto:2
-    container_name: pini-mosquitto
-    ports:
-      - "1883:1883"
-      - "9001:9001"
-    volumes:
-      - ./mosquitto/config:/mosquitto/config
-      - ./mosquitto/data:/mosquitto/data
-      - ./mosquitto/log:/mosquitto/log
-    labels:
-      - "io.portainer.accesscontrol.teams=administrators"
-      - "com.pinicharging.description=MQTT Broker (Mosquitto)"
-    restart: unless-stopped
-    networks:
-      - pini-network
-    profiles:
-      - with-mosquitto
-
 networks:
   pini-network:
     driver: bridge
