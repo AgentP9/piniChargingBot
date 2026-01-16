@@ -83,13 +83,18 @@ function App() {
     if (selectedPatternId) {
       const selectedPattern = patterns.find(p => p.id === selectedPatternId);
       if (selectedPattern && selectedPattern.deviceName) {
-        // Only update if the filter doesn't match the current pattern's device name
-        if (filters.device !== selectedPattern.deviceName) {
-          setFilters(prevFilters => ({
-            ...prevFilters,
-            device: selectedPattern.deviceName
-          }));
-        }
+        // Update the filter to match the current pattern's device name
+        // Using the updater function to avoid stale closure issues
+        setFilters(prevFilters => {
+          // Only update if the filter doesn't match the current pattern's device name
+          if (prevFilters.device !== selectedPattern.deviceName) {
+            return {
+              ...prevFilters,
+              device: selectedPattern.deviceName
+            };
+          }
+          return prevFilters;
+        });
       } else if (!selectedPattern) {
         // Pattern was deleted, clear selection
         setSelectedPatternId(null);
@@ -99,8 +104,9 @@ function App() {
         }));
       }
     }
-    // Note: filters.device is intentionally NOT in the dependency array to avoid infinite loops
+    // Note: filters/filters.device is intentionally NOT in the dependency array to avoid infinite loops
     // We only want to react to pattern data changes, not filter changes
+    // The updater function form of setFilters ensures we always have the latest filter state
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patterns, selectedPatternId]);
 
