@@ -788,13 +788,12 @@ app.put('/api/patterns/:patternId/label', (req, res) => {
     return res.status(404).json({ error: result.error });
   }
   
-  // Save updated patterns
-  patternAnalyzer.savePatterns(chargingPatterns);
-  
-  // If shouldRenameAll is true, update all processes with the old label
-  if (shouldRenameAll && result.oldLabel) {
+  // If shouldRenameAll is true, update all processes in the pattern to match the new label
+  // This ensures that renaming a pattern also renames all its associated CPIs
+  if (shouldRenameAll) {
     const pattern = chargingPatterns.find(p => p.id === patternId);
-    if (pattern && pattern.processIds) {
+    if (pattern && pattern.processIds && pattern.processIds.length > 0) {
+      let updatedCount = 0;
       pattern.processIds.forEach(processId => {
         const process = chargingProcesses.find(p => p.id === processId);
         if (process) {
@@ -802,11 +801,19 @@ app.put('/api/patterns/:patternId/label', (req, res) => {
           // Note: deviceName historically meant charger name (backward compatibility), 
           // but is now being repurposed to mean the device being charged
           process.deviceName = trimmedLabel;
+          updatedCount++;
         }
       });
-      storage.saveProcesses(chargingProcesses);
+      
+      if (updatedCount > 0) {
+        storage.saveProcesses(chargingProcesses);
+        console.log(`Updated deviceName for ${updatedCount} processes to "${trimmedLabel}"`);
+      }
     }
   }
+  
+  // Save updated patterns after process updates to maintain consistency
+  patternAnalyzer.savePatterns(chargingPatterns);
   
   console.log(`Updated pattern ${patternId} label from "${result.oldLabel}" to "${trimmedLabel}"`);
   
