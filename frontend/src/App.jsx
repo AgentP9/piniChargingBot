@@ -296,8 +296,7 @@ function App() {
         >
           {theme === 'light' ? '🌙' : '☀️'}
         </button>
-        <h1>🔌 Pini Charging Monitor</h1>
-        <p>Real-time monitoring of device charging via MQTT</p>
+        <h1>🔌 Charging Monitor</h1>
       </header>
 
       <main className="app-main">
