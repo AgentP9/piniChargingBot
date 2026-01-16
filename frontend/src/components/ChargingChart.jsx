@@ -28,7 +28,7 @@ function ChargingChart({ processes }) {
       return powerEvents;
     } else {
       // Multiple processes - use time from start (seconds) on x-axis
-      const allDataPoints = [];
+      const dataPointsMap = new Map(); // Use Map for O(1) lookups
       
       processList.forEach((process, processIndex) => {
         if (!process || !process.events) return;
@@ -45,11 +45,16 @@ function ChargingChart({ processes }) {
           // Skip events that occurred before the process start time (data inconsistencies)
           if (secondsFromStart < 0) return;
           
-          // Find or create data point for this second
-          let dataPoint = allDataPoints.find(d => d.seconds === secondsFromStart);
+          // Get or create data point for this second
+          let dataPoint = dataPointsMap.get(secondsFromStart);
           if (!dataPoint) {
-            dataPoint = { seconds: secondsFromStart, time: `${Math.floor(secondsFromStart / 60)}m ${secondsFromStart % 60}s` };
-            allDataPoints.push(dataPoint);
+            const minutes = Math.floor(secondsFromStart / 60);
+            const seconds = secondsFromStart % 60;
+            dataPoint = { 
+              seconds: secondsFromStart, 
+              time: `${minutes}m ${seconds}s` 
+            };
+            dataPointsMap.set(secondsFromStart, dataPoint);
           }
           
           // Add power value for this process
@@ -57,8 +62,8 @@ function ChargingChart({ processes }) {
         });
       });
       
-      // Sort by seconds from start
-      return allDataPoints.sort((a, b) => a.seconds - b.seconds);
+      // Convert Map to array and sort by seconds from start
+      return Array.from(dataPointsMap.values()).sort((a, b) => a.seconds - b.seconds);
     }
   }, [processList]);
 
