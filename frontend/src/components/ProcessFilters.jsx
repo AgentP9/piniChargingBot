@@ -78,11 +78,22 @@ function ProcessFilters({ filters, onFilterChange, devices, patterns, processes,
 
   // Filter processes based on current filters (same logic as ProcessList)
   const filteredProcesses = useMemo(() => {
-    if (!processes || !onToggleSelectAll) return [];
+    if (!processes) return [];
     
     // Parse filter dates
-    const filterStartDate = filters?.startDate ? new Date(filters.startDate).setHours(0, 0, 0, 0) : null;
-    const filterEndDate = filters?.endDate ? new Date(filters.endDate).setHours(23, 59, 59, 999) : null;
+    let filterStartDate = null;
+    if (filters?.startDate) {
+      const date = new Date(filters.startDate);
+      date.setHours(0, 0, 0, 0);
+      filterStartDate = date;
+    }
+    
+    let filterEndDate = null;
+    if (filters?.endDate) {
+      const date = new Date(filters.endDate);
+      date.setHours(23, 59, 59, 999);
+      filterEndDate = date;
+    }
     
     // Pre-compute process ID to device name mapping
     const processIdToDeviceName = {};
@@ -116,19 +127,19 @@ function ProcessFilters({ filters, onFilterChange, devices, patterns, processes,
       
       // Start date filter
       if (filterStartDate) {
-        const processDate = new Date(process.startTime).getTime();
+        const processDate = new Date(process.startTime);
         if (processDate < filterStartDate) return false;
       }
       
       // End date filter
       if (filterEndDate) {
-        const processDate = new Date(process.startTime).getTime();
+        const processDate = new Date(process.startTime);
         if (processDate > filterEndDate) return false;
       }
       
       return true;
     });
-  }, [processes, filters, patterns, onToggleSelectAll]);
+  }, [processes, filters, patterns]);
 
   // Check if all filtered processes are selected
   const allFilteredSelected = useMemo(() => {
