@@ -99,7 +99,10 @@ function App() {
         }));
       }
     }
-  }, [patterns, selectedPatternId, filters.device]);
+    // Note: filters.device is intentionally NOT in the dependency array to avoid infinite loops
+    // We only want to react to pattern data changes, not filter changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patterns, selectedPatternId]);
 
   const handleProcessSelect = (process) => {
     setSelectedProcess(process);
