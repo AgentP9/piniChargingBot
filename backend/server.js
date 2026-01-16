@@ -792,7 +792,7 @@ app.put('/api/patterns/:patternId/label', (req, res) => {
   // This ensures that renaming a pattern also renames all its associated CPIs
   if (shouldRenameAll) {
     const pattern = chargingPatterns.find(p => p.id === patternId);
-    if (pattern && pattern.processIds && pattern.processIds.length > 0) {
+    if (pattern && pattern.processIds) {
       let updatedCount = 0;
       pattern.processIds.forEach(processId => {
         const process = chargingProcesses.find(p => p.id === processId);
