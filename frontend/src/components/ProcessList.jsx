@@ -141,15 +141,16 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
     return date;
   }, [filters?.endDate]);
 
-  // Pre-compute process ID to pattern ID mapping for O(1) lookup during filtering
-  const processIdToPatternId = useMemo(() => {
+  // Pre-compute process ID to device name mapping for O(1) lookup during filtering
+  const processIdToDeviceName = useMemo(() => {
     if (!patterns || patterns.length === 0) return {};
     
     const mapping = {};
     patterns.forEach(pattern => {
-      if (pattern.processIds) {
+      // Only create mappings for patterns that have both processIds and a deviceName
+      if (pattern.processIds && pattern.deviceName) {
         pattern.processIds.forEach(processId => {
-          mapping[processId] = pattern.id;
+          mapping[processId] = pattern.deviceName;
         });
       }
     });
@@ -175,8 +176,8 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
     // requires a complete charging session to identify the device
     if (filters?.device && filters.device !== 'all') {
       // Use pre-computed mapping for O(1) lookup
-      const patternId = processIdToPatternId[process.id];
-      if (!patternId || patternId !== filters.device) {
+      const deviceName = processIdToDeviceName[process.id];
+      if (!deviceName || deviceName !== filters.device) {
         return false;
       }
     }

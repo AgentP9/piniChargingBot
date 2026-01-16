@@ -63,12 +63,17 @@ function ProcessFilters({ filters, onFilterChange, devices, patterns }) {
   const uniqueDeviceNames = useMemo(() => {
     if (!patterns || patterns.length === 0) return [];
     
-    const deviceNames = patterns.map((pattern) => ({
-      id: pattern.id,
-      name: pattern.deviceName
-    }));
+    // Use a Set to deduplicate device names
+    // Multiple patterns can have the same deviceName, but we only want to show each name once in the filter
+    const uniqueNames = new Set();
+    patterns.forEach((pattern) => {
+      if (pattern.deviceName) {
+        uniqueNames.add(pattern.deviceName);
+      }
+    });
     
-    return deviceNames;
+    // Convert Set to array and sort alphabetically for consistent ordering
+    return Array.from(uniqueNames).sort();
   }, [patterns]);
 
   return (
@@ -132,9 +137,9 @@ function ProcessFilters({ filters, onFilterChange, devices, patterns }) {
               className="filter-select"
             >
               <option value="all">All Devices</option>
-              {uniqueDeviceNames.map(device => (
-                <option key={device.id} value={device.id}>
-                  {device.name}
+              {uniqueDeviceNames.map(deviceName => (
+                <option key={deviceName} value={deviceName}>
+                  {deviceName}
                 </option>
               ))}
             </select>

@@ -788,27 +788,45 @@ app.put('/api/patterns/:patternId/label', (req, res) => {
     return res.status(404).json({ error: result.error });
   }
   
-  // Save updated patterns
-  patternAnalyzer.savePatterns(chargingPatterns);
-  
-  // If shouldRenameAll is true, update all processes with the old label
-  if (shouldRenameAll && result.oldLabel) {
+  // If shouldRenameAll is true, update all processes in the pattern to match the new label
+  // This ensures that renaming a pattern also renames all its associated processes (CPIs)
+  // Note: We don't check for result.oldLabel here because we want to update processes
+  // even if the pattern previously had no deviceName (e.g., patterns created during analysis)
+  if (shouldRenameAll) {
     const pattern = chargingPatterns.find(p => p.id === patternId);
     if (pattern && pattern.processIds) {
+      // Create a Map for O(1) process lookup to avoid O(n*m) complexity
+      const processMap = new Map(chargingProcesses.map(p => [p.id, p]));
+      
+      let updatedCount = 0;
       pattern.processIds.forEach(processId => {
-        const process = chargingProcesses.find(p => p.id === processId);
+        const process = processMap.get(processId);
         if (process) {
           // Update deviceName to reflect the charged device (e.g., "iPhone", "TonieBox")
           // Note: deviceName historically meant charger name (backward compatibility), 
           // but is now being repurposed to mean the device being charged
           process.deviceName = trimmedLabel;
+          updatedCount++;
         }
       });
-      storage.saveProcesses(chargingProcesses);
+      
+      if (updatedCount > 0) {
+        // Only save if we actually updated some processes (avoids unnecessary I/O)
+        storage.saveProcesses(chargingProcesses);
+        // Sanitize label for safe logging (replace newlines and control characters)
+        const sanitizedLabel = trimmedLabel.replace(/[\r\n\t]/g, ' ');
+        console.log(`Updated deviceName for ${updatedCount} processes to "${sanitizedLabel}"`);
+      }
     }
   }
   
-  console.log(`Updated pattern ${patternId} label from "${result.oldLabel}" to "${trimmedLabel}"`);
+  // Save updated patterns after process updates to maintain consistency
+  patternAnalyzer.savePatterns(chargingPatterns);
+  
+  // Sanitize labels for safe logging (replace newlines and control characters)
+  const sanitizedOldLabel = result.oldLabel ? result.oldLabel.replace(/[\r\n\t]/g, ' ') : 'undefined';
+  const sanitizedNewLabel = trimmedLabel.replace(/[\r\n\t]/g, ' ');
+  console.log(`Updated pattern ${patternId} label from "${sanitizedOldLabel}" to "${sanitizedNewLabel}"`);
   
   res.json({ 
     success: true, 

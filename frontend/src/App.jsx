@@ -77,6 +77,39 @@ function App() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
+  // Sync device filter when selected pattern's device name changes
+  // This handles the case when a pattern is renamed while selected
+  useEffect(() => {
+    if (selectedPatternId) {
+      const selectedPattern = patterns.find(p => p.id === selectedPatternId);
+      if (selectedPattern && selectedPattern.deviceName) {
+        // Update the filter to match the current pattern's device name
+        // Using the updater function to avoid stale closure issues
+        setFilters(prevFilters => {
+          // Only update if the filter doesn't match the current pattern's device name
+          if (prevFilters.device !== selectedPattern.deviceName) {
+            return {
+              ...prevFilters,
+              device: selectedPattern.deviceName
+            };
+          }
+          return prevFilters;
+        });
+      } else if (!selectedPattern) {
+        // Pattern was deleted, clear selection
+        setSelectedPatternId(null);
+        setFilters(prevFilters => ({
+          ...prevFilters,
+          device: 'all'
+        }));
+      }
+    }
+    // Note: filters/filters.device is intentionally NOT in the dependency array to avoid infinite loops
+    // We only want to react to pattern data changes, not filter changes
+    // The updater function form of setFilters ensures we always have the latest filter state
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patterns, selectedPatternId]);
+
   const handleProcessSelect = (process) => {
     setSelectedProcess(process);
   };
@@ -126,9 +159,14 @@ function App() {
     if (newFilters.charger !== filters.charger && newFilters.charger !== selectedDeviceId) {
       setSelectedDeviceId(null);
     }
-    // If the device filter changed and doesn't match the selected pattern, clear pattern selection
-    if (newFilters.device !== filters.device && newFilters.device !== selectedPatternId) {
-      setSelectedPatternId(null);
+    // If the device filter changed, check if it matches the selected pattern's device name
+    // If not, clear the pattern selection
+    if (newFilters.device !== filters.device) {
+      const selectedPattern = patterns.find(p => p.id === selectedPatternId);
+      const selectedPatternDeviceName = selectedPattern?.deviceName;
+      if (newFilters.device !== selectedPatternDeviceName) {
+        setSelectedPatternId(null);
+      }
     }
   };
 
@@ -148,10 +186,21 @@ function App() {
     setSelectedPatternId(patternId);
     // Clear charger selection when selecting a pattern
     setSelectedDeviceId(null);
-    // Update the device filter to match the selected pattern
+    
+    // Find the pattern and use its deviceName for the filter
+    // This ensures compatibility with the device name-based filtering
+    let deviceFilterValue = 'all';
+    if (patternId) {
+      const pattern = patterns.find(p => p.id === patternId);
+      if (pattern && pattern.deviceName) {
+        deviceFilterValue = pattern.deviceName;
+      }
+    }
+    
+    // Update the device filter to match the selected pattern's device name
     setFilters({
       ...filters,
-      device: patternId || 'all',
+      device: deviceFilterValue,
       charger: 'all' // Reset charger filter when selecting pattern
     });
   };
@@ -169,10 +218,28 @@ function App() {
         await fetchData();
       } else if (action === 'merge') {
         const { sourcePatternId, targetPatternId } = data;
+        
+        // If the currently selected pattern is being merged into another,
+        // update the selection to point to the target pattern
+        const wasSourceSelected = selectedPatternId === sourcePatternId;
+        
         await axios.post(`${API_URL}/patterns/merge`, {
           sourcePatternId,
           targetPatternId
         });
+        
+        // If the source pattern was selected, switch selection to target
+        if (wasSourceSelected) {
+          setSelectedPatternId(targetPatternId);
+          // Find the target pattern to get its device name
+          const targetPattern = patterns.find(p => p.id === targetPatternId);
+          if (targetPattern && targetPattern.deviceName) {
+            setFilters(prevFilters => ({
+              ...prevFilters,
+              device: targetPattern.deviceName
+            }));
+          }
+        }
         
         // Refresh data to reflect changes
         await fetchData();
