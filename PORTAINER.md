@@ -46,30 +46,19 @@ This guide explains how to deploy and configure the Pini Charging Monitor using 
    - Example: `shellyplug-living-room,shellyplug-garage`
    - Uses charger ID as both name and topic
 
-   **Default deployment (using external MQTT broker):**
-   - `MQTT_BROKER_URL`: Set to your existing broker (e.g., `mqtt://192.168.1.100:1883`)
+   **Default deployment:**
+   - `MQTT_BROKER_URL`: Set to your MQTT broker (e.g., `mqtt://192.168.1.100:1883`)
    - `MQTT_USERNAME`: Your broker username (if required)
    - `MQTT_PASSWORD`: Your broker password (if required)
    - `MQTT_DEVICES`: Your charger configurations (e.g., `Office Charger:shellies/plug07`)
-   
-   **To use the built-in Mosquitto broker (optional):**
-   - `MQTT_BROKER_URL`: `mqtt://mosquitto:1883`
-   - Enable the `with-mosquitto` profile (see note below)
 
 5. **Deploy Stack**
    - Click **Deploy the stack**
    - Wait for deployment to complete (may take a few minutes for first-time build)
-   
-   **Note:** By default, the built-in Mosquitto broker is NOT started. If you need it:
-   1. Before deploying, scroll down to find **Advanced mode** toggle
-   2. In the compose file editor, find the `mosquitto:` service
-   3. Remove or comment out the `profiles:` section (lines with `profiles:` and `- with-mosquitto`)
-   4. Then deploy the stack
 
 6. **Access Application**
    - Frontend: `http://your-server-ip:1818`
    - Backend API: Available only through frontend proxy at `http://your-server-ip:1818/api/health`
-   - MQTT Broker (if enabled): `your-server-ip:1883`
 
 ## Method 2: Deploy from Web Editor
 
@@ -93,7 +82,7 @@ This guide explains how to deploy and configure the Pini Charging Monitor using 
 
 1. **Prepare Files**
    - Download or clone the repository to your local machine
-   - Ensure all files are present (docker-compose.yml, backend/, frontend/, mosquitto/)
+   - Ensure all files are present (docker-compose.yml, backend/, frontend/)
 
 2. **Upload Stack**
    - Go to **Stacks** → **+ Add stack**
@@ -133,7 +122,7 @@ This guide explains how to deploy and configure the Pini Charging Monitor using 
 
 ### Example Configuration Scenarios
 
-#### Using External MQTT Broker (Default)
+#### Using MQTT Broker
 
 ```env
 MQTT_BROKER_URL=mqtt://192.168.1.100:1883
@@ -142,34 +131,10 @@ MQTT_PASSWORD=secure_password
 MQTT_DEVICES=Living Room:shellies/living-room-plug,Bedroom:shellies/bedroom-plug,Garage:shellies/garage-plug
 ```
 
-**Note:** The internal mosquitto service will not start by default, so no port conflicts.
-
-#### Using Built-in Mosquitto Broker (Optional)
-
-To enable the built-in Mosquitto broker:
-
-1. Set environment variables:
-   ```env
-   MQTT_BROKER_URL=mqtt://mosquitto:1883
-   MQTT_DEVICES=Office Charger:shellies/device1,Kitchen:shellies/device2
-   ```
-
-2. In Portainer, edit the stack:
-   - Go to **Editor** tab
-   - Find the `mosquitto:` service section
-   - Remove these two lines:
-     ```yaml
-     profiles:
-       - with-mosquitto
-     ```
-   - Click **Update the stack**
-
-This will start the Mosquitto container and expose ports 1883 and 9001.
-
 #### Multiple Devices
 
 ```env
-MQTT_BROKER_URL=mqtt://mosquitto:1883
+MQTT_BROKER_URL=mqtt://192.168.1.100:1883
 MQTT_DEVICES=Kitchen:home/kitchen-plug,Office:home/office-plug,Workshop:garage/workshop-plug,EV Charger:garage/ev-charger
 ```
 
@@ -187,7 +152,7 @@ MQTT_DEVICES=Secure Device 1:home/secure/device1,Secure Device 2:home/secure/dev
 ### Viewing Logs
 
 1. Navigate to **Containers**
-2. Click on container name (e.g., `pini-backend`, `pini-frontend`, `pini-mosquitto`)
+2. Click on container name (e.g., `pini-backend`, `pini-frontend`)
 3. Click **Logs** to view real-time logs
 4. Use filters to search for specific events
 
@@ -212,11 +177,9 @@ Or restart the entire stack:
 
 ## Volumes and Persistence
 
-The stack uses the following volumes for data persistence:
+The stack uses Docker volumes for data persistence:
 
-- `./mosquitto/config`: MQTT broker configuration
-- `./mosquitto/data`: MQTT broker persistent data
-- `./mosquitto/log`: MQTT broker logs
+- `backend-data`: Backend application data (charging processes, patterns, etc.)
 
 To view volumes in Portainer:
 1. Navigate to **Volumes**
@@ -234,9 +197,9 @@ To view volumes in Portainer:
    - **Stacks** → `pini-charging-monitor` → **Editor**
    - Check `MQTT_BROKER_URL` is correct
 
-3. Check mosquitto container:
-   - **Containers** → `pini-mosquitto` → **Logs**
-   - Ensure it's running (green status)
+3. Check your MQTT broker:
+   - Ensure your MQTT broker is running and accessible
+   - Check broker logs if available
 
 ### Frontend Not Loading
 
@@ -290,8 +253,8 @@ For easier deployment, you can create a Portainer App Template:
     {
       "name": "MQTT_BROKER_URL",
       "label": "MQTT Broker URL",
-      "default": "mqtt://mosquitto:1883",
-      "description": "URL of the MQTT broker (use internal or external)"
+      "default": "mqtt://192.168.1.100:1883",
+      "description": "URL of the MQTT broker"
     },
     {
       "name": "MQTT_USERNAME",
@@ -367,7 +330,7 @@ Portainer can help monitor the stack:
 
 2. Backup volumes:
    - Use Portainer's volume backup feature, or
-   - SSH to host and backup `./mosquitto/data` directory
+   - SSH to host and backup Docker volumes
 
 ### Restore
 

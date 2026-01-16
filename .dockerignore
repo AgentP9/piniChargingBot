@@ -4,5 +4,3 @@ npm-debug.log
 dist
 .git
 .gitignore
-mosquitto/data
-mosquitto/log
