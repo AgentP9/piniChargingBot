@@ -147,8 +147,9 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
     
     const mapping = {};
     patterns.forEach(pattern => {
-      if (pattern.processIds && pattern.deviceName) {
+      if (pattern.processIds) {
         pattern.processIds.forEach(processId => {
+          // Store the device name if it exists, otherwise the process won't match any device filter
           mapping[processId] = pattern.deviceName;
         });
       }
