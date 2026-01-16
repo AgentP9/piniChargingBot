@@ -790,6 +790,8 @@ app.put('/api/patterns/:patternId/label', (req, res) => {
   
   // If shouldRenameAll is true, update all processes in the pattern to match the new label
   // This ensures that renaming a pattern also renames all its associated CPIs
+  // Note: We don't check for result.oldLabel here because we want to update processes
+  // even if the pattern previously had no deviceName (e.g., newly created patterns)
   if (shouldRenameAll) {
     const pattern = chargingPatterns.find(p => p.id === patternId);
     if (pattern && pattern.processIds) {
