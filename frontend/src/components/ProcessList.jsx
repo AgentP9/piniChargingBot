@@ -345,6 +345,8 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
                       {Math.round(guessedDevice.confidence * 100)}%
                     </span>
                   </span>
+                ) : process.deviceName ? (
+                  <span>{process.deviceName}</span>
                 ) : (
                   <span>-</span>
                 )}
