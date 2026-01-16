@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import './ProcessFilters.css';
 
-function ProcessFilters({ filters, onFilterChange, devices, patterns }) {
+function ProcessFilters({ filters, onFilterChange, devices, patterns, processes, selectedProcesses, onToggleSelectAll }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleStateChange = (e) => {
@@ -76,6 +76,74 @@ function ProcessFilters({ filters, onFilterChange, devices, patterns }) {
     return Array.from(uniqueNames).sort();
   }, [patterns]);
 
+  // Filter processes based on current filters (same logic as ProcessList)
+  const filteredProcesses = useMemo(() => {
+    if (!processes || !onToggleSelectAll) return [];
+    
+    // Parse filter dates
+    const filterStartDate = filters?.startDate ? new Date(filters.startDate).setHours(0, 0, 0, 0) : null;
+    const filterEndDate = filters?.endDate ? new Date(filters.endDate).setHours(23, 59, 59, 999) : null;
+    
+    // Pre-compute process ID to device name mapping
+    const processIdToDeviceName = {};
+    if (patterns && patterns.length > 0) {
+      patterns.forEach(pattern => {
+        if (pattern.processIds && pattern.deviceName) {
+          pattern.processIds.forEach(processId => {
+            processIdToDeviceName[processId] = pattern.deviceName;
+          });
+        }
+      });
+    }
+    
+    return processes.filter(process => {
+      // State filter
+      const isCompleted = process.endTime !== null && process.endTime !== undefined;
+      if (filters?.state === 'active' && isCompleted) return false;
+      if (filters?.state === 'completed' && !isCompleted) return false;
+      
+      // Charger filter
+      if (filters?.charger && filters.charger !== 'all') {
+        const processChargerId = process.chargerId || process.deviceId;
+        if (processChargerId !== filters.charger) return false;
+      }
+      
+      // Device filter
+      if (filters?.device && filters.device !== 'all') {
+        const deviceName = processIdToDeviceName[process.id];
+        if (!deviceName || deviceName !== filters.device) return false;
+      }
+      
+      // Start date filter
+      if (filterStartDate) {
+        const processDate = new Date(process.startTime).getTime();
+        if (processDate < filterStartDate) return false;
+      }
+      
+      // End date filter
+      if (filterEndDate) {
+        const processDate = new Date(process.startTime).getTime();
+        if (processDate > filterEndDate) return false;
+      }
+      
+      return true;
+    });
+  }, [processes, filters, patterns, onToggleSelectAll]);
+
+  // Check if all filtered processes are selected
+  const allFilteredSelected = useMemo(() => {
+    if (!filteredProcesses || filteredProcesses.length === 0 || !selectedProcesses) return false;
+    return filteredProcesses.every(process => 
+      selectedProcesses.some(sp => sp.id === process.id)
+    );
+  }, [filteredProcesses, selectedProcesses]);
+
+  const handleToggleSelectAll = () => {
+    if (onToggleSelectAll && filteredProcesses.length > 0) {
+      onToggleSelectAll(filteredProcesses);
+    }
+  };
+
   return (
     <div className="process-filters">
       <div className="filter-header">
@@ -93,6 +161,15 @@ function ProcessFilters({ filters, onFilterChange, devices, patterns }) {
             </span>
           )}
         </button>
+        {onToggleSelectAll && filteredProcesses.length > 0 && (
+          <button
+            className="select-all-button"
+            onClick={handleToggleSelectAll}
+            title={allFilteredSelected ? "Deselect all filtered processes" : "Select all filtered processes"}
+          >
+            {allFilteredSelected ? '☑ Deselect All' : '☐ Select All'}
+          </button>
+        )}
       </div>
 
       {isExpanded && (

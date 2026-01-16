@@ -125,6 +125,26 @@ function App() {
     setSelectedProcesses([]);
   };
 
+  const handleToggleSelectAll = (filteredProcesses) => {
+    // Check if all filtered processes are selected
+    const allSelected = filteredProcesses.every(process => 
+      selectedProcesses.some(sp => sp.id === process.id)
+    );
+    
+    if (allSelected) {
+      // Deselect all filtered processes
+      const filteredIds = new Set(filteredProcesses.map(p => p.id));
+      setSelectedProcesses(prevSelected => 
+        prevSelected.filter(p => !filteredIds.has(p.id))
+      );
+    } else {
+      // Select all filtered processes that aren't already selected
+      const selectedIds = new Set(selectedProcesses.map(p => p.id));
+      const newSelections = filteredProcesses.filter(p => !selectedIds.has(p.id));
+      setSelectedProcesses(prevSelected => [...prevSelected, ...newSelections]);
+    }
+  };
+
   const handleProcessDelete = async (processId) => {
     try {
       await axios.delete(`${API_URL}/processes/${processId}`);
@@ -340,6 +360,9 @@ function App() {
                   onFilterChange={handleFilterChange}
                   devices={devices}
                   patterns={patterns}
+                  processes={processes}
+                  selectedProcesses={selectedProcesses}
+                  onToggleSelectAll={handleToggleSelectAll}
                 />
                 <ProcessList 
                   processes={processes}
