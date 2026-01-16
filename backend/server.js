@@ -791,7 +791,7 @@ app.put('/api/patterns/:patternId/label', (req, res) => {
   // If shouldRenameAll is true, update all processes in the pattern to match the new label
   // This ensures that renaming a pattern also renames all its associated CPIs
   // Note: We don't check for result.oldLabel here because we want to update processes
-  // even if the pattern previously had no deviceName (e.g., newly created patterns)
+  // even if the pattern previously had no deviceName (e.g., patterns created during analysis)
   if (shouldRenameAll) {
     const pattern = chargingPatterns.find(p => p.id === patternId);
     if (pattern && pattern.processIds) {
@@ -808,9 +808,12 @@ app.put('/api/patterns/:patternId/label', (req, res) => {
       });
       
       if (updatedCount > 0) {
-        storage.saveProcesses(chargingProcesses);
         console.log(`Updated deviceName for ${updatedCount} processes to "${trimmedLabel}"`);
       }
+      
+      // Always save processes when shouldRenameAll is true, even if updatedCount is 0
+      // This maintains consistency with the pattern save below
+      storage.saveProcesses(chargingProcesses);
     }
   }
   
