@@ -218,10 +218,28 @@ function App() {
         await fetchData();
       } else if (action === 'merge') {
         const { sourcePatternId, targetPatternId } = data;
+        
+        // If the currently selected pattern is being merged into another,
+        // update the selection to point to the target pattern
+        const wasSourceSelected = selectedPatternId === sourcePatternId;
+        
         await axios.post(`${API_URL}/patterns/merge`, {
           sourcePatternId,
           targetPatternId
         });
+        
+        // If the source pattern was selected, switch selection to target
+        if (wasSourceSelected) {
+          setSelectedPatternId(targetPatternId);
+          // Find the target pattern to get its device name
+          const targetPattern = patterns.find(p => p.id === targetPatternId);
+          if (targetPattern && targetPattern.deviceName) {
+            setFilters(prevFilters => ({
+              ...prevFilters,
+              device: targetPattern.deviceName
+            }));
+          }
+        }
         
         // Refresh data to reflect changes
         await fetchData();
