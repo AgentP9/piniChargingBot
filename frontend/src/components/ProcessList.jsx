@@ -6,7 +6,7 @@ import './ProcessList.css';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
-function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, onDeleteProcess, onCompleteProcess, filters, onPatternUpdate, onProcessUpdate }) {
+function ProcessList({ processes, patterns, selectedProcesses, onSelectProcess, onDeleteProcess, onCompleteProcess, filters, onPatternUpdate, onProcessUpdate }) {
   const [editingProcess, setEditingProcess] = useState(null);
   const [processGuesses, setProcessGuesses] = useState({});
 
@@ -284,11 +284,12 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
         const assumedDevice = getAssumedDevice(process);
         const guessedDevice = getGuessedDevice(process);
         const showCompleteButton = shouldShowCompleteButton(process);
+        const isSelected = selectedProcesses.some(p => p.id === process.id);
         
         return (
         <div 
           key={process.id} 
-          className={`process-item ${selectedProcess?.id === process.id ? 'selected' : ''} ${process.endTime ? 'has-preview' : ''}`}
+          className={`process-item ${isSelected ? 'selected' : ''} ${process.endTime ? 'has-preview' : ''}`}
           onClick={() => onSelectProcess(process)}
         >
           {process.endTime && <ChartPreview process={process} />}
@@ -297,6 +298,14 @@ function ProcessList({ processes, patterns, selectedProcess, onSelectProcess, on
             {/* Row 1: Process ID | State + Complete Button | Delete Button */}
             <div className="process-row process-row-1">
               <div className="process-cell">
+                <input 
+                  type="checkbox" 
+                  className="process-checkbox"
+                  checked={isSelected}
+                  onChange={() => onSelectProcess(process)}
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label={`Select process #${process.id}`}
+                />
                 <span className="process-id">Process #{process.id}</span>
               </div>
               <div className="process-cell process-cell-center">

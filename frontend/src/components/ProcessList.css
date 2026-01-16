@@ -118,6 +118,14 @@
   font-size: 1.05rem;
 }
 
+.process-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  margin-right: 0.5rem;
+  accent-color: var(--border-secondary);
+}
+
 .process-badge {
   padding: 0.25rem 0.75rem;
   border-radius: 12px;

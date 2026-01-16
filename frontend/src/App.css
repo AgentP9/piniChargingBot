@@ -102,6 +102,40 @@
   grid-column: 1 / -1;
 }
 
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.chart-header h2 {
+  margin-bottom: 0;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.clear-selection-button {
+  background: var(--border-secondary);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clear-selection-button:hover {
+  background: var(--status-error);
+  transform: scale(1.05);
+}
+
+.clear-selection-button:active {
+  transform: scale(0.95);
+}
+
 .process-info {
   display: flex;
   flex-wrap: wrap;
