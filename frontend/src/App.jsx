@@ -355,15 +355,82 @@ function App() {
 
               <section className="card processes-section">
                 <h2>Charging Processes</h2>
-                <ProcessFilters 
-                  filters={filters}
-                  onFilterChange={handleFilterChange}
-                  devices={devices}
-                  patterns={patterns}
-                  processes={processes}
-                  selectedProcesses={selectedProcesses}
-                  onToggleSelectAll={handleToggleSelectAll}
-                />
+                <div className="filters-and-select-container">
+                  <ProcessFilters 
+                    filters={filters}
+                    onFilterChange={handleFilterChange}
+                    devices={devices}
+                    patterns={patterns}
+                  />
+                  {(() => {
+                    // Calculate filtered processes based on current filters (same logic as ProcessList)
+                    const filterStartDate = filters?.startDate ? (() => {
+                      const date = new Date(filters.startDate);
+                      date.setHours(0, 0, 0, 0);
+                      return date;
+                    })() : null;
+                    
+                    const filterEndDate = filters?.endDate ? (() => {
+                      const date = new Date(filters.endDate);
+                      date.setHours(23, 59, 59, 999);
+                      return date;
+                    })() : null;
+                    
+                    const processIdToDeviceName = {};
+                    if (patterns && patterns.length > 0) {
+                      patterns.forEach(pattern => {
+                        if (pattern.processIds && pattern.deviceName) {
+                          pattern.processIds.forEach(processId => {
+                            processIdToDeviceName[processId] = pattern.deviceName;
+                          });
+                        }
+                      });
+                    }
+                    
+                    const filteredProcesses = processes.filter(process => {
+                      const isCompleted = process.endTime !== null && process.endTime !== undefined;
+                      if (filters?.state === 'active' && isCompleted) return false;
+                      if (filters?.state === 'completed' && !isCompleted) return false;
+                      
+                      if (filters?.charger && filters.charger !== 'all') {
+                        const processChargerId = process.chargerId || process.deviceId;
+                        if (processChargerId !== filters.charger) return false;
+                      }
+                      
+                      if (filters?.device && filters.device !== 'all') {
+                        const deviceName = processIdToDeviceName[process.id];
+                        if (!deviceName || deviceName !== filters.device) return false;
+                      }
+                      
+                      if (filterStartDate) {
+                        const processDate = new Date(process.startTime);
+                        if (processDate < filterStartDate) return false;
+                      }
+                      
+                      if (filterEndDate) {
+                        const processDate = new Date(process.startTime);
+                        if (processDate > filterEndDate) return false;
+                      }
+                      
+                      return true;
+                    });
+                    
+                    const allFilteredSelected = filteredProcesses.length > 0 && filteredProcesses.every(process => 
+                      selectedProcesses.some(sp => sp.id === process.id)
+                    );
+                    
+                    return filteredProcesses.length > 0 && (
+                      <button
+                        className="select-all-toggle-button"
+                        onClick={() => handleToggleSelectAll(filteredProcesses)}
+                        title={allFilteredSelected ? "Deselect all filtered processes" : "Select all filtered processes"}
+                        aria-label={allFilteredSelected ? "Deselect all filtered processes" : "Select all filtered processes"}
+                      >
+                        {allFilteredSelected ? '☑' : '☐'}
+                      </button>
+                    );
+                  })()}
+                </div>
                 <ProcessList 
                   processes={processes}
                   patterns={patterns}
