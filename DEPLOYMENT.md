@@ -3,6 +3,7 @@
 ## Prerequisites
 - Docker and Docker Compose installed
 - MQTT-enabled devices (e.g., Shelly Plug S) or MQTT simulator
+- An MQTT broker (e.g., Mosquitto, HiveMQ, or any MQTT-compatible broker)
 
 ## Quick Start
 
@@ -16,31 +17,31 @@
 
 2. **Start the stack**:
    ```bash
-   # Using your existing MQTT broker (default)
    docker compose up -d
-   
-   # OR, to use the built-in Mosquitto broker
-   docker compose --profile with-mosquitto up -d
    ```
 
 3. **Access the application**:
    - Web UI: http://localhost:1818
    - Backend API: Available only through frontend proxy at http://localhost:1818/api/health
-   - MQTT Broker (if using built-in): localhost:1883
 
 ## Testing with Simulated Data
 
-Use the provided test script to simulate charging cycles:
+If you need to simulate MQTT messages for testing, you can use any MQTT client tool such as:
+- MQTT Explorer (GUI tool)
+- mosquitto_pub command line tool
+- MQTT.fx
+- Any programmatic MQTT client
 
+Example using mosquitto_pub (if installed):
 ```bash
-# Install mosquitto clients if needed
-sudo apt-get install mosquitto-clients
+# Simulate power on
+mosquitto_pub -h your-broker-host -t "shellyplug-s-12345/relay/0" -m "on"
 
-# Using your existing broker
-./test-mqtt.sh shellyplug-s-12345 your-broker-host
+# Simulate power consumption
+mosquitto_pub -h your-broker-host -t "shellyplug-s-12345/relay/0/power" -m "15.5"
 
-# Using built-in mosquitto (if started with --profile with-mosquitto)
-./test-mqtt.sh shellyplug-s-12345 localhost
+# Simulate power off
+mosquitto_pub -h your-broker-host -t "shellyplug-s-12345/relay/0" -m "off"
 ```
 
 ## Architecture Overview
@@ -59,8 +60,8 @@ sudo apt-get install mosquitto-clients
        │ Proxies /api
        ▼
 ┌──────────────────┐      MQTT      ┌────────────────┐
-│ Backend (Node.js)├───────────────►│ Mosquitto MQTT │
-│  (Internal only) │◄───────────────┤   Broker       │
+│ Backend (Node.js)├───────────────►│  MQTT Broker   │
+│  (Internal only) │◄───────────────┤  (External)    │
 └──────┬───────────┘                └────────┬───────┘
        │                                     │
        │ Persistent storage                  │
@@ -105,7 +106,6 @@ sudo apt-get install mosquitto-clients
 - ✅ Multi-stage Docker builds for optimization
 - ✅ Docker Compose orchestration
 - ✅ Nginx reverse proxy for frontend
-- ✅ Embedded MQTT broker (Mosquitto)
 - ✅ Environment-based configuration
 - ✅ Health check endpoints
 - ✅ Persistent volumes for data storage
@@ -114,15 +114,9 @@ sudo apt-get install mosquitto-clients
 
 ```env
 # MQTT Configuration
-# Using external broker (default):
 MQTT_BROKER_URL=mqtt://192.168.1.100:1883
 MQTT_USERNAME=your-username
 MQTT_PASSWORD=your-password
-
-# OR, using built-in mosquitto (requires --profile with-mosquitto):
-# MQTT_BROKER_URL=mqtt://mosquitto:1883
-# MQTT_USERNAME=
-# MQTT_PASSWORD=
 
 # Device Configuration
 # New format: Name:topic (allows custom names and topics)
@@ -231,7 +225,7 @@ Charging processes are stored persistently in JSON files within a Docker volume:
 ### Backend can't connect to MQTT
 ```bash
 docker compose logs backend
-docker compose logs mosquitto
+# Check your MQTT broker logs
 ```
 
 ### Frontend not loading

@@ -40,15 +40,13 @@ The application consists of two main components:
    - Interactive power consumption charts
    - Charging process selection and visualization
 
-**Optional MQTT Broker:**
-   - Can optionally include Eclipse Mosquitto broker using Docker profiles
-   - Designed to work with your existing MQTT broker by default
+
 
 ## Prerequisites
 
 - Docker and Docker Compose installed (or Portainer for web-based management)
 - MQTT-compatible power plugs (e.g., Shelly Plug S) configured to publish to MQTT - these are your **chargers**
-- An existing MQTT broker (or use the optional built-in Mosquitto broker)
+- An MQTT broker (e.g., Mosquitto, HiveMQ, or any MQTT-compatible broker)
 
 ## Quick Start
 
@@ -67,7 +65,7 @@ The application consists of two main components:
    
    Edit `.env` and configure your MQTT broker and chargers:
    ```env
-   # Use your existing MQTT broker
+   # Use your MQTT broker
    MQTT_BROKER_URL=mqtt://192.168.1.100:1883
    MQTT_USERNAME=your-username  # if required
    MQTT_PASSWORD=your-password  # if required
@@ -77,12 +75,6 @@ The application consists of two main components:
 3. Start the application:
    ```bash
    docker-compose up -d
-   ```
-   
-   **Note:** If you want to use the built-in Mosquitto broker instead:
-   ```bash
-   # Update MQTT_BROKER_URL in .env to: mqtt://mosquitto:1883
-   docker-compose --profile with-mosquitto up -d
    ```
 
 4. Access the web interface:
@@ -125,37 +117,21 @@ All configuration can be managed via environment variables (through `.env` file 
   - New format: `Office Charger:shellies/shellyplug07,Kitchen:shellies/shellyplug02`
   - Legacy format (backward compatible): `shellyplug-s-12345,shellyplug-s-67890`
 
-### Using with External MQTT Broker (Default)
+### Connecting to Your MQTT Broker
 
-The application is designed to work with your existing MQTT broker:
+The application is designed to work with any MQTT broker. Update the `.env` file with your broker details:
 
-1. Update the `.env` file with your broker details:
-   ```env
-   MQTT_BROKER_URL=mqtt://192.168.1.100:1883
-   MQTT_USERNAME=your-username
-   MQTT_PASSWORD=your-password
-   MQTT_DEVICES=Office Charger:shellies/device1,Garage:shellies/device2
-   ```
+```env
+MQTT_BROKER_URL=mqtt://192.168.1.100:1883
+MQTT_USERNAME=your-username
+MQTT_PASSWORD=your-password
+MQTT_DEVICES=Office Charger:shellies/device1,Garage:shellies/device2
+```
 
-2. Start the application (mosquitto service will not be started):
-   ```bash
-   docker-compose up -d
-   ```
-
-### Using Built-in Mosquitto Broker (Optional)
-
-If you don't have an MQTT broker, you can use the included Mosquitto:
-
-1. Update the `.env` file:
-   ```env
-   MQTT_BROKER_URL=mqtt://mosquitto:1883
-   MQTT_DEVICES=Office Charger:shellies/device1,Garage:shellies/device2
-   ```
-
-2. Start with the mosquitto profile:
-   ```bash
-   docker-compose --profile with-mosquitto up -d
-   ```
+Then start the application:
+```bash
+docker-compose up -d
+```
 
 ### MQTT Topics
 
@@ -252,7 +228,7 @@ For information about managing device labels, see [DEVICE_LABELS.md](DEVICE_LABE
 cd backend
 npm install
 cp .env.example .env
-# Edit .env with your MQTT broker configuration
+# Edit .env with your MQTT broker configuration (point to your MQTT broker)
 npm run dev
 ```
 
@@ -265,10 +241,6 @@ npm run dev
 ```
 
 The frontend will be available at http://localhost:5173 with hot reload enabled.
-
-## Using with External MQTT Broker
-
-See the Configuration section above for details on connecting to your existing MQTT broker.
 
 ## Data Storage
 
@@ -307,8 +279,8 @@ Each charger will be monitored independently, and the UI will display all charge
 ## Troubleshooting
 
 ### Backend can't connect to MQTT broker
-- Check that the MQTT broker is running: `docker-compose logs mosquitto`
 - Verify the `MQTT_BROKER_URL` in your `.env` file
+- Ensure your MQTT broker is running and accessible
 - Check firewall settings if using external broker
 
 ### No data showing in frontend
