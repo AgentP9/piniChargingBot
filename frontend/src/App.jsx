@@ -15,7 +15,7 @@ function App() {
   const [devices, setDevices] = useState([]);
   const [processes, setProcesses] = useState([]);
   const [patterns, setPatterns] = useState([]);
-  const [selectedProcess, setSelectedProcess] = useState(null);
+  const [selectedProcesses, setSelectedProcesses] = useState([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState(null);
   const [selectedPatternId, setSelectedPatternId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -28,13 +28,13 @@ function App() {
     endDate: ''
   });
   
-  // Use ref to track the currently selected process ID
-  const selectedProcessIdRef = useRef(null);
+  // Use ref to track the currently selected process IDs
+  const selectedProcessIdsRef = useRef([]);
 
-  // Update ref when selectedProcess changes
+  // Update ref when selectedProcesses changes
   useEffect(() => {
-    selectedProcessIdRef.current = selectedProcess?.id || null;
-  }, [selectedProcess]);
+    selectedProcessIdsRef.current = selectedProcesses.map(p => p.id);
+  }, [selectedProcesses]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -48,18 +48,15 @@ function App() {
       setProcesses(processesRes.data);
       setPatterns(patternsRes.data);
       
-      // Update selected process with fresh data if one is selected
-      // Note: selectedProcessIdRef.current is intentionally not in the dependency array
+      // Update selected processes with fresh data if any are selected
+      // Note: selectedProcessIdsRef.current is intentionally not in the dependency array
       // because refs are stable and don't trigger re-renders. The ref's .current property
-      // is accessed directly to get the latest selected process ID.
-      if (selectedProcessIdRef.current !== null) {
-        const updatedProcess = processesRes.data.find(p => p.id === selectedProcessIdRef.current);
-        if (updatedProcess) {
-          setSelectedProcess(updatedProcess);
-        } else {
-          // Clear selection if process is no longer available
-          setSelectedProcess(null);
-        }
+      // is accessed directly to get the latest selected process IDs.
+      if (selectedProcessIdsRef.current.length > 0) {
+        const updatedProcesses = processesRes.data.filter(p => 
+          selectedProcessIdsRef.current.includes(p.id)
+        );
+        setSelectedProcesses(updatedProcesses);
       }
       
       setLoading(false);
@@ -111,7 +108,41 @@ function App() {
   }, [patterns, selectedPatternId]);
 
   const handleProcessSelect = (process) => {
-    setSelectedProcess(process);
+    setSelectedProcesses(prevSelected => {
+      const isAlreadySelected = prevSelected.some(p => p.id === process.id);
+      
+      if (isAlreadySelected) {
+        // Remove from selection
+        return prevSelected.filter(p => p.id !== process.id);
+      } else {
+        // Add to selection
+        return [...prevSelected, process];
+      }
+    });
+  };
+
+  const handleClearSelection = () => {
+    setSelectedProcesses([]);
+  };
+
+  const handleToggleSelectAll = (filteredProcesses) => {
+    // Check if all filtered processes are selected
+    const allSelected = filteredProcesses.every(process => 
+      selectedProcesses.some(sp => sp.id === process.id)
+    );
+    
+    if (allSelected) {
+      // Deselect all filtered processes
+      const filteredIds = new Set(filteredProcesses.map(p => p.id));
+      setSelectedProcesses(prevSelected => 
+        prevSelected.filter(p => !filteredIds.has(p.id))
+      );
+    } else {
+      // Select all filtered processes that aren't already selected
+      const selectedIds = new Set(selectedProcesses.map(p => p.id));
+      const newSelections = filteredProcesses.filter(p => !selectedIds.has(p.id));
+      setSelectedProcesses(prevSelected => [...prevSelected, ...newSelections]);
+    }
   };
 
   const handleProcessDelete = async (processId) => {
@@ -121,10 +152,10 @@ function App() {
       // Remove from local state
       setProcesses(processes.filter(p => p.id !== processId));
       
-      // Clear selection if the deleted process was selected
-      if (selectedProcess?.id === processId) {
-        setSelectedProcess(null);
-      }
+      // Remove from selection if the deleted process was selected
+      setSelectedProcesses(prevSelected => 
+        prevSelected.filter(p => p.id !== processId)
+      );
     } catch (err) {
       console.error('Error deleting process:', err);
       setError('Failed to delete process. Please try again.');
@@ -140,10 +171,10 @@ function App() {
         p.id === processId ? response.data.process : p
       ));
       
-      // Update selected process if it was the one completed
-      if (selectedProcess?.id === processId) {
-        setSelectedProcess(response.data.process);
-      }
+      // Update selected processes if it was one of the selected ones
+      setSelectedProcesses(prevSelected =>
+        prevSelected.map(p => p.id === processId ? response.data.process : p)
+      );
       
       // Refresh data to get updated device states
       fetchData();
@@ -324,16 +355,86 @@ function App() {
 
               <section className="card processes-section">
                 <h2>Charging Processes</h2>
-                <ProcessFilters 
-                  filters={filters}
-                  onFilterChange={handleFilterChange}
-                  devices={devices}
-                  patterns={patterns}
-                />
+                <div className="filters-and-select-container">
+                  <ProcessFilters 
+                    filters={filters}
+                    onFilterChange={handleFilterChange}
+                    devices={devices}
+                    patterns={patterns}
+                  />
+                  {(() => {
+                    // Calculate filtered processes based on current filters (same logic as ProcessList)
+                    const filterStartDate = filters?.startDate ? (() => {
+                      const date = new Date(filters.startDate);
+                      date.setHours(0, 0, 0, 0);
+                      return date;
+                    })() : null;
+                    
+                    const filterEndDate = filters?.endDate ? (() => {
+                      const date = new Date(filters.endDate);
+                      date.setHours(23, 59, 59, 999);
+                      return date;
+                    })() : null;
+                    
+                    const processIdToDeviceName = {};
+                    if (patterns && patterns.length > 0) {
+                      patterns.forEach(pattern => {
+                        if (pattern.processIds && pattern.deviceName) {
+                          pattern.processIds.forEach(processId => {
+                            processIdToDeviceName[processId] = pattern.deviceName;
+                          });
+                        }
+                      });
+                    }
+                    
+                    const filteredProcesses = processes.filter(process => {
+                      const isCompleted = process.endTime !== null && process.endTime !== undefined;
+                      if (filters?.state === 'active' && isCompleted) return false;
+                      if (filters?.state === 'completed' && !isCompleted) return false;
+                      
+                      if (filters?.charger && filters.charger !== 'all') {
+                        const processChargerId = process.chargerId || process.deviceId;
+                        if (processChargerId !== filters.charger) return false;
+                      }
+                      
+                      if (filters?.device && filters.device !== 'all') {
+                        const deviceName = processIdToDeviceName[process.id];
+                        if (!deviceName || deviceName !== filters.device) return false;
+                      }
+                      
+                      if (filterStartDate) {
+                        const processDate = new Date(process.startTime);
+                        if (processDate < filterStartDate) return false;
+                      }
+                      
+                      if (filterEndDate) {
+                        const processDate = new Date(process.startTime);
+                        if (processDate > filterEndDate) return false;
+                      }
+                      
+                      return true;
+                    });
+                    
+                    const allFilteredSelected = filteredProcesses.length > 0 && filteredProcesses.every(process => 
+                      selectedProcesses.some(sp => sp.id === process.id)
+                    );
+                    
+                    return filteredProcesses.length > 0 && (
+                      <button
+                        className="select-all-toggle-button"
+                        onClick={() => handleToggleSelectAll(filteredProcesses)}
+                        title={allFilteredSelected ? "Deselect all filtered processes" : "Select all filtered processes"}
+                        aria-label={allFilteredSelected ? "Deselect all filtered processes" : "Select all filtered processes"}
+                      >
+                        {allFilteredSelected ? '☑' : '☐'}
+                      </button>
+                    );
+                  })()}
+                </div>
                 <ProcessList 
                   processes={processes}
                   patterns={patterns}
-                  selectedProcess={selectedProcess}
+                  selectedProcesses={selectedProcesses}
                   onSelectProcess={handleProcessSelect}
                   onDeleteProcess={handleProcessDelete}
                   onCompleteProcess={handleProcessComplete}
@@ -344,29 +445,45 @@ function App() {
               </section>
             </div>
 
-            {selectedProcess && (
+            {selectedProcesses.length > 0 && (
               <section className="card chart-section">
-                <h2>Charging Details - Process #{selectedProcess.id}</h2>
-                <div className="process-info">
-                  <div className="info-item">
-                    <strong>Device:</strong> {selectedProcess.deviceName || selectedProcess.deviceId}
-                  </div>
-                  <div className="info-item">
-                    <strong>Start:</strong> {new Date(selectedProcess.startTime).toLocaleString()}
-                  </div>
-                  {selectedProcess.endTime && (
-                    <div className="info-item">
-                      <strong>End:</strong> {new Date(selectedProcess.endTime).toLocaleString()}
-                    </div>
-                  )}
-                  <div className="info-item">
-                    <strong>Status:</strong> 
-                    <span className={selectedProcess.endTime ? 'status-completed' : 'status-active'}>
-                      {selectedProcess.endTime ? ' Completed' : ' Active'}
-                    </span>
-                  </div>
+                <div className="chart-header">
+                  <h2>
+                    {selectedProcesses.length === 1 
+                      ? `Charging Details - Process #${selectedProcesses[0].id}`
+                      : `Comparing ${selectedProcesses.length} Charging Processes`
+                    }
+                  </h2>
+                  <button 
+                    className="clear-selection-button"
+                    onClick={handleClearSelection}
+                    title="Clear selection"
+                  >
+                    Clear Selection
+                  </button>
                 </div>
-                <ChargingChart process={selectedProcess} />
+                {selectedProcesses.length === 1 && (
+                  <div className="process-info">
+                    <div className="info-item">
+                      <strong>Device:</strong> {selectedProcesses[0].deviceName || selectedProcesses[0].deviceId}
+                    </div>
+                    <div className="info-item">
+                      <strong>Start:</strong> {new Date(selectedProcesses[0].startTime).toLocaleString()}
+                    </div>
+                    {selectedProcesses[0].endTime && (
+                      <div className="info-item">
+                        <strong>End:</strong> {new Date(selectedProcesses[0].endTime).toLocaleString()}
+                      </div>
+                    )}
+                    <div className="info-item">
+                      <strong>Status:</strong> 
+                      <span className={selectedProcesses[0].endTime ? 'status-completed' : 'status-active'}>
+                        {selectedProcesses[0].endTime ? ' Completed' : ' Active'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                <ChargingChart processes={selectedProcesses} />
               </section>
             )}
           </>

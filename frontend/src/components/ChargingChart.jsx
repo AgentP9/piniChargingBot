@@ -2,77 +2,152 @@ import React, { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import './ChargingChart.css';
 
-function ChargingChart({ process }) {
+// Color palette for multiple processes
+const PROCESS_COLORS = ['#667eea', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#30cfd0'];
+
+function ChargingChart({ processes }) {
+  // Support both single process (for backward compatibility) and multiple processes
+  const processList = Array.isArray(processes) ? processes : [processes].filter(Boolean);
+  
   const chartData = useMemo(() => {
-    if (!process || !process.events) return [];
+    if (processList.length === 0) return [];
     
-    // Filter power consumption events and format for chart
-    const powerEvents = process.events
-      .filter(e => e.type === 'power_consumption')
-      .map(e => ({
-        timestamp: new Date(e.timestamp),
-        power: e.value,
-        time: new Date(e.timestamp).toLocaleTimeString()
-      }));
-    
-    return powerEvents;
-  }, [process]);
+    if (processList.length === 1) {
+      // Single process - use timestamp on x-axis
+      const process = processList[0];
+      if (!process || !process.events) return [];
+      
+      const powerEvents = process.events
+        .filter(e => e.type === 'power_consumption')
+        .map(e => ({
+          timestamp: new Date(e.timestamp),
+          power: e.value,
+          time: new Date(e.timestamp).toLocaleTimeString()
+        }));
+      
+      return powerEvents;
+    } else {
+      // Multiple processes - use time from start (seconds) on x-axis
+      const dataPointsMap = new Map(); // Use Map for O(1) lookups
+      
+      processList.forEach((process, processIndex) => {
+        if (!process || !process.events) return;
+        
+        const powerEvents = process.events.filter(e => e.type === 'power_consumption');
+        if (powerEvents.length === 0) return;
+        
+        const startTime = new Date(process.startTime).getTime();
+        
+        powerEvents.forEach(e => {
+          const eventTime = new Date(e.timestamp).getTime();
+          const secondsFromStart = Math.floor((eventTime - startTime) / 1000);
+          
+          // Skip events that occurred before the process start time (data inconsistencies)
+          if (secondsFromStart < 0) return;
+          
+          // Get or create data point for this second
+          let dataPoint = dataPointsMap.get(secondsFromStart);
+          if (!dataPoint) {
+            const minutes = Math.floor(secondsFromStart / 60);
+            const seconds = secondsFromStart % 60;
+            dataPoint = { 
+              seconds: secondsFromStart, 
+              time: `${minutes}m ${seconds}s` 
+            };
+            dataPointsMap.set(secondsFromStart, dataPoint);
+          }
+          
+          // Add power value for this process
+          dataPoint[`process${process.id}`] = e.value;
+        });
+      });
+      
+      // Convert Map to array and sort by seconds from start
+      return Array.from(dataPointsMap.values()).sort((a, b) => a.seconds - b.seconds);
+    }
+  }, [processList]);
 
   const stats = useMemo(() => {
-    if (chartData.length === 0) return null;
+    if (processList.length === 0 || chartData.length === 0) return null;
     
-    const powers = chartData.map(d => d.power);
-    const maxPower = Math.max(...powers);
-    const minPower = Math.min(...powers);
-    const avgPower = powers.reduce((a, b) => a + b, 0) / powers.length;
-    
-    // Calculate energy (approximate)
-    const duration = process.endTime 
-      ? new Date(process.endTime) - new Date(process.startTime)
-      : Date.now() - new Date(process.startTime);
-    const totalEnergy = (avgPower * duration / 1000 / 3600).toFixed(2); // Wh
-    
-    return {
-      maxPower: maxPower.toFixed(2),
-      minPower: minPower.toFixed(2),
-      avgPower: avgPower.toFixed(2),
-      totalEnergy,
-      dataPoints: chartData.length
-    };
-  }, [chartData, process]);
+    if (processList.length === 1) {
+      const process = processList[0];
+      const powers = chartData.map(d => d.power);
+      const maxPower = Math.max(...powers);
+      const minPower = Math.min(...powers);
+      const avgPower = powers.reduce((a, b) => a + b, 0) / powers.length;
+      
+      // Calculate energy (approximate)
+      const duration = process.endTime 
+        ? new Date(process.endTime) - new Date(process.startTime)
+        : Date.now() - new Date(process.startTime);
+      const totalEnergy = (avgPower * duration / 1000 / 3600).toFixed(2); // Wh
+      
+      return {
+        maxPower: maxPower.toFixed(2),
+        minPower: minPower.toFixed(2),
+        avgPower: avgPower.toFixed(2),
+        totalEnergy,
+        dataPoints: chartData.length
+      };
+    } else {
+      // Multi-process stats - show aggregate stats
+      return {
+        processCount: processList.length,
+        dataPoints: chartData.length
+      };
+    }
+  }, [chartData, processList]);
 
   if (chartData.length === 0) {
     return (
       <div className="chart-empty">
-        <p>No power consumption data available for this charging process.</p>
+        <p>No power consumption data available for the selected charging process(es).</p>
       </div>
     );
   }
 
+  const isMultiProcess = processList.length > 1;
+
   return (
     <div className="charging-chart">
-      <div className="chart-stats">
-        <div className="stat-card">
-          <div className="stat-label">Max Power</div>
-          <div className="stat-value">{stats.maxPower} W</div>
+      {!isMultiProcess && (
+        <div className="chart-stats">
+          <div className="stat-card">
+            <div className="stat-label">Max Power</div>
+            <div className="stat-value">{stats.maxPower} W</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-label">Avg Power</div>
+            <div className="stat-value">{stats.avgPower} W</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-label">Min Power</div>
+            <div className="stat-value">{stats.minPower} W</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-label">Total Energy</div>
+            <div className="stat-value">{stats.totalEnergy} Wh</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-label">Data Points</div>
+            <div className="stat-value">{stats.dataPoints}</div>
+          </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-label">Avg Power</div>
-          <div className="stat-value">{stats.avgPower} W</div>
+      )}
+      
+      {isMultiProcess && (
+        <div className="chart-stats">
+          <div className="stat-card">
+            <div className="stat-label">Comparing Processes</div>
+            <div className="stat-value">{stats.processCount}</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-label">Total Data Points</div>
+            <div className="stat-value">{stats.dataPoints}</div>
+          </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-label">Min Power</div>
-          <div className="stat-value">{stats.minPower} W</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Total Energy</div>
-          <div className="stat-value">{stats.totalEnergy} Wh</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Data Points</div>
-          <div className="stat-value">{stats.dataPoints}</div>
-        </div>
-      </div>
+      )}
       
       <div className="chart-container">
         <ResponsiveContainer width="100%" height={400}>
@@ -82,9 +157,10 @@ function ChargingChart({ process }) {
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
             <XAxis 
-              dataKey="time" 
+              dataKey={isMultiProcess ? "seconds" : "time"}
               stroke="#666"
               tick={{ fontSize: 12 }}
+              label={isMultiProcess ? { value: 'Time from Start', position: 'insideBottom', offset: -5 } : undefined}
             />
             <YAxis 
               stroke="#666"
@@ -100,15 +176,30 @@ function ChargingChart({ process }) {
               }}
             />
             <Legend />
-            <Line 
-              type="monotone" 
-              dataKey="power" 
-              stroke="#667eea" 
-              strokeWidth={2}
-              dot={{ fill: '#667eea', r: 3 }}
-              activeDot={{ r: 6 }}
-              name="Power (W)"
-            />
+            {!isMultiProcess ? (
+              <Line 
+                type="monotone" 
+                dataKey="power" 
+                stroke="#667eea" 
+                strokeWidth={2}
+                dot={{ fill: '#667eea', r: 3 }}
+                activeDot={{ r: 6 }}
+                name="Power (W)"
+              />
+            ) : (
+              processList.map((process, index) => (
+                <Line 
+                  key={process.id}
+                  type="monotone" 
+                  dataKey={`process${process.id}`}
+                  stroke={PROCESS_COLORS[index % PROCESS_COLORS.length]}
+                  strokeWidth={2}
+                  dot={false}
+                  name={`Process #${process.id}${process.deviceName ? ` (${process.deviceName})` : ''}`}
+                  connectNulls={true}
+                />
+              ))
+            )}
           </LineChart>
         </ResponsiveContainer>
       </div>
