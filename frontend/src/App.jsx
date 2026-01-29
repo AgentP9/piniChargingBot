@@ -145,10 +145,6 @@ function App() {
                   <ChargingPage 
                     devices={devices}
                     processes={processes}
-                    patterns={patterns}
-                    onDeleteProcess={handleProcessDelete}
-                    onCompleteProcess={handleProcessComplete}
-                    onProcessUpdate={handleProcessUpdate}
                   />
                 } 
               />
