@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import DeviceList from '../components/DeviceList';
 import ChargingChart from '../components/ChargingChart';
 import './ChargingPage.css';
@@ -7,12 +7,6 @@ function ChargingPage({
   devices, 
   processes
 }) {
-  const [selectedDeviceId, setSelectedDeviceId] = useState(null);
-
-  const handleDeviceSelect = (deviceId) => {
-    setSelectedDeviceId(deviceId);
-  };
-
   // Get active (currently running) charging processes
   const activeProcesses = useMemo(() => {
     return processes.filter(process => !process.endTime);
@@ -24,8 +18,8 @@ function ChargingPage({
         <h2>Connected Chargers</h2>
         <DeviceList 
           devices={devices}
-          selectedDeviceId={selectedDeviceId}
-          onSelectDevice={handleDeviceSelect}
+          selectedDeviceId={null}
+          onSelectDevice={() => {}}
         />
       </section>
 
