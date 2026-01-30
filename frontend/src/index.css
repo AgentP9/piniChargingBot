@@ -12,6 +12,9 @@
   --bg-hover: #f0f3ff;
   --bg-header: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   
+  /* Primary color */
+  --primary-color: #667eea;
+  
   /* Text colors */
   --text-primary: #333;
   --text-secondary: #555;
@@ -52,6 +55,9 @@
   --bg-tertiary: #252525;
   --bg-hover: #3a3a5f;
   --bg-header: linear-gradient(135deg, #4a5fb8 0%, #5c3a82 100%);
+  
+  /* Primary color */
+  --primary-color: #667eea;
   
   /* Text colors */
   --text-primary: #e0e0e0;
