@@ -24,6 +24,29 @@
   color: var(--text-secondary);
 }
 
+.estimate-item {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.estimate-value {
+  color: var(--primary-color);
+  font-size: 1.1em;
+  margin-right: 0.5rem;
+}
+
+.estimate-confidence {
+  color: var(--text-secondary);
+  font-size: 0.9em;
+  font-weight: normal;
+}
+
+.estimate-hint {
+  grid-column: 1 / -1;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
 @media (max-width: 900px) {
   .charging-page {
     padding: 1rem;

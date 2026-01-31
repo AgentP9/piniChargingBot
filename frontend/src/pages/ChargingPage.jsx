@@ -1,16 +1,64 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import axios from 'axios';
 import DeviceList from '../components/DeviceList';
 import ChargingChart from '../components/ChargingChart';
 import './ChargingPage.css';
+
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 function ChargingPage({ 
   devices, 
   processes
 }) {
+  const [estimations, setEstimations] = useState({});
+
   // Get active (currently running) charging processes
   const activeProcesses = useMemo(() => {
     return processes.filter(process => !process.endTime);
   }, [processes]);
+
+  // Fetch completion time estimates for active processes
+  useEffect(() => {
+    if (activeProcesses.length === 0) {
+      setEstimations({});
+      return;
+    }
+
+    const fetchEstimates = async () => {
+      const newEstimations = {};
+      await Promise.all(
+        activeProcesses.map(async (process) => {
+          try {
+            const response = await axios.get(`${API_URL}/processes/${process.id}/estimate`);
+            if (response.data.hasEstimate) {
+              newEstimations[process.id] = response.data;
+            }
+          } catch (error) {
+            console.error(`Error fetching estimate for process ${process.id}:`, error);
+          }
+        })
+      );
+      setEstimations(newEstimations);
+    };
+
+    fetchEstimates();
+    // Refresh estimates every 30 seconds
+    const interval = setInterval(fetchEstimates, 30000);
+    return () => clearInterval(interval);
+  }, [activeProcesses]);
+
+  const formatRemainingTime = (minutes) => {
+    if (minutes < 1) {
+      return 'Less than 1 minute';
+    }
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    
+    if (hours > 0) {
+      return `${hours}h ${mins}m`;
+    }
+    return `${mins}m`;
+  };
 
   return (
     <div className="charging-page">
@@ -47,6 +95,28 @@ function ChargingPage({
                   Active
                 </span>
               </div>
+              {estimations[activeProcesses[0].id] && (
+                <>
+                  <div className="info-item estimate-item">
+                    <strong>Estimated Remaining:</strong>{' '}
+                    <span className="estimate-value">
+                      {estimations[activeProcesses[0].id].status === 'completing' ? (
+                        'Completing...'
+                      ) : (
+                        formatRemainingTime(estimations[activeProcesses[0].id].remainingMinutes)
+                      )}
+                    </span>
+                    <span className="estimate-confidence">
+                      ({Math.round(estimations[activeProcesses[0].id].confidence * 100)}% confidence)
+                    </span>
+                  </div>
+                  {estimations[activeProcesses[0].id].patternDeviceName && (
+                    <div className="info-item estimate-hint">
+                      <small>Based on pattern: {estimations[activeProcesses[0].id].patternDeviceName}</small>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           )}
           <ChargingChart processes={activeProcesses} />
