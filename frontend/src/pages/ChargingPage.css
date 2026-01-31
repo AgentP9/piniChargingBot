@@ -24,6 +24,53 @@
   color: var(--text-secondary);
 }
 
+.guess-item {
+  color: var(--status-active);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.guess-value {
+  color: var(--status-active);
+  font-size: 1.1em;
+  margin-right: 0.25rem;
+}
+
+.guess-confidence {
+  color: var(--text-secondary);
+  font-size: 0.9em;
+  font-weight: normal;
+  margin-right: 0.5rem;
+}
+
+.confirm-guess-button {
+  background: var(--status-active);
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.confirm-guess-button:hover {
+  background: #22863a;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.confirm-guess-button:active {
+  transform: translateY(0);
+}
+
 .estimate-item {
   color: var(--primary-color);
   font-weight: 600;

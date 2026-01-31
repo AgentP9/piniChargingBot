@@ -11,6 +11,7 @@ function ChargingPage({
   processes
 }) {
   const [estimations, setEstimations] = useState({});
+  const [guesses, setGuesses] = useState({});
 
   // Get active (currently running) charging processes
   const activeProcesses = useMemo(() => {
@@ -51,6 +52,59 @@ function ChargingPage({
     const interval = setInterval(fetchEstimates, 30000);
     return () => clearInterval(interval);
   }, [activeProcessIds, activeProcesses]);
+
+  // Fetch device guesses for active processes
+  useEffect(() => {
+    if (activeProcesses.length === 0) {
+      setGuesses({});
+      return;
+    }
+
+    const fetchGuesses = async () => {
+      const newGuesses = {};
+      await Promise.all(
+        activeProcesses.map(async (process) => {
+          try {
+            const response = await axios.get(`${API_URL}/processes/${process.id}/guess`);
+            if (response.data.hasGuess) {
+              newGuesses[process.id] = {
+                deviceName: response.data.guessedDevice,
+                confidence: response.data.confidence
+              };
+            }
+          } catch (error) {
+            console.error(`Error fetching guess for process ${process.id}:`, error);
+          }
+        })
+      );
+      setGuesses(newGuesses);
+    };
+
+    fetchGuesses();
+    // Refresh guesses every 10 seconds
+    const interval = setInterval(fetchGuesses, 10000);
+    return () => clearInterval(interval);
+  }, [activeProcessIds, activeProcesses]);
+
+  const handleConfirmGuess = async (processId, guessedDeviceName) => {
+    try {
+      await axios.put(`${API_URL}/processes/${processId}/device-name`, {
+        newDeviceName: guessedDeviceName
+      });
+      
+      // Remove the guess from state since it's now confirmed
+      setGuesses(prev => {
+        const updated = { ...prev };
+        delete updated[processId];
+        return updated;
+      });
+      
+      console.log(`Confirmed guess for process ${processId}: ${guessedDeviceName}`);
+    } catch (error) {
+      console.error(`Error confirming guess for process ${processId}:`, error);
+      alert('Failed to confirm device guess. Please try again.');
+    }
+  };
 
   const formatRemainingTime = (minutes) => {
     if (minutes < 1) {
@@ -101,26 +155,51 @@ function ChargingPage({
                 </span>
               </div>
               {(() => {
-                const estimation = estimations[activeProcesses[0].id];
-                return estimation && (
+                const processId = activeProcesses[0].id;
+                const guess = guesses[processId];
+                const estimation = estimations[processId];
+                
+                return (
                   <>
-                    <div className="info-item estimate-item">
-                      <strong>Estimated Remaining:</strong>{' '}
-                      <span className="estimate-value">
-                        {estimation.status === 'completing' ? (
-                          'Completing...'
-                        ) : (
-                          formatRemainingTime(estimation.remainingMinutes)
-                        )}
-                      </span>
-                      <span className="estimate-confidence">
-                        ({Math.round(estimation.confidence * 100)}% confidence)
-                      </span>
-                    </div>
-                    {estimation.patternDeviceName && (
-                      <div className="info-item estimate-hint">
-                        <small>Based on pattern: {estimation.patternDeviceName}</small>
+                    {guess && (
+                      <div className="info-item guess-item">
+                        <strong>Device Guess:</strong>{' '}
+                        <span className="guess-value">
+                          {guess.deviceName}
+                        </span>
+                        <span className="guess-confidence">
+                          ({Math.round(guess.confidence * 100)}% match)
+                        </span>
+                        <button
+                          className="confirm-guess-button"
+                          onClick={() => handleConfirmGuess(processId, guess.deviceName)}
+                          title="Confirm this device identification"
+                        >
+                          ✓ Confirm
+                        </button>
                       </div>
+                    )}
+                    {estimation && (
+                      <>
+                        <div className="info-item estimate-item">
+                          <strong>Estimated Remaining:</strong>{' '}
+                          <span className="estimate-value">
+                            {estimation.status === 'completing' ? (
+                              'Completing...'
+                            ) : (
+                              formatRemainingTime(estimation.remainingMinutes)
+                            )}
+                          </span>
+                          <span className="estimate-confidence">
+                            ({Math.round(estimation.confidence * 100)}% confidence)
+                          </span>
+                        </div>
+                        {estimation.patternDeviceName && (
+                          <div className="info-item estimate-hint">
+                            <small>Based on pattern: {estimation.patternDeviceName}</small>
+                          </div>
+                        )}
+                      </>
                     )}
                   </>
                 );
