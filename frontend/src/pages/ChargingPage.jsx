@@ -84,7 +84,7 @@ function ChargingPage({
     // Refresh guesses every 10 seconds
     const interval = setInterval(fetchGuesses, 10000);
     return () => clearInterval(interval);
-  }, [activeProcessIds, activeProcesses]);
+  }, [activeProcesses]);
 
   const handleConfirmGuess = async (processId, guessedDeviceName) => {
     try {
@@ -98,8 +98,6 @@ function ChargingPage({
         delete updated[processId];
         return updated;
       });
-      
-      console.log(`Confirmed guess for process ${processId}: ${guessedDeviceName}`);
     } catch (error) {
       console.error(`Error confirming guess for process ${processId}:`, error);
       alert('Failed to confirm device guess. Please try again.');

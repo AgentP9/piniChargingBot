@@ -62,7 +62,7 @@
 }
 
 .confirm-guess-button:hover {
-  background: #22863a;
+  background: var(--status-active-hover);
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }

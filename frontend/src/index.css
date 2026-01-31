@@ -28,6 +28,7 @@
   
   /* Status colors */
   --status-active: #28a745;
+  --status-active-hover: #22863a;
   --status-active-bg: #d4edda;
   --status-inactive: #6c757d;
   --status-inactive-bg: #e2e3e5;
@@ -72,6 +73,7 @@
   
   /* Status colors */
   --status-active: #4ade80;
+  --status-active-hover: #22c55e;
   --status-active-bg: #1e4d2b;
   --status-inactive: #9ca3af;
   --status-inactive-bg: #374151;
