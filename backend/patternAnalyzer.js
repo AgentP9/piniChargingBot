@@ -416,6 +416,10 @@ function findMatchingPattern(process, patterns) {
 const PROFILE_KEYS = ['mean', 'stdDev', 'min', 'max', 'median', 'p25', 'p75', 'peakPowerRatio'];
 const CURVE_PHASES = ['early', 'middle', 'late'];
 
+// Constants for completion time estimation
+const CONFIDENCE_MULTIPLIER_PAST_AVERAGE = 0.7; // Lower confidence when past average duration
+const CONFIDENCE_MULTIPLIER_EARLY_PHASE = 0.9;  // High confidence when still in early phase
+
 /**
  * Update the device label for a pattern
  * Ensures label uniqueness by checking against other patterns
@@ -635,12 +639,12 @@ function estimateCompletionTime(process, patterns) {
     // If elapsed time exceeds average, estimate based on max duration
     if (elapsedMinutes > averageDuration) {
       remainingMinutes = Math.max(0, maxDuration - elapsedMinutes);
-      confidence *= 0.7; // Lower confidence since we're past average
+      confidence *= CONFIDENCE_MULTIPLIER_PAST_AVERAGE; // Lower confidence since we're past average
     }
     
     // If elapsed time is less than min duration, we have high confidence
     if (elapsedMinutes < minDuration) {
-      confidence *= 0.9;
+      confidence *= CONFIDENCE_MULTIPLIER_EARLY_PHASE;
     }
   }
   

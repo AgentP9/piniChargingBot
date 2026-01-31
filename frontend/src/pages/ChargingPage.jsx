@@ -17,6 +17,11 @@ function ChargingPage({
     return processes.filter(process => !process.endTime);
   }, [processes]);
 
+  // Track active process IDs to prevent unnecessary effect re-runs
+  const activeProcessIds = useMemo(() => {
+    return activeProcesses.map(p => p.id).join(',');
+  }, [activeProcesses]);
+
   // Fetch completion time estimates for active processes
   useEffect(() => {
     if (activeProcesses.length === 0) {
@@ -45,7 +50,7 @@ function ChargingPage({
     // Refresh estimates every 30 seconds
     const interval = setInterval(fetchEstimates, 30000);
     return () => clearInterval(interval);
-  }, [activeProcesses]);
+  }, [activeProcessIds, activeProcesses]);
 
   const formatRemainingTime = (minutes) => {
     if (minutes < 1) {
@@ -95,28 +100,31 @@ function ChargingPage({
                   Active
                 </span>
               </div>
-              {estimations[activeProcesses[0].id] && (
-                <>
-                  <div className="info-item estimate-item">
-                    <strong>Estimated Remaining:</strong>{' '}
-                    <span className="estimate-value">
-                      {estimations[activeProcesses[0].id].status === 'completing' ? (
-                        'Completing...'
-                      ) : (
-                        formatRemainingTime(estimations[activeProcesses[0].id].remainingMinutes)
-                      )}
-                    </span>
-                    <span className="estimate-confidence">
-                      ({Math.round(estimations[activeProcesses[0].id].confidence * 100)}% confidence)
-                    </span>
-                  </div>
-                  {estimations[activeProcesses[0].id].patternDeviceName && (
-                    <div className="info-item estimate-hint">
-                      <small>Based on pattern: {estimations[activeProcesses[0].id].patternDeviceName}</small>
+              {(() => {
+                const estimation = estimations[activeProcesses[0].id];
+                return estimation && (
+                  <>
+                    <div className="info-item estimate-item">
+                      <strong>Estimated Remaining:</strong>{' '}
+                      <span className="estimate-value">
+                        {estimation.status === 'completing' ? (
+                          'Completing...'
+                        ) : (
+                          formatRemainingTime(estimation.remainingMinutes)
+                        )}
+                      </span>
+                      <span className="estimate-confidence">
+                        ({Math.round(estimation.confidence * 100)}% confidence)
+                      </span>
                     </div>
-                  )}
-                </>
-              )}
+                    {estimation.patternDeviceName && (
+                      <div className="info-item estimate-hint">
+                        <small>Based on pattern: {estimation.patternDeviceName}</small>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           )}
           <ChargingChart processes={activeProcesses} />
