@@ -1,0 +1,222 @@
+import React, { useMemo, useState, useEffect } from 'react';
+import axios from 'axios';
+import DeviceList from '../components/DeviceList';
+import ChargingChart from '../components/ChargingChart';
+import './ChargingPage.css';
+
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+
+function ChargingPage({ 
+  devices, 
+  processes
+}) {
+  const [estimations, setEstimations] = useState({});
+  const [guesses, setGuesses] = useState({});
+
+  // Get active (currently running) charging processes
+  const activeProcesses = useMemo(() => {
+    return processes.filter(process => !process.endTime);
+  }, [processes]);
+
+  // Track active process IDs to prevent unnecessary effect re-runs
+  const activeProcessIds = useMemo(() => {
+    return activeProcesses.map(p => p.id).join(',');
+  }, [activeProcesses]);
+
+  // Fetch completion time estimates for active processes
+  useEffect(() => {
+    if (activeProcesses.length === 0) {
+      setEstimations({});
+      return;
+    }
+
+    const fetchEstimates = async () => {
+      const newEstimations = {};
+      await Promise.all(
+        activeProcesses.map(async (process) => {
+          try {
+            const response = await axios.get(`${API_URL}/processes/${process.id}/estimate`);
+            if (response.data.hasEstimate) {
+              newEstimations[process.id] = response.data;
+            }
+          } catch (error) {
+            console.error(`Error fetching estimate for process ${process.id}:`, error);
+          }
+        })
+      );
+      setEstimations(newEstimations);
+    };
+
+    fetchEstimates();
+    // Refresh estimates every 30 seconds
+    const interval = setInterval(fetchEstimates, 30000);
+    return () => clearInterval(interval);
+  }, [activeProcessIds, activeProcesses]);
+
+  // Fetch device guesses for active processes
+  useEffect(() => {
+    if (activeProcesses.length === 0) {
+      setGuesses({});
+      return;
+    }
+
+    const fetchGuesses = async () => {
+      const newGuesses = {};
+      await Promise.all(
+        activeProcesses.map(async (process) => {
+          try {
+            const response = await axios.get(`${API_URL}/processes/${process.id}/guess`);
+            if (response.data.hasGuess) {
+              newGuesses[process.id] = {
+                deviceName: response.data.guessedDevice,
+                confidence: response.data.confidence
+              };
+            }
+          } catch (error) {
+            console.error(`Error fetching guess for process ${process.id}:`, error);
+          }
+        })
+      );
+      setGuesses(newGuesses);
+    };
+
+    fetchGuesses();
+    // Refresh guesses every 10 seconds
+    const interval = setInterval(fetchGuesses, 10000);
+    return () => clearInterval(interval);
+  }, [activeProcesses]);
+
+  const handleConfirmGuess = async (processId, guessedDeviceName) => {
+    try {
+      await axios.put(`${API_URL}/processes/${processId}/device-name`, {
+        newDeviceName: guessedDeviceName
+      });
+      
+      // Remove the guess from state since it's now confirmed
+      setGuesses(prev => {
+        const updated = { ...prev };
+        delete updated[processId];
+        return updated;
+      });
+    } catch (error) {
+      console.error(`Error confirming guess for process ${processId}:`, error);
+      alert('Failed to confirm device guess. Please try again.');
+    }
+  };
+
+  const formatRemainingTime = (minutes) => {
+    if (minutes < 1) {
+      return 'Less than 1 minute';
+    }
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    
+    if (hours > 0) {
+      return `${hours}h ${mins}m`;
+    }
+    return `${mins}m`;
+  };
+
+  return (
+    <div className="charging-page">
+      <section className="card devices-section-full">
+        <h2>Connected Chargers</h2>
+        <DeviceList 
+          devices={devices}
+          selectedDeviceId={null}
+          onSelectDevice={() => {}}
+        />
+      </section>
+
+      {activeProcesses.length > 0 && (
+        <section className="card chart-section">
+          <div className="chart-header">
+            <h2>
+              {activeProcesses.length === 1 
+                ? `Current Charging - Process #${activeProcesses[0].id}`
+                : `Current Charging (${activeProcesses.length} active processes)`
+              }
+            </h2>
+          </div>
+          {activeProcesses.length === 1 && (
+            <div className="process-info">
+              <div className="info-item">
+                <strong>Charger:</strong> {activeProcesses[0].chargerName || activeProcesses[0].deviceName || activeProcesses[0].chargerId || activeProcesses[0].deviceId}
+              </div>
+              <div className="info-item">
+                <strong>Start:</strong> {new Date(activeProcesses[0].startTime).toLocaleString()}
+              </div>
+              <div className="info-item">
+                <strong>Status:</strong> 
+                <span className="status-active">
+                  Active
+                </span>
+              </div>
+              {(() => {
+                const processId = activeProcesses[0].id;
+                const guess = guesses[processId];
+                const estimation = estimations[processId];
+                
+                return (
+                  <>
+                    {guess && (
+                      <div className="info-item guess-item">
+                        <strong>Device Guess:</strong>{' '}
+                        <span className="guess-value">
+                          {guess.deviceName}
+                        </span>
+                        <span className="guess-confidence">
+                          ({Math.round(guess.confidence * 100)}% match)
+                        </span>
+                        <button
+                          className="confirm-guess-button"
+                          onClick={() => handleConfirmGuess(processId, guess.deviceName)}
+                          title="Confirm this device identification"
+                        >
+                          ✓ Confirm
+                        </button>
+                      </div>
+                    )}
+                    {estimation && (
+                      <>
+                        <div className="info-item estimate-item">
+                          <strong>Estimated Remaining:</strong>{' '}
+                          <span className="estimate-value">
+                            {estimation.status === 'completing' ? (
+                              'Completing...'
+                            ) : (
+                              formatRemainingTime(estimation.remainingMinutes)
+                            )}
+                          </span>
+                          <span className="estimate-confidence">
+                            ({Math.round(estimation.confidence * 100)}% confidence)
+                          </span>
+                        </div>
+                        {estimation.patternDeviceName && (
+                          <div className="info-item estimate-hint">
+                            <small>Based on pattern: {estimation.patternDeviceName}</small>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          )}
+          <ChargingChart processes={activeProcesses} />
+        </section>
+      )}
+
+      {activeProcesses.length === 0 && (
+        <section className="card empty-charging-section">
+          <div className="empty-state">
+            <p>No active charging processes</p>
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+export default ChargingPage;

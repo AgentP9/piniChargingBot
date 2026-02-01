@@ -416,6 +416,10 @@ function findMatchingPattern(process, patterns) {
 const PROFILE_KEYS = ['mean', 'stdDev', 'min', 'max', 'median', 'p25', 'p75', 'peakPowerRatio'];
 const CURVE_PHASES = ['early', 'middle', 'late'];
 
+// Constants for completion time estimation
+const CONFIDENCE_MULTIPLIER_PAST_AVERAGE = 0.7; // Lower confidence when past average duration
+const CONFIDENCE_MULTIPLIER_EARLY_PHASE = 0.9;  // High confidence when still in early phase
+
 /**
  * Update the device label for a pattern
  * Ensures label uniqueness by checking against other patterns
@@ -547,6 +551,117 @@ function deletePattern(patterns, patternId) {
   return { success: true, deletedPattern: pattern };
 }
 
+/**
+ * Detect if a charging process is in its completion phase
+ * This detects when power consumption drops below a threshold and stabilizes
+ * @param {Object} process - Active charging process
+ * @param {number} thresholdWatts - Power threshold below which we consider charging near complete (default 5W)
+ * @param {number} stableMinutes - Number of minutes power must stay below threshold (default 5 minutes)
+ * @returns {boolean} True if process appears to be in completion phase
+ */
+function isInCompletionPhase(process, thresholdWatts = 5, stableMinutes = 5) {
+  if (!process || !process.events || process.endTime) {
+    return false;
+  }
+  
+  const powerEvents = process.events.filter(e => e.type === 'power_consumption');
+  
+  if (powerEvents.length < 10) {
+    return false; // Need more data
+  }
+  
+  // Check recent events (last stableMinutes worth)
+  const now = Date.now();
+  const stableThresholdMs = stableMinutes * 60 * 1000;
+  const recentEvents = powerEvents.filter(e => 
+    now - new Date(e.timestamp).getTime() < stableThresholdMs
+  );
+  
+  if (recentEvents.length < 3) {
+    return false; // Need more recent data
+  }
+  
+  // Check if all recent events are below threshold
+  return recentEvents.every(e => e.value < thresholdWatts);
+}
+
+/**
+ * Estimate time until charging completion for an active process
+ * Uses pattern matching to predict remaining time based on similar past charging sessions
+ * @param {Object} process - Active charging process
+ * @param {Array} patterns - Array of known charging patterns
+ * @returns {Object|null} Estimation with remainingMinutes and confidence, or null if cannot estimate
+ */
+function estimateCompletionTime(process, patterns) {
+  if (!process || process.endTime || !patterns || patterns.length === 0) {
+    return null;
+  }
+  
+  // Check if process is already in completion phase
+  if (isInCompletionPhase(process)) {
+    return {
+      remainingMinutes: 0,
+      confidence: 0.9,
+      status: 'completing',
+      message: 'Charging is complete or nearly complete'
+    };
+  }
+  
+  // Try to find matching pattern
+  const match = findMatchingPattern(process, patterns);
+  
+  if (!match || !match.pattern.statistics || !match.pattern.statistics.averageDuration) {
+    return null;
+  }
+  
+  const pattern = match.pattern;
+  const similarity = match.similarity;
+  
+  // Calculate elapsed time
+  const startTime = new Date(process.startTime).getTime();
+  const now = Date.now();
+  const elapsedMinutes = (now - startTime) / 1000 / 60;
+  
+  // Use average duration from pattern
+  const averageDuration = pattern.statistics.averageDuration;
+  
+  // Estimate remaining time
+  let remainingMinutes = Math.max(0, averageDuration - elapsedMinutes);
+  
+  // Adjust confidence based on similarity and how much data we have
+  let confidence = similarity;
+  
+  // If we have min/max duration, use that to refine the estimate
+  if (pattern.statistics.minDuration && pattern.statistics.maxDuration) {
+    const minDuration = pattern.statistics.minDuration;
+    const maxDuration = pattern.statistics.maxDuration;
+    
+    // If elapsed time exceeds average, estimate based on max duration
+    if (elapsedMinutes > averageDuration) {
+      remainingMinutes = Math.max(0, maxDuration - elapsedMinutes);
+      confidence *= CONFIDENCE_MULTIPLIER_PAST_AVERAGE; // Lower confidence since we're past average
+    }
+    
+    // If elapsed time is less than min duration, we have high confidence
+    if (elapsedMinutes < minDuration) {
+      confidence *= CONFIDENCE_MULTIPLIER_EARLY_PHASE;
+    }
+  }
+  
+  // Round confidence to 2 decimal places
+  confidence = parseFloat(confidence.toFixed(2));
+  
+  return {
+    remainingMinutes: Math.round(remainingMinutes),
+    confidence: Math.min(confidence, 0.95), // Cap at 0.95 since it's just an estimate
+    estimatedTotalMinutes: Math.round(averageDuration),
+    elapsedMinutes: Math.round(elapsedMinutes),
+    patternDeviceName: pattern.deviceName,
+    status: 'charging',
+    message: `Estimated based on ${pattern.count} similar charging session${pattern.count > 1 ? 's' : ''}`
+  };
+}
+
 module.exports = {
   analyzePatterns,
   loadPatterns,
@@ -557,5 +672,7 @@ module.exports = {
   findMatchingPattern,
   updatePatternLabel,
   mergePatterns,
-  deletePattern
+  deletePattern,
+  estimateCompletionTime,
+  isInCompletionPhase
 };

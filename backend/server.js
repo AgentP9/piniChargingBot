@@ -760,6 +760,61 @@ app.get('/api/processes/:id/guess', (req, res) => {
   }
 });
 
+// Estimate completion time for an active process
+// Returns estimated remaining time based on pattern matching
+app.get('/api/processes/:id/estimate', (req, res) => {
+  const processId = parseInt(req.params.id);
+  
+  // Validate that the ID is a valid positive integer
+  if (isNaN(processId) || processId <= 0 || !Number.isInteger(processId)) {
+    return res.status(400).json({ error: 'Invalid process ID' });
+  }
+  
+  const process = chargingProcesses.find(p => p.id === processId);
+  
+  if (!process) {
+    return res.status(404).json({ error: 'Process not found' });
+  }
+  
+  // Only provide estimates for active (incomplete) processes
+  if (process.endTime) {
+    return res.json({
+      processId: processId,
+      isActive: false,
+      hasEstimate: false,
+      message: 'Process is completed, no estimate needed'
+    });
+  }
+  
+  try {
+    const estimate = patternAnalyzer.estimateCompletionTime(process, chargingPatterns);
+    
+    if (estimate) {
+      res.json({
+        processId: processId,
+        isActive: true,
+        hasEstimate: true,
+        ...estimate
+      });
+    } else {
+      res.json({
+        processId: processId,
+        isActive: true,
+        hasEstimate: false,
+        message: 'Not enough data or no matching pattern found to estimate completion time'
+      });
+    }
+  } catch (error) {
+    console.error(`Error estimating completion time for process ${processId}:`, error);
+    res.status(500).json({
+      error: 'Failed to estimate completion time',
+      processId: processId,
+      isActive: true,
+      hasEstimate: false
+    });
+  }
+});
+
 // Pattern Label Management Endpoints
 
 // Update device label for a pattern

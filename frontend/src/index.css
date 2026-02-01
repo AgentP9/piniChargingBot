@@ -12,6 +12,9 @@
   --bg-hover: #f0f3ff;
   --bg-header: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   
+  /* Primary color */
+  --primary-color: #667eea;
+  
   /* Text colors */
   --text-primary: #333;
   --text-secondary: #555;
@@ -25,6 +28,7 @@
   
   /* Status colors */
   --status-active: #28a745;
+  --status-active-hover: #22863a;
   --status-active-bg: #d4edda;
   --status-inactive: #6c757d;
   --status-inactive-bg: #e2e3e5;
@@ -53,6 +57,9 @@
   --bg-hover: #3a3a5f;
   --bg-header: linear-gradient(135deg, #4a5fb8 0%, #5c3a82 100%);
   
+  /* Primary color */
+  --primary-color: #667eea;
+  
   /* Text colors */
   --text-primary: #e0e0e0;
   --text-secondary: #c0c0c0;
@@ -66,6 +73,7 @@
   
   /* Status colors */
   --status-active: #4ade80;
+  --status-active-hover: #22c55e;
   --status-active-bg: #1e4d2b;
   --status-inactive: #9ca3af;
   --status-inactive-bg: #374151;
