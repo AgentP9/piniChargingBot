@@ -18,6 +18,12 @@ const SIMILARITY_THRESHOLD = 0.65;
 // automatically assign the device name
 const HIGH_CONFIDENCE_THRESHOLD = 0.85;
 
+// Pre-compiled regex patterns for checking numbered variants
+// This improves performance when isManuallyCustomized is called frequently
+const NUMBERED_VARIANT_PATTERNS = FRIENDLY_DEVICE_NAMES.map(
+  baseName => new RegExp(`^${baseName}\\s+\\d+$`)
+);
+
 // Data directory for persistent storage
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const PATTERNS_FILE = path.join(DATA_DIR, 'charging-patterns.json');
@@ -113,8 +119,8 @@ function isManuallyCustomized(deviceName) {
   }
   
   // Check if it's a numbered variant like "Hugo 2", "Egon 3", etc.
-  for (const baseName of FRIENDLY_DEVICE_NAMES) {
-    const pattern = new RegExp(`^${baseName}\\s+\\d+$`);
+  // Use pre-compiled patterns for better performance
+  for (const pattern of NUMBERED_VARIANT_PATTERNS) {
     if (pattern.test(deviceName)) {
       return false; // It's an auto-generated numbered variant
     }

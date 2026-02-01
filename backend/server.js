@@ -49,6 +49,27 @@ async function runPatternAnalysis() {
   }
 }
 
+/**
+ * Try to auto-assign a device name to a process based on high-confidence pattern match
+ * @param {Object} process - The charging process to potentially auto-assign
+ * @param {number} processId - The ID of the process (for logging)
+ * @returns {boolean} True if auto-assignment occurred, false otherwise
+ */
+function tryAutoAssignDeviceName(process, processId) {
+  try {
+    const match = patternAnalyzer.findMatchingPattern(process, chargingPatterns);
+    if (match && match.similarity >= patternAnalyzer.HIGH_CONFIDENCE_THRESHOLD) {
+      // Auto-assign the device name if we have high confidence
+      process.deviceName = match.pattern.deviceName;
+      console.log(`Auto-assigned device name "${match.pattern.deviceName}" to process ${processId} (confidence: ${match.similarity})`);
+      return true;
+    }
+  } catch (error) {
+    console.error(`Error during auto-assignment for process ${processId}:`, error);
+  }
+  return false;
+}
+
 // Current state of each charger (physical charging device like ShellyPlug)
 const chargerStates = {};
 
@@ -208,16 +229,7 @@ mqttClient.on('message', (topic, message) => {
         });
         
         // Check if there's a high-confidence pattern match and auto-assign device name
-        try {
-          const match = patternAnalyzer.findMatchingPattern(process, chargingPatterns);
-          if (match && match.similarity >= patternAnalyzer.HIGH_CONFIDENCE_THRESHOLD) {
-            // Auto-assign the device name if we have high confidence
-            process.deviceName = match.pattern.deviceName;
-            console.log(`Auto-assigned device name "${match.pattern.deviceName}" to process ${processId} (confidence: ${match.similarity})`);
-          }
-        } catch (error) {
-          console.error(`Error during auto-assignment for process ${processId}:`, error);
-        }
+        tryAutoAssignDeviceName(process, processId);
         
         // Persist to storage
         storage.saveProcesses(chargingProcesses);
@@ -379,16 +391,7 @@ app.put('/api/processes/:id/complete', (req, res) => {
   }
   
   // Check if there's a high-confidence pattern match and auto-assign device name
-  try {
-    const match = patternAnalyzer.findMatchingPattern(process, chargingPatterns);
-    if (match && match.similarity >= patternAnalyzer.HIGH_CONFIDENCE_THRESHOLD) {
-      // Auto-assign the device name if we have high confidence
-      process.deviceName = match.pattern.deviceName;
-      console.log(`Auto-assigned device name "${match.pattern.deviceName}" to process ${processId} (confidence: ${match.similarity})`);
-    }
-  } catch (error) {
-    console.error(`Error during auto-assignment for process ${processId}:`, error);
-  }
+  tryAutoAssignDeviceName(process, processId);
   
   // Persist the change to storage
   storage.saveProcesses(chargingProcesses);
