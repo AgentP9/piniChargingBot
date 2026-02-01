@@ -13,6 +13,11 @@ const FRIENDLY_DEVICE_NAMES = [
 // Processes with similarity > this threshold are considered the same device
 const SIMILARITY_THRESHOLD = 0.65;
 
+// High confidence threshold for auto-assigning device names
+// When a charging process completes with a pattern match above this threshold,
+// automatically assign the device name
+const HIGH_CONFIDENCE_THRESHOLD = 0.85;
+
 // Data directory for persistent storage
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const PATTERNS_FILE = path.join(DATA_DIR, 'charging-patterns.json');
@@ -90,6 +95,33 @@ function calculatePowerProfile(process) {
       late: parseFloat(lateMean.toFixed(2))
     }
   };
+}
+
+/**
+ * Check if a device name appears to be manually customized (not a default friendly name)
+ * @param {string} deviceName - The device name to check
+ * @returns {boolean} True if the name appears to be manually customized
+ */
+function isManuallyCustomized(deviceName) {
+  if (!deviceName) {
+    return false;
+  }
+  
+  // Check if it's one of the default friendly names
+  if (FRIENDLY_DEVICE_NAMES.includes(deviceName)) {
+    return false;
+  }
+  
+  // Check if it's a numbered variant like "Hugo 2", "Egon 3", etc.
+  for (const baseName of FRIENDLY_DEVICE_NAMES) {
+    const pattern = new RegExp(`^${baseName}\\s+\\d+$`);
+    if (pattern.test(deviceName)) {
+      return false; // It's an auto-generated numbered variant
+    }
+  }
+  
+  // If it doesn't match any default pattern, it's manually customized
+  return true;
 }
 
 /**
@@ -246,6 +278,15 @@ function analyzePatterns(processes, existingPatterns = []) {
       matchedPattern.count++;
       matchedPattern.durations.push(duration);
       matchedPattern.lastSeen = process.endTime;
+      
+      // If this process had a manually customized pattern name, and the current
+      // matched pattern doesn't have a manually customized name, prefer the manual one
+      if (existingPatternForProcess && 
+          isManuallyCustomized(existingPatternForProcess.deviceName) &&
+          !isManuallyCustomized(matchedPattern.deviceName)) {
+        console.log(`Pattern analysis: Preserving manual device name "${existingPatternForProcess.deviceName}" over auto-generated "${matchedPattern.deviceName}"`);
+        matchedPattern.deviceName = existingPatternForProcess.deviceName;
+      }
       
       // Update average profile (simple running average)
       const oldWeight = matchedPattern.count - 1;
@@ -674,5 +715,7 @@ module.exports = {
   mergePatterns,
   deletePattern,
   estimateCompletionTime,
-  isInCompletionPhase
+  isInCompletionPhase,
+  isManuallyCustomized,
+  HIGH_CONFIDENCE_THRESHOLD
 };
