@@ -285,13 +285,25 @@ function analyzePatterns(processes, existingPatterns = []) {
       matchedPattern.durations.push(duration);
       matchedPattern.lastSeen = process.endTime;
       
-      // If this process had a manually customized pattern name, and the current
-      // matched pattern doesn't have a manually customized name, prefer the manual one
+      // Check if we should preserve a manually customized name
+      // Priority: existing pattern manual name > process manual name > current pattern name
       if (existingPatternForProcess && 
           isManuallyCustomized(existingPatternForProcess.deviceName) &&
           !isManuallyCustomized(matchedPattern.deviceName)) {
         console.log(`Pattern analysis: Preserving manual device name "${existingPatternForProcess.deviceName}" over auto-generated "${matchedPattern.deviceName}"`);
         matchedPattern.deviceName = existingPatternForProcess.deviceName;
+      } else {
+        // Check if the process itself has a manually assigned device name
+        const processDeviceName = process.deviceName;
+        const processChargerName = process.chargerName || process.deviceName || process.chargerId || process.deviceId;
+        
+        if (processDeviceName && 
+            processDeviceName !== processChargerName && 
+            isManuallyCustomized(processDeviceName) &&
+            !isManuallyCustomized(matchedPattern.deviceName)) {
+          console.log(`Pattern analysis: Using manually assigned device name "${processDeviceName}" from process ${process.id} over "${matchedPattern.deviceName}"`);
+          matchedPattern.deviceName = processDeviceName;
+        }
       }
       
       // Update average profile (simple running average)
@@ -331,13 +343,26 @@ function analyzePatterns(processes, existingPatterns = []) {
         patternId = `pattern_${timestamp}_${random}`;
         const patternIndex = patterns.length;
         
-        // Generate unique friendly name - append number if we've exhausted the base names
-        if (patternIndex < FRIENDLY_DEVICE_NAMES.length) {
-          deviceName = FRIENDLY_DEVICE_NAMES[patternIndex];
+        // Check if the process has a manually assigned device name
+        // (different from charger name and manually customized)
+        const processDeviceName = process.deviceName;
+        const processChargerName = process.chargerName || process.deviceName || process.chargerId || process.deviceId;
+        
+        if (processDeviceName && 
+            processDeviceName !== processChargerName && 
+            isManuallyCustomized(processDeviceName)) {
+          // Use the manually assigned device name from the process
+          deviceName = processDeviceName;
+          console.log(`Pattern analysis: Using manually assigned device name "${deviceName}" from process ${process.id}`);
         } else {
-          const baseNameIndex = patternIndex % FRIENDLY_DEVICE_NAMES.length;
-          const suffix = Math.floor(patternIndex / FRIENDLY_DEVICE_NAMES.length) + 1;
-          deviceName = `${FRIENDLY_DEVICE_NAMES[baseNameIndex]} ${suffix}`;
+          // Generate unique friendly name - append number if we've exhausted the base names
+          if (patternIndex < FRIENDLY_DEVICE_NAMES.length) {
+            deviceName = FRIENDLY_DEVICE_NAMES[patternIndex];
+          } else {
+            const baseNameIndex = patternIndex % FRIENDLY_DEVICE_NAMES.length;
+            const suffix = Math.floor(patternIndex / FRIENDLY_DEVICE_NAMES.length) + 1;
+            deviceName = `${FRIENDLY_DEVICE_NAMES[baseNameIndex]} ${suffix}`;
+          }
         }
       }
       
