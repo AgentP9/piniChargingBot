@@ -4,19 +4,20 @@
 
 This document describes improvements made to the pattern recognition system to address two key issues:
 
-1. **Pattern Preservation**: Manually identified devices and assigned patterns are now preserved during pattern re-analysis
+1. **Pattern Preservation**: Manually identified devices and assigned patterns are now preserved during pattern re-analysis and rerun
 2. **Auto-Assignment**: High-confidence pattern matches are automatically assigned as valid device names when charging completes
 
 ## Issue 1: Pattern Preservation
 
 ### Problem
-When users manually customized device names (e.g., changing "Hugo" to "Alice's iPhone"), running pattern recognition would sometimes overwrite these manual customizations with auto-generated names.
+When users manually customized device names (e.g., changing "Hugo" to "Alice's iPhone" or manually assigning a device name to a process), running pattern recognition would sometimes overwrite these manual customizations with auto-generated names. This was especially problematic when using the "rerun recognition" feature which clears all patterns.
 
 ### Solution
 The pattern analysis algorithm now:
 1. Detects which device names are manually customized vs. auto-generated
 2. Preserves manually customized names when patterns are merged during re-analysis
 3. Gives preference to manual customizations over auto-generated names
+4. **NEW**: Checks if individual processes have manually assigned device names and uses those when creating patterns, even during "rerun recognition"
 
 ### Implementation Details
 
@@ -26,8 +27,8 @@ Determines if a device name appears to be manually customized:
 - Returns `false` for auto-generated numbered variants: "Hugo 2", "Egon 3", etc.
 - Returns `true` for all other names (e.g., "Alice's iPhone", "Kitchen TonieBox")
 
-#### Pattern Analysis Logic
-When re-analyzing patterns:
+#### Pattern Analysis Logic - Existing Patterns
+When re-analyzing patterns with existing patterns in memory:
 ```javascript
 // If process had a manually customized pattern and current pattern doesn't,
 // preserve the manual name
@@ -38,17 +39,54 @@ if (existingPatternForProcess &&
 }
 ```
 
-### Example Scenario
+#### Pattern Analysis Logic - Process Device Names (NEW)
+When creating new patterns or no existing patterns are available (e.g., during "rerun recognition"):
+```javascript
+// Check if the process has a manually assigned device name
+const processDeviceName = process.deviceName;
+const processChargerName = process.chargerName || ...;
 
-**Before fix:**
+if (processDeviceName && 
+    processDeviceName !== processChargerName && 
+    isManuallyCustomized(processDeviceName)) {
+  // Use the manually assigned device name from the process
+  deviceName = processDeviceName;
+}
+```
+
+This ensures that manually assigned device names on individual processes are preserved even when patterns are completely cleared and recreated.
+
+### Example Scenarios
+
+**Scenario 1: Pattern rename (Original fix)**
+
+Before fix:
 1. User manually names a pattern "My iPhone"
 2. User runs pattern re-analysis
 3. Pattern gets renamed back to "Hugo" (auto-generated) ❌
 
-**After fix:**
+After fix:
 1. User manually names a pattern "My iPhone"
 2. User runs pattern re-analysis
 3. Pattern keeps the name "My iPhone" ✓
+
+**Scenario 2: Process device name assignment + rerun (NEW fix)**
+
+Before fix:
+1. User manually assigns device name "Alice's iPhone" to process 1 via `/api/processes/1/device-name`
+2. User manually assigns device name "Alice's iPhone" to process 2
+3. User runs "rerun recognition" (POST /api/patterns/rerun)
+4. All patterns cleared, processes re-analyzed
+5. New pattern created with auto-generated name "Hugo" ❌
+6. Manual work lost!
+
+After fix:
+1. User manually assigns device name "Alice's iPhone" to process 1 via `/api/processes/1/device-name`
+2. User manually assigns device name "Alice's iPhone" to process 2
+3. User runs "rerun recognition" (POST /api/patterns/rerun)
+4. All patterns cleared, processes re-analyzed
+5. New pattern created with name "Alice's iPhone" from the process ✓
+6. Manual work preserved!
 
 ## Issue 2: High-Confidence Auto-Assignment
 
