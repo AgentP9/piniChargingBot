@@ -31,7 +31,7 @@
 }
 
 .rerun-button:hover {
-  background: var(--info-accent);
+  background: var(--status-active-hover);
   transform: translateY(-1px);
   box-shadow: 0 2px 8px var(--shadow-accent);
 }

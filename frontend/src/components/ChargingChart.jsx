@@ -3,7 +3,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import './ChargingChart.css';
 
 // Color palette for multiple processes
-const PROCESS_COLORS = ['#667eea', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#30cfd0'];
+const PROCESS_COLORS = ['#10b981', '#34d399', '#6ee7b7', '#14b8a6', '#2dd4bf', '#5eead4'];
 
 function ChargingChart({ processes }) {
   // Support both single process (for backward compatibility) and multiple processes
