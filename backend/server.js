@@ -574,6 +574,50 @@ app.get('/api/devices/:deviceId', (req, res) => {
   }
 });
 
+// Control charger endpoint - turn on/off
+app.post('/api/chargers/:chargerId/control', (req, res) => {
+  const { chargerId } = req.params;
+  const { state } = req.body;
+  
+  // Validate charger exists
+  const chargerState = chargerStates[chargerId];
+  if (!chargerState) {
+    return res.status(404).json({ error: 'Charger not found' });
+  }
+  
+  // Validate state parameter
+  if (!state || (state !== 'on' && state !== 'off')) {
+    return res.status(400).json({ error: 'Invalid state. Must be "on" or "off"' });
+  }
+  
+  // Check if MQTT is connected
+  if (!mqttClient || !mqttClient.connected) {
+    return res.status(503).json({ error: 'MQTT broker not connected' });
+  }
+  
+  // Publish command to MQTT
+  const commandTopic = `${chargerState.topic}/relay/0/command`;
+  const command = state;
+  
+  console.log(`Sending command to charger "${chargerState.name}" (${chargerId}): ${command} on topic ${commandTopic}`);
+  
+  mqttClient.publish(commandTopic, command, { qos: 0, retain: false }, (err) => {
+    if (err) {
+      console.error(`Failed to publish command to ${commandTopic}:`, err);
+      return res.status(500).json({ error: 'Failed to send command to charger' });
+    }
+    
+    console.log(`Successfully sent ${command} command to charger "${chargerState.name}"`);
+    res.json({
+      success: true,
+      message: `Command "${command}" sent to charger "${chargerState.name}"`,
+      chargerId: chargerId,
+      chargerName: chargerState.name,
+      commandSent: command
+    });
+  });
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({

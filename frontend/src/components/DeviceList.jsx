@@ -7,6 +7,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 // DeviceList displays connected chargers (physical charging devices like ShellyPlugs)
 function DeviceList({ devices, selectedDeviceId, onSelectDevice }) {
   const [deviceGuesses, setDeviceGuesses] = useState({});
+  const [controllingDevice, setControllingDevice] = useState(null);
 
   // Fetch educated guesses for active processes
   useEffect(() => {
@@ -58,6 +59,27 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice }) {
     }
   };
 
+  const handleToggleCharger = async (deviceId, currentState, event) => {
+    // Prevent the click from bubbling to the device selection
+    event.stopPropagation();
+    
+    const newState = currentState ? 'off' : 'on';
+    
+    setControllingDevice(deviceId);
+    
+    try {
+      await axios.post(`${API_URL}/chargers/${deviceId}/control`, {
+        state: newState
+      });
+      console.log(`Successfully sent ${newState} command to charger ${deviceId}`);
+    } catch (error) {
+      console.error(`Error controlling charger ${deviceId}:`, error);
+      alert(`Failed to ${newState} charger. Please try again.`);
+    } finally {
+      setControllingDevice(null);
+    }
+  };
+
   return (
     <div className="device-list">
       {devices.map(device => {
@@ -81,9 +103,19 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice }) {
         >
           <div className="device-header">
             <h3 className="device-name">{device.name}</h3>
-            <span className={`device-status ${device.isOn ? 'status-on' : 'status-off'}`}>
-              {device.isOn ? '● ON' : '○ OFF'}
-            </span>
+            <div className="device-header-right">
+              <span className={`device-status ${device.isOn ? 'status-on' : 'status-off'}`}>
+                {device.isOn ? '● ON' : '○ OFF'}
+              </span>
+              <button
+                className={`control-button ${device.isOn ? 'control-button-on' : 'control-button-off'}`}
+                onClick={(e) => handleToggleCharger(device.id, device.isOn, e)}
+                disabled={controllingDevice === device.id}
+                title={device.isOn ? 'Turn off charger' : 'Turn on charger'}
+              >
+                {controllingDevice === device.id ? '...' : (device.isOn ? 'Turn OFF' : 'Turn ON')}
+              </button>
+            </div>
           </div>
           <div className="device-details">
             <div className="detail-row">
