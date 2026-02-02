@@ -1,10 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DeviceLabelModal from './DeviceLabelModal';
 import './PatternManager.css';
 
 function PatternManager({ patterns, selectedPatternId, onPatternUpdate, onSelectPattern }) {
   const [expandedPattern, setExpandedPattern] = useState(null);
   const [editingPattern, setEditingPattern] = useState(null);
+
+  // Update editingPattern reference when patterns array changes
+  // This ensures we're always working with the current pattern object
+  useEffect(() => {
+    if (editingPattern) {
+      const currentPattern = patterns.find(p => p.id === editingPattern.id);
+      if (currentPattern) {
+        // Update to the current pattern object from the new patterns array
+        setEditingPattern(currentPattern);
+      } else {
+        // Pattern no longer exists, close the modal
+        setEditingPattern(null);
+      }
+    }
+  }, [patterns]); // Only depend on patterns, not editingPattern, to avoid infinite loop
 
   const handleDeletePattern = async (patternId, deviceName) => {
     const confirmed = window.confirm(
