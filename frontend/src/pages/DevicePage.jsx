@@ -129,6 +129,17 @@ function DevicePage({
     });
   };
 
+  // Wrapper for onPatternUpdate that clears selections before the update
+  const handlePatternUpdate = async (action, data) => {
+    // Clear all selections before executing pattern update operations
+    // This prevents issues with stale data when patterns are renamed/merged/deleted
+    setSelectedProcesses([]);
+    setSelectedPatternId(null);
+    
+    // Execute the pattern update
+    return onPatternUpdate(action, data);
+  };
+
   return (
     <div className="device-page">
       <div className="dashboard-grid">
@@ -137,7 +148,7 @@ function DevicePage({
           <PatternManager 
             patterns={patterns}
             selectedPatternId={selectedPatternId}
-            onPatternUpdate={onPatternUpdate}
+            onPatternUpdate={handlePatternUpdate}
             onSelectPattern={handlePatternSelect}
           />
         </section>
