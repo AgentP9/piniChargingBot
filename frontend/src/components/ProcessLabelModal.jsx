@@ -2,41 +2,36 @@ import React, { useState, useEffect } from 'react';
 import './DeviceLabelModal.css'; // Reuse the same styles
 
 function ProcessLabelModal({ process, patterns, onClose, onSave }) {
-  const [newLabel, setNewLabel] = useState('');
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedPattern, setSelectedPattern] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (process) {
-      setNewLabel(process.deviceName || '');
+      // Set the current device name as the default selection if it exists in patterns
+      const currentPattern = patterns.find(p => p.deviceName === process.deviceName);
+      if (currentPattern) {
+        setSelectedPattern(process.deviceName);
+      } else {
+        setSelectedPattern('');
+      }
       setError('');
     }
-  }, [process]);
+  }, [process, patterns]);
 
   if (!process) return null;
 
-  // Get all unique device names from patterns
-  const allDeviceNames = [...new Set(patterns.map(p => p.deviceName))];
+  // Get all unique device names from patterns, sorted alphabetically
+  const allDeviceNames = [...new Set(patterns.map(p => p.deviceName))].sort();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!newLabel.trim()) {
-      setError('Please enter a device name');
+    if (!selectedPattern) {
+      setError('Please select a device pattern');
       return;
     }
 
-    const trimmedLabel = newLabel.trim();
-    onSave(process.id, trimmedLabel);
+    onSave(process.id, selectedPattern);
   };
-
-  const handleDeviceSelect = (deviceName) => {
-    setNewLabel(deviceName);
-    setShowDropdown(false);
-  };
-
-  const filteredSuggestions = allDeviceNames.filter(name =>
-    name.toLowerCase().includes(newLabel.toLowerCase())
-  );
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -52,48 +47,29 @@ function ProcessLabelModal({ process, patterns, onClose, onSave }) {
             
             <div className="info-box" style={{ marginBottom: '1rem' }}>
               <strong>Note:</strong>
-              <p>Renaming this individual charging process will remove it from its current pattern and either:</p>
-              <ul>
-                <li>Add it to an existing pattern with the same name, or</li>
-                <li>Create a new pattern if the name doesn't exist</li>
-              </ul>
+              <p>Select an existing device pattern to assign this charging process to it. The process will be removed from its current pattern (if any).</p>
             </div>
 
             <div className="form-group">
-              <label htmlFor="device-label">Device Name:</label>
-              <div className="input-container">
-                <input
-                  id="device-label"
-                  type="text"
-                  value={newLabel}
-                  onChange={(e) => {
-                    setNewLabel(e.target.value);
-                    setShowDropdown(true);
-                    setError(''); // Clear error on change
-                  }}
-                  onFocus={() => setShowDropdown(true)}
-                  placeholder="Enter device name"
-                  autoComplete="off"
-                  className="label-input"
-                />
-                
-                {showDropdown && filteredSuggestions.length > 0 && (
-                  <div className="dropdown-menu" onMouseDown={(e) => e.stopPropagation()}>
-                    <div className="dropdown-header">Existing devices:</div>
-                    {filteredSuggestions.map((name, index) => (
-                      <div
-                        key={index}
-                        className="dropdown-item"
-                        onClick={() => handleDeviceSelect(name)}
-                      >
-                        {name}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <label htmlFor="device-select">Device Pattern:</label>
+              <select
+                id="device-select"
+                value={selectedPattern}
+                onChange={(e) => {
+                  setSelectedPattern(e.target.value);
+                  setError('');
+                }}
+                className="label-input"
+              >
+                <option value="">-- Select a device pattern --</option>
+                {allDeviceNames.map((name, index) => (
+                  <option key={index} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
               <small className="help-text">
-                Choose an existing device name to add this process to that pattern, or enter a new name to create a new pattern.
+                Choose an existing device pattern to assign this process to. To create a new pattern, use the "New Pattern" button in the Recognized Devices section.
               </small>
             </div>
 
