@@ -220,14 +220,14 @@ function ChargingPage({
                             onClick={() => handleConfirmGuess(processId, guess.deviceName)}
                             title="Confirm this device identification"
                           >
-                            &#10003; Confirm
+                            &#10003;
                           </button>
                           <button
                             className="reject-guess-button"
                             onClick={() => handleRejectGuess(processId, guess.patternId)}
                             title="Reject and show next best match"
                           >
-                            &#10005; Reject
+                            &#10005;
                           </button>
                         </div>
                       </div>
@@ -250,13 +250,24 @@ function ChargingPage({
                         {estimation.patternDeviceName && (
                           <div className="info-item estimate-hint">
                             <small>Based on pattern: {estimation.patternDeviceName}</small>
-                            <button
-                              className="confirm-guess-button"
-                              onClick={() => handleConfirmGuess(processId, estimation.patternDeviceName)}
-                              title="Confirm this device identification"
-                            >
-                              &#10003; Confirm
-                            </button>
+                            <div className="guess-buttons">
+                              <button
+                                className="confirm-guess-button"
+                                onClick={() => handleConfirmGuess(processId, estimation.patternDeviceName)}
+                                title="Confirm this device identification"
+                              >
+                                &#10003;
+                              </button>
+                              {estimation.patternId && (
+                                <button
+                                  className="reject-guess-button"
+                                  onClick={() => handleRejectGuess(processId, estimation.patternId)}
+                                  title="Reject and show next best match"
+                                >
+                                  &#10005;
+                                </button>
+                              )}
+                            </div>
                           </div>
                         )}
                       </>

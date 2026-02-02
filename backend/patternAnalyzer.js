@@ -765,6 +765,7 @@ function estimateCompletionTime(process, patterns) {
     estimatedTotalMinutes: Math.round(averageDuration),
     elapsedMinutes: Math.round(elapsedMinutes),
     patternDeviceName: pattern.deviceName,
+    patternId: pattern.id,
     status: 'charging',
     message: `Estimated based on ${pattern.count} similar charging session${pattern.count > 1 ? 's' : ''}`
   };
