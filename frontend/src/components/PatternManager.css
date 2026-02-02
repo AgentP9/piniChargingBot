@@ -9,10 +9,40 @@
   margin-bottom: 1rem;
 }
 
+.header-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .pattern-manager h3 {
   margin: 0;
   color: var(--text-primary);
   font-size: 1.2rem;
+}
+
+.create-button {
+  background: var(--status-active);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.create-button:hover {
+  background: var(--status-active-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px var(--shadow-accent);
+}
+
+.create-button:active {
+  transform: translateY(0);
 }
 
 .rerun-button {

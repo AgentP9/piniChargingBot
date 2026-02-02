@@ -5,6 +5,7 @@ import './PatternManager.css';
 function PatternManager({ patterns, selectedPatternId, onPatternUpdate, onSelectPattern }) {
   const [expandedPattern, setExpandedPattern] = useState(null);
   const [editingPattern, setEditingPattern] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // Update editingPattern reference when patterns array changes
   // This ensures we're always working with the current pattern object
@@ -83,6 +84,20 @@ function PatternManager({ patterns, selectedPatternId, onPatternUpdate, onSelect
     setEditingPattern(null);
   };
 
+  const handleCreatePattern = async (deviceName) => {
+    try {
+      await onPatternUpdate('create', { deviceName });
+      setShowCreateModal(false);
+    } catch (error) {
+      console.error('Error creating pattern:', error);
+      if (error.message.includes('already exists')) {
+        alert('A pattern with this device name already exists. Please choose a different name.');
+      } else {
+        alert('Failed to create pattern. Please try again.');
+      }
+    }
+  };
+
   if (!patterns || patterns.length === 0) {
     return (
       <div className="pattern-manager">
@@ -117,13 +132,22 @@ function PatternManager({ patterns, selectedPatternId, onPatternUpdate, onSelect
     <div className="pattern-manager">
       <div className="pattern-header-row">
         <h3>Recognized Devices ({patterns.length})</h3>
-        <button 
-          className="rerun-button"
-          onClick={handleRerunRecognition}
-          title="Rerun device recognition from scratch"
-        >
-          🔄 Rerun Recognition
-        </button>
+        <div className="header-buttons">
+          <button 
+            className="create-button"
+            onClick={() => setShowCreateModal(true)}
+            title="Create a new device pattern manually"
+          >
+            ➕ New Pattern
+          </button>
+          <button 
+            className="rerun-button"
+            onClick={handleRerunRecognition}
+            title="Rerun device recognition from scratch"
+          >
+            🔄 Rerun Recognition
+          </button>
+        </div>
       </div>
       <div className="pattern-list">
         {patterns.map((pattern, index) => {
@@ -237,6 +261,73 @@ function PatternManager({ patterns, selectedPatternId, onPatternUpdate, onSelect
           onMerge={handleMergePatterns}
         />
       )}
+
+      {showCreateModal && (
+        <CreatePatternModal
+          onClose={() => setShowCreateModal(false)}
+          onCreate={handleCreatePattern}
+        />
+      )}
+    </div>
+  );
+}
+
+// Simple modal component for creating new patterns
+function CreatePatternModal({ onClose, onCreate }) {
+  const [deviceName, setDeviceName] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!deviceName.trim()) {
+      setError('Please enter a device name');
+      return;
+    }
+    onCreate(deviceName.trim());
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Create New Pattern</h2>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body">
+            {error && <div className="error-message">{error}</div>}
+            <div className="form-group">
+              <label htmlFor="new-pattern-name">Device Name:</label>
+              <input
+                id="new-pattern-name"
+                type="text"
+                value={deviceName}
+                onChange={(e) => {
+                  setDeviceName(e.target.value);
+                  setError('');
+                }}
+                placeholder="Enter device name (e.g., Laptop, iPhone)"
+                autoComplete="off"
+                autoFocus
+                className="label-input"
+              />
+              <small className="help-text">
+                Create a new pattern that processes can be assigned to.
+              </small>
+            </div>
+          </div>
+
+          <div className="modal-footer">
+            <button type="button" className="btn-secondary" onClick={onClose}>
+              Cancel
+            </button>
+            <button type="submit" className="btn-primary">
+              Create Pattern
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

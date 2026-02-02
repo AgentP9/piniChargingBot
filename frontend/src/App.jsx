@@ -90,6 +90,13 @@ function App() {
       } else if (action === 'rerun') {
         await axios.post(`${API_URL}/patterns/rerun`);
         await fetchData();
+      } else if (action === 'create') {
+        const { deviceName, chargerId } = data;
+        await axios.post(`${API_URL}/patterns`, {
+          deviceName,
+          chargerId
+        });
+        await fetchData();
       }
     } catch (err) {
       console.error(`Error performing pattern action ${action}:`, err);
