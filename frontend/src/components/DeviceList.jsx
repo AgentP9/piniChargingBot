@@ -109,9 +109,6 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice }) {
           <div className="device-header">
             <h3 className="device-name">{device.name}</h3>
             <div className="device-header-right">
-              <span className={`device-status ${device.isOn ? 'status-on' : 'status-off'}`}>
-                {device.isOn ? '● ON' : '○ OFF'}
-              </span>
               <button
                 className={`control-button ${device.isOn ? 'control-button-on' : 'control-button-off'}`}
                 onClick={(e) => handleToggleCharger(device.id, device.isOn, e)}

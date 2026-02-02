@@ -31,18 +31,6 @@
   color: var(--text-on-primary);
 }
 
-.device-item.selected .device-status {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.device-item.selected .status-on {
-  color: var(--text-on-primary);
-}
-
-.device-item.selected .status-off {
-  color: rgba(255, 255, 255, 0.9);
-}
-
 .device-header {
   display: flex;
   justify-content: space-between;
@@ -62,13 +50,6 @@
   font-weight: 600;
 }
 
-.device-status {
-  font-size: 0.9rem;
-  font-weight: 600;
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-}
-
 .control-button {
   font-size: 0.85rem;
   font-weight: 600;
@@ -83,6 +64,7 @@
   justify-content: center;
   gap: 0.5rem;
   min-width: 90px;
+  height: 36px;
 }
 
 .control-button:hover:not(:disabled) {
@@ -130,16 +112,6 @@
 
 .control-button-off:hover:not(:disabled) {
   background: #059669;
-}
-
-.status-on {
-  color: var(--status-active);
-  background: var(--status-active-bg);
-}
-
-.status-off {
-  color: var(--status-inactive);
-  background: var(--status-inactive-bg);
 }
 
 .device-details {
