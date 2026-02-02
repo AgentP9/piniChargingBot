@@ -98,10 +98,6 @@
   flex-wrap: wrap;
 }
 
-.estimate-hint small {
-  margin-right: 0.5rem;
-}
-
 @media (max-width: 900px) {
   .charging-page {
     padding: 1rem;
