@@ -114,7 +114,12 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice }) {
                 disabled={controllingDevice === device.id}
                 title={device.isOn ? 'Turn off charger' : 'Turn on charger'}
               >
-                {controllingDevice === device.id ? 'Please wait...' : (device.isOn ? 'Turn OFF' : 'Turn ON')}
+                {controllingDevice === device.id ? (
+                  <>
+                    <span className="spinner"></span>
+                    Please wait...
+                  </>
+                ) : (device.isOn ? 'Turn OFF' : 'Turn ON')}
               </button>
             </div>
           </div>
