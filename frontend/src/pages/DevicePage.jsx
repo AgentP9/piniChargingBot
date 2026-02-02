@@ -140,6 +140,18 @@ function DevicePage({
     return onPatternUpdate(action, data);
   };
 
+  // Wrapper for onProcessUpdate that clears selections before the update
+  const handleProcessUpdate = async (action, data) => {
+    // Clear all selections before executing process update operations
+    // This prevents issues with stale data when processes are renamed
+    // (which can affect patterns and other processes)
+    setSelectedProcesses([]);
+    setSelectedPatternId(null);
+    
+    // Execute the process update
+    return onProcessUpdate(action, data);
+  };
+
   return (
     <div className="device-page">
       <div className="dashboard-grid">
@@ -237,8 +249,8 @@ function DevicePage({
             onSelectProcess={handleProcessSelect}
             onDeleteProcess={onDeleteProcess}
             onCompleteProcess={onCompleteProcess}
-            onPatternUpdate={onPatternUpdate}
-            onProcessUpdate={onProcessUpdate}
+            onPatternUpdate={handlePatternUpdate}
+            onProcessUpdate={handleProcessUpdate}
             filters={filters}
           />
         </section>
