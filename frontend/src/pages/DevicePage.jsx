@@ -300,7 +300,7 @@ function DevicePage({
               </div>
             </div>
           )}
-          <ChargingChart processes={selectedProcesses} />
+          <ChargingChart processes={selectedProcesses} patterns={patterns} />
         </section>
       )}
     </div>
