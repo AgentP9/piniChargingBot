@@ -100,6 +100,11 @@ function ChargingPage({
         delete updated[processId];
         return updated;
       });
+      
+      // Refresh data to show the confirmed device name
+      if (onRefreshData) {
+        await onRefreshData();
+      }
     } catch (error) {
       console.error(`Error confirming guess for process ${processId}:`, error);
       alert('Failed to confirm device guess. Please try again.');
