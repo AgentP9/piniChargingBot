@@ -116,13 +116,20 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }
             <div className="device-header-right">
               <div 
                 className={`toggle-switch ${device.isOn ? 'toggle-on' : 'toggle-off'} ${controllingDevice === device.id ? 'toggle-loading' : ''}`}
-                onClick={(e) => handleToggleCharger(device.id, device.isOn, e)}
+                onClick={(e) => {
+                  if (controllingDevice !== device.id) {
+                    handleToggleCharger(device.id, device.isOn, e);
+                  } else {
+                    e.stopPropagation();
+                  }
+                }}
                 role="switch"
                 aria-checked={device.isOn}
+                aria-disabled={controllingDevice === device.id}
                 aria-label={device.isOn ? 'Turn off charger' : 'Turn on charger'}
                 tabIndex={0}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
+                  if ((e.key === 'Enter' || e.key === ' ') && controllingDevice !== device.id) {
                     e.preventDefault();
                     handleToggleCharger(device.id, device.isOn, e);
                   }
