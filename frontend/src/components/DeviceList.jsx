@@ -5,7 +5,7 @@ import './DeviceList.css';
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 // DeviceList displays connected chargers (physical charging devices like ShellyPlugs)
-function DeviceList({ devices, selectedDeviceId, onSelectDevice }) {
+function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }) {
   const [deviceGuesses, setDeviceGuesses] = useState({});
   const [controllingDevice, setControllingDevice] = useState(null);
 
@@ -76,6 +76,11 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice }) {
         new Promise(resolve => setTimeout(resolve, 1000))
       ]);
       console.log(`Successfully sent ${newState} command to charger ${deviceId}`);
+      
+      // Immediately refresh data to show new state
+      if (onRefreshData) {
+        await onRefreshData();
+      }
     } catch (error) {
       console.error(`Error controlling charger ${deviceId}:`, error);
       const errorMessage = error.response?.data?.error || `Failed to ${newState} charger`;
@@ -93,7 +98,7 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice }) {
         return (
         <div 
           key={device.id} 
-          className={`device-item ${selectedDeviceId === device.id ? 'selected' : ''}`}
+          className={`device-item ${selectedDeviceId === device.id ? 'selected' : ''} ${device.isOn ? 'device-on' : 'device-off'}`}
           onClick={() => handleDeviceClick(device.id)}
           role="button"
           tabIndex={0}
@@ -109,23 +114,41 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice }) {
           <div className="device-header">
             <h3 className="device-name">{device.name}</h3>
             <div className="device-header-right">
-              <button
-                className={`control-button ${device.isOn ? 'control-button-on' : 'control-button-off'}`}
+              <div 
+                className={`toggle-switch ${device.isOn ? 'toggle-on' : 'toggle-off'} ${controllingDevice === device.id ? 'toggle-loading' : ''}`}
                 onClick={(e) => handleToggleCharger(device.id, device.isOn, e)}
-                disabled={controllingDevice === device.id}
-                title={device.isOn ? 'Turn off charger' : 'Turn on charger'}
+                role="switch"
+                aria-checked={device.isOn}
+                aria-label={device.isOn ? 'Turn off charger' : 'Turn on charger'}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleToggleCharger(device.id, device.isOn, e);
+                  }
+                }}
               >
                 {controllingDevice === device.id ? (
-                  <span className="spinner"></span>
-                ) : (device.isOn ? 'Turn OFF' : 'Turn ON')}
-              </button>
+                  <div className="toggle-track">
+                    <span className="spinner toggle-spinner"></span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="toggle-track"></div>
+                    <div className="toggle-thumb"></div>
+                    <span className="toggle-label">{device.isOn ? 'ON' : 'OFF'}</span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
           <div className="device-details">
-            <div className="detail-row">
-              <span className="detail-label">Power:</span>
-              <span className="detail-value">{device.power.toFixed(2)} W</span>
-            </div>
+            {device.isOn && device.power > 0 && (
+              <div className="detail-row">
+                <span className="detail-label">Power:</span>
+                <span className="detail-value">{device.power.toFixed(2)} W</span>
+              </div>
+            )}
             {device.currentProcessId !== null && (
               <div className="detail-row">
                 <span className="detail-label">Current Process:</span>

@@ -126,6 +126,7 @@ function ChargingPage({
           devices={devices}
           selectedDeviceId={null}
           onSelectDevice={() => {}}
+          onRefreshData={onRefreshData}
         />
       </section>
 

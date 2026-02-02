@@ -14,6 +14,16 @@
   user-select: none;
 }
 
+.device-item.device-on {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0.08) 100%);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.device-item.device-off {
+  background: var(--bg-tertiary);
+  border-color: var(--border-primary);
+}
+
 .device-item:hover {
   border-color: var(--border-secondary);
   box-shadow: 0 2px 8px var(--shadow-accent);
@@ -50,35 +60,80 @@
   font-weight: 600;
 }
 
-.control-button {
-  font-size: 0.85rem;
-  font-weight: 600;
-  padding: 0.4rem 0.9rem;
-  border: none;
-  border-radius: 6px;
+/* Toggle Switch Styles */
+.toggle-switch {
+  position: relative;
+  width: 70px;
+  height: 32px;
+  background: #cbd5e1;
+  border-radius: 16px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  padding: 3px;
+}
+
+.toggle-switch:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.toggle-switch.toggle-on {
+  background: #10b981;
+}
+
+.toggle-switch.toggle-off {
+  background: #94a3b8;
+}
+
+.toggle-switch.toggle-loading {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.toggle-track {
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  min-width: 90px;
-  min-height: 36px;
 }
 
-.control-button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+.toggle-thumb {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  left: 3px;
 }
 
-.control-button:active:not(:disabled) {
-  transform: translateY(0);
+.toggle-on .toggle-thumb {
+  transform: translateX(38px);
 }
 
-.spinner {
-  width: 14px;
-  height: 14px;
+.toggle-label {
+  position: absolute;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: white;
+  transition: opacity 0.2s ease;
+}
+
+.toggle-on .toggle-label {
+  left: 8px;
+}
+
+.toggle-off .toggle-label {
+  right: 8px;
+}
+
+.toggle-spinner {
+  width: 18px;
+  height: 18px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
   border-radius: 50%;
@@ -89,29 +144,6 @@
   to {
     transform: rotate(360deg);
   }
-}
-
-.control-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.control-button-on {
-  background: #ef4444;
-  color: white;
-}
-
-.control-button-on:hover:not(:disabled) {
-  background: #dc2626;
-}
-
-.control-button-off {
-  background: #10b981;
-  color: white;
-}
-
-.control-button-off:hover:not(:disabled) {
-  background: #059669;
 }
 
 .device-details {
