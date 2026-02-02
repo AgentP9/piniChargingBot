@@ -461,6 +461,42 @@ function savePatterns(patterns) {
  * @param {Array} patterns - Array of existing patterns
  * @returns {Object|null} Matching pattern or null if no match found
  */
+/**
+ * Find all matching patterns for a process, sorted by similarity
+ * @param {Object} process - The charging process to match
+ * @param {Array} patterns - Array of all patterns
+ * @param {Array} excludePatternIds - Optional array of pattern IDs to exclude
+ * @returns {Array} Array of matches sorted by similarity (highest first)
+ */
+function findAllMatchingPatterns(process, patterns, excludePatternIds = []) {
+  const profile = calculatePowerProfile(process);
+  if (!profile) {
+    return [];
+  }
+  
+  const matches = [];
+  
+  for (const pattern of patterns) {
+    // Skip excluded patterns
+    if (excludePatternIds.includes(pattern.id)) {
+      continue;
+    }
+    
+    const similarity = calculateProfileSimilarity(profile, pattern.averageProfile);
+    if (similarity >= SIMILARITY_THRESHOLD) {
+      matches.push({
+        pattern,
+        similarity: parseFloat(similarity.toFixed(3))
+      });
+    }
+  }
+  
+  // Sort by similarity (highest first)
+  matches.sort((a, b) => b.similarity - a.similarity);
+  
+  return matches;
+}
+
 function findMatchingPattern(process, patterns) {
   const profile = calculatePowerProfile(process);
   if (!profile) {
@@ -742,6 +778,7 @@ module.exports = {
   calculateDuration,
   calculateProfileSimilarity,
   findMatchingPattern,
+  findAllMatchingPatterns,
   updatePatternLabel,
   mergePatterns,
   deletePattern,

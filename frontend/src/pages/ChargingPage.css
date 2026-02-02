@@ -46,6 +46,18 @@
   margin-right: 0.5rem;
 }
 
+.guess-cycled {
+  font-size: 1.2em;
+  margin-left: 0.25rem;
+  cursor: help;
+}
+
+.guess-buttons {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
 .confirm-guess-button {
   background: var(--status-active);
   color: white;
@@ -68,6 +80,31 @@
 }
 
 .confirm-guess-button:active {
+  transform: translateY(0);
+}
+
+.reject-guess-button {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.reject-guess-button:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.reject-guess-button:active {
   transform: translateY(0);
 }
 

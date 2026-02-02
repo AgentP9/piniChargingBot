@@ -71,6 +71,7 @@ function ChargingPage({
             if (response.data.hasGuess) {
               newGuesses[process.id] = {
                 deviceName: response.data.guessedDevice,
+                patternId: response.data.patternId,
                 confidence: response.data.confidence
               };
             }
@@ -108,6 +109,38 @@ function ChargingPage({
     } catch (error) {
       console.error(`Error confirming guess for process ${processId}:`, error);
       alert('Failed to confirm device guess. Please try again.');
+    }
+  };
+
+  const handleRejectGuess = async (processId, patternId) => {
+    try {
+      const response = await axios.post(`${API_URL}/processes/${processId}/reject-guess`, {
+        rejectedPatternId: patternId
+      });
+      
+      if (response.data.hasGuess) {
+        // Update the guess with the next suggestion
+        setGuesses(prev => ({
+          ...prev,
+          [processId]: {
+            deviceName: response.data.guessedDevice,
+            patternId: response.data.patternId,
+            confidence: response.data.confidence,
+            cycled: response.data.cycled,
+            totalMatches: response.data.totalMatches
+          }
+        }));
+      } else {
+        // No more guesses available
+        setGuesses(prev => {
+          const updated = { ...prev };
+          delete updated[processId];
+          return updated;
+        });
+      }
+    } catch (error) {
+      console.error(`Error rejecting guess for process ${processId}:`, error);
+      alert('Failed to reject device guess. Please try again.');
     }
   };
 
@@ -176,13 +209,27 @@ function ChargingPage({
                         <span className="guess-confidence">
                           ({Math.round(guess.confidence * 100)}% match)
                         </span>
-                        <button
-                          className="confirm-guess-button"
-                          onClick={() => handleConfirmGuess(processId, guess.deviceName)}
-                          title="Confirm this device identification"
-                        >
-                          &#10003; Confirm
-                        </button>
+                        {guess.cycled && (
+                          <span className="guess-cycled" title="All options have been shown, cycling back">
+                            🔄
+                          </span>
+                        )}
+                        <div className="guess-buttons">
+                          <button
+                            className="confirm-guess-button"
+                            onClick={() => handleConfirmGuess(processId, guess.deviceName)}
+                            title="Confirm this device identification"
+                          >
+                            &#10003; Confirm
+                          </button>
+                          <button
+                            className="reject-guess-button"
+                            onClick={() => handleRejectGuess(processId, guess.patternId)}
+                            title="Reject and show next best match"
+                          >
+                            &#10005; Reject
+                          </button>
+                        </div>
                       </div>
                     )}
                     {estimation && (
