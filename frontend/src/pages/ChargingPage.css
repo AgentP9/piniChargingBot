@@ -92,6 +92,14 @@
   grid-column: 1 / -1;
   color: var(--text-muted);
   font-style: italic;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.estimate-hint small {
+  margin-right: 0.5rem;
 }
 
 @media (max-width: 900px) {

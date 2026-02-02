@@ -197,6 +197,13 @@ function ChargingPage({
                         {estimation.patternDeviceName && (
                           <div className="info-item estimate-hint">
                             <small>Based on pattern: {estimation.patternDeviceName}</small>
+                            <button
+                              className="confirm-guess-button"
+                              onClick={() => handleConfirmGuess(processId, estimation.patternDeviceName)}
+                              title="Confirm this device identification"
+                            >
+                              ✓ Confirm
+                            </button>
                           </div>
                         )}
                       </>

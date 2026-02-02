@@ -198,9 +198,9 @@ function ChargingChart({ processes, patterns = [] }) {
               <Line 
                 type="monotone" 
                 dataKey="power" 
-                stroke="#667eea" 
+                stroke="#10b981" 
                 strokeWidth={2}
-                dot={{ fill: '#667eea', r: 3 }}
+                dot={{ fill: '#10b981', r: 3 }}
                 activeDot={{ r: 6 }}
                 name="Power (W)"
               />
