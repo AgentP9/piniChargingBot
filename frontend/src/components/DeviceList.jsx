@@ -69,7 +69,7 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice }) {
     
     try {
       // Enforce minimum 1 second delay for spinner visibility
-      const [response] = await Promise.all([
+      await Promise.all([
         axios.post(`${API_URL}/chargers/${deviceId}/control`, {
           state: newState
         }),
