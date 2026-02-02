@@ -755,6 +755,16 @@ app.get('/api/processes/:id/guess', (req, res) => {
     });
   }
   
+  // Don't provide guesses if the device name is already assigned
+  if (process.deviceName && process.deviceName.trim() !== '') {
+    return res.json({
+      processId: processId,
+      isActive: true,
+      hasGuess: false,
+      message: 'Device already identified'
+    });
+  }
+  
   try {
     // Try to match against existing patterns
     const match = patternAnalyzer.findMatchingPattern(process, chargingPatterns);
