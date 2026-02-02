@@ -224,7 +224,7 @@ function PatternManager({ patterns, selectedPatternId, onPatternUpdate, onSelect
                     </div>
                     <div className="detail-item">
                       <span className="detail-label">Last Seen:</span>
-                      <span className="detail-value">{new Date(pattern.lastSeen).toLocaleDateString()}</span>
+                      <span className="detail-value">{pattern.lastSeen ? new Date(pattern.lastSeen).toLocaleDateString() : 'N/A'}</span>
                     </div>
                   </div>
 
