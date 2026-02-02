@@ -68,9 +68,13 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice }) {
     setControllingDevice(deviceId);
     
     try {
-      await axios.post(`${API_URL}/chargers/${deviceId}/control`, {
-        state: newState
-      });
+      // Enforce minimum 1 second delay for spinner visibility
+      const [response] = await Promise.all([
+        axios.post(`${API_URL}/chargers/${deviceId}/control`, {
+          state: newState
+        }),
+        new Promise(resolve => setTimeout(resolve, 1000))
+      ]);
       console.log(`Successfully sent ${newState} command to charger ${deviceId}`);
     } catch (error) {
       console.error(`Error controlling charger ${deviceId}:`, error);
@@ -115,10 +119,7 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice }) {
                 title={device.isOn ? 'Turn off charger' : 'Turn on charger'}
               >
                 {controllingDevice === device.id ? (
-                  <>
-                    <span className="spinner"></span>
-                    Please wait...
-                  </>
+                  <span className="spinner"></span>
                 ) : (device.isOn ? 'Turn OFF' : 'Turn ON')}
               </button>
             </div>
