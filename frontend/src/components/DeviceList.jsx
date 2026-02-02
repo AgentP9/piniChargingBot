@@ -74,7 +74,8 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice }) {
       console.log(`Successfully sent ${newState} command to charger ${deviceId}`);
     } catch (error) {
       console.error(`Error controlling charger ${deviceId}:`, error);
-      alert(`Failed to ${newState} charger. Please try again.`);
+      const errorMessage = error.response?.data?.error || `Failed to ${newState} charger`;
+      alert(`${errorMessage}. Please try again.`);
     } finally {
       setControllingDevice(null);
     }

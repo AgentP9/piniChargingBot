@@ -601,7 +601,7 @@ app.post('/api/chargers/:chargerId/control', (req, res) => {
   
   console.log(`Sending command to charger "${chargerState.name}" (${chargerId}): ${command} on topic ${commandTopic}`);
   
-  mqttClient.publish(commandTopic, command, { qos: 0, retain: false }, (err) => {
+  mqttClient.publish(commandTopic, command, { qos: 1, retain: false }, (err) => {
     if (err) {
       console.error(`Failed to publish command to ${commandTopic}:`, err);
       return res.status(500).json({ error: 'Failed to send command to charger' });
