@@ -85,7 +85,7 @@ function displayPatterns(patterns, title) {
   });
 }
 
-function renamePatter(patterns, processes, fromName, toName) {
+function renamePattern(patterns, processes, fromName, toName) {
   const pattern = patterns.find(p => p.deviceName === fromName);
   if (!pattern) {
     console.log(`✗ Pattern "${fromName}" not found`);
@@ -124,9 +124,9 @@ displayPatterns(patterns, 'Initial Patterns (auto-generated names)');
 console.log('\n\nScenario 1: Label patterns with device names');
 console.log('=============================================');
 
-patterns = renamePatter(patterns, processes, patterns[0].deviceName, 'Laptop');
-patterns = renamePatter(patterns, processes, patterns.find(p => p.processIds.includes(3))?.deviceName, 'iPhone');
-patterns = renamePatter(patterns, processes, patterns.find(p => p.processIds.includes(4))?.deviceName, 'Test');
+patterns = renamePattern(patterns, processes, patterns[0].deviceName, 'Laptop');
+patterns = renamePattern(patterns, processes, patterns.find(p => p.processIds.includes(3))?.deviceName, 'iPhone');
+patterns = renamePattern(patterns, processes, patterns.find(p => p.processIds.includes(4))?.deviceName, 'Test');
 
 displayPatterns(patterns, 'Patterns after labeling');
 
@@ -135,7 +135,7 @@ console.log('\n\nScenario 2: Change CPI "Laptop" to "Test"');
 console.log('==========================================');
 console.log('Expected: New RP "Test" created OR merged with existing "Test"');
 
-patterns = renamePatter(patterns, processes, 'Laptop', 'Test2');  // Use "Test2" to avoid conflict
+patterns = renamePattern(patterns, processes, 'Laptop', 'Test2');  // Use "Test2" to avoid conflict
 
 displayPatterns(patterns, 'Patterns after renaming Laptop to Test2');
 
@@ -151,7 +151,7 @@ console.log('\n\nScenario 3: Rename CPI "iPhone" to "Laptop"');
 console.log('============================================');
 console.log('Expected: RPs updated - "iPhone" becomes "Laptop"');
 
-patterns = renamePatter(patterns, processes, 'iPhone', 'Laptop');
+patterns = renamePattern(patterns, processes, 'iPhone', 'Laptop');
 
 displayPatterns(patterns, 'Patterns after renaming iPhone to Laptop');
 
@@ -168,10 +168,10 @@ console.log('===============================================');
 console.log('Expected: "Test" pattern deleted');
 
 // First rename "Test" to "Laptop2"
-patterns = renamePatter(patterns, processes, 'Test', 'Laptop2');
+patterns = renamePattern(patterns, processes, 'Test', 'Laptop2');
 
 // Then rename "Test2" to "Laptop3"  
-patterns = renamePatter(patterns, processes, 'Test2', 'Laptop3');
+patterns = renamePattern(patterns, processes, 'Test2', 'Laptop3');
 
 displayPatterns(patterns, 'Final patterns');
 
