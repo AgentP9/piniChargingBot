@@ -811,7 +811,7 @@ app.get('/api/processes/:id/guess', (req, res) => {
   
   try {
     // Try to match against existing patterns, excluding any rejected ones
-    const rejectedPatterns = process.rejectedPatterns || [];
+    const rejectedPatterns = Array.isArray(process.rejectedPatterns) ? process.rejectedPatterns : [];
     const matches = patternAnalyzer.findAllMatchingPatterns(process, chargingPatterns, rejectedPatterns);
     
     if (matches.length > 0) {

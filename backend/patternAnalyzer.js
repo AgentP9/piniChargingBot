@@ -456,12 +456,6 @@ function savePatterns(patterns) {
 }
 
 /**
- * Find the pattern that best matches a given process
- * @param {Object} process - A charging process
- * @param {Array} patterns - Array of existing patterns
- * @returns {Object|null} Matching pattern or null if no match found
- */
-/**
  * Find all matching patterns for a process, sorted by similarity
  * @param {Object} process - The charging process to match
  * @param {Array} patterns - Array of all patterns
@@ -497,6 +491,12 @@ function findAllMatchingPatterns(process, patterns, excludePatternIds = []) {
   return matches;
 }
 
+/**
+ * Find the pattern that best matches a given process
+ * @param {Object} process - A charging process
+ * @param {Array} patterns - Array of existing patterns
+ * @returns {Object|null} Matching pattern or null if no match found
+ */
 function findMatchingPattern(process, patterns) {
   const profile = calculatePowerProfile(process);
   if (!profile) {
