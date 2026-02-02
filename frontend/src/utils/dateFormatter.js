@@ -1,10 +1,16 @@
 /**
- * Format a date to German locale format: dd.mm.yyyy HH:MM:SS
+ * Format a date to German locale format: dd.mm.yyyy HH:mm:ss
  * @param {Date|string} date - Date object or date string
- * @returns {string} Formatted date string
+ * @returns {string} Formatted date string or empty string if invalid
  */
 export function formatDateTime(date) {
   const d = new Date(date);
+  
+  // Validate date
+  if (isNaN(d.getTime())) {
+    console.error('Invalid date provided to formatDateTime:', date);
+    return '';
+  }
   
   const day = String(d.getDate()).padStart(2, '0');
   const month = String(d.getMonth() + 1).padStart(2, '0');
