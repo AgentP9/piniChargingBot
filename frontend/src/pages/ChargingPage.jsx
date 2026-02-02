@@ -8,7 +8,8 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 function ChargingPage({ 
   devices, 
-  processes
+  processes,
+  onRefreshData
 }) {
   const [estimations, setEstimations] = useState({});
   const [guesses, setGuesses] = useState({});
@@ -125,6 +126,7 @@ function ChargingPage({
           devices={devices}
           selectedDeviceId={null}
           onSelectDevice={() => {}}
+          onRefreshData={onRefreshData}
         />
       </section>
 
