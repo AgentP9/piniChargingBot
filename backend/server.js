@@ -456,41 +456,17 @@ app.put('/api/processes/:id/device-name', (req, res) => {
       if (!targetPattern.processIds.includes(processId)) {
         targetPattern.processIds.push(processId);
         targetPattern.count = targetPattern.processIds.length;
+        targetPattern.lastSeen = process.endTime || new Date().toISOString();
         console.log(`Added process ${processId} to existing pattern ${targetPattern.id}`);
       }
     } else {
-      // Create a new pattern for this process
-      const profile = patternAnalyzer.calculatePowerProfile(process);
-      const duration = patternAnalyzer.calculateDuration(process);
-      
-      if (profile && duration) {
-        const timestamp = Date.now();
-        const random = Math.random().toString(36).substring(2, 11);
-        const newPatternId = `pattern_${timestamp}_${random}`;
-        
-        const newPattern = {
-          id: newPatternId,
-          deviceId: process.chargerId || process.deviceId,
-          chargerId: process.chargerId || process.deviceId,
-          chargerName: process.chargerName || process.deviceName || process.chargerId || process.deviceId,
-          deviceName: trimmedName,
-          count: 1,
-          processIds: [processId],
-          averageProfile: { ...profile },
-          statistics: {
-            averageDuration: parseFloat(duration.toFixed(2)),
-            minDuration: parseFloat(duration.toFixed(2)),
-            maxDuration: parseFloat(duration.toFixed(2)),
-            medianDuration: parseFloat(duration.toFixed(2)),
-            totalSessions: 1
-          },
-          firstSeen: process.startTime,
-          lastSeen: process.endTime
-        };
-        
-        chargingPatterns.push(newPattern);
-        console.log(`Created new pattern ${newPatternId} with device name "${trimmedName}"`);
-      }
+      // Pattern doesn't exist - return error since we don't auto-create patterns
+      // The user must create a pattern manually first via POST /api/patterns
+      return res.status(404).json({ 
+        error: 'No pattern exists with this device name',
+        message: 'Please create a pattern with this name first, or choose an existing pattern name',
+        deviceName: trimmedName
+      });
     }
     
     // Save updated patterns
@@ -956,17 +932,7 @@ app.put('/api/patterns/:patternId/label', (req, res) => {
     }
   }
   
-  // If we renamed all processes, trigger pattern re-analysis to reorganize patterns
-  // based on power profiles and the new device names. This ensures that:
-  // 1. Processes with the same name and similar power profiles are grouped together
-  // 2. Processes with the same name but different power profiles may form separate patterns
-  // 3. Empty patterns (after all processes move to other patterns) are removed
-  if (shouldRenameAll) {
-    console.log('Triggering pattern re-analysis after renaming processes');
-    chargingPatterns = patternAnalyzer.analyzePatterns(chargingProcesses, chargingPatterns);
-  }
-  
-  // Save updated patterns after process updates and potential re-analysis
+  // Save updated patterns after process updates to maintain consistency
   patternAnalyzer.savePatterns(chargingPatterns);
   
   // Sanitize labels for safe logging (replace newlines and control characters)
@@ -1026,6 +992,60 @@ app.post('/api/patterns/merge', (req, res) => {
     message: 'Patterns merged successfully',
     mergedPattern: result.mergedPattern,
     removedPatternId: result.removedPatternId
+  });
+});
+
+// Create a new pattern manually
+app.post('/api/patterns', (req, res) => {
+  const { deviceName, chargerId } = req.body;
+  
+  if (!deviceName || typeof deviceName !== 'string' || deviceName.trim() === '') {
+    return res.status(400).json({ error: 'Device name is required' });
+  }
+  
+  const trimmedDeviceName = deviceName.trim();
+  
+  // Check if a pattern with this name already exists
+  const existingPattern = chargingPatterns.find(p => p.deviceName === trimmedDeviceName);
+  if (existingPattern) {
+    return res.status(409).json({ 
+      error: 'A pattern with this device name already exists',
+      existingPatternId: existingPattern.id
+    });
+  }
+  
+  // Generate unique pattern ID
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 11);
+  const patternId = `pattern_${timestamp}_${random}`;
+  
+  // Create new pattern with minimal data (no processes yet)
+  const newPattern = {
+    id: patternId,
+    deviceId: chargerId || null,
+    chargerId: chargerId || null,
+    chargerName: chargerId || 'Manual',
+    deviceName: trimmedDeviceName,
+    count: 0,
+    processIds: [],
+    averageProfile: null,
+    statistics: null,
+    firstSeen: new Date().toISOString(),
+    lastSeen: new Date().toISOString(),
+    manuallyCreated: true // Mark as manually created
+  };
+  
+  chargingPatterns.push(newPattern);
+  
+  // Save patterns
+  patternAnalyzer.savePatterns(chargingPatterns);
+  
+  console.log(`Created new pattern manually: ${patternId} with name "${trimmedDeviceName}"`);
+  
+  res.json({
+    success: true,
+    message: 'Pattern created successfully',
+    pattern: newPattern
   });
 });
 
