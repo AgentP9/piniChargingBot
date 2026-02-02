@@ -956,7 +956,17 @@ app.put('/api/patterns/:patternId/label', (req, res) => {
     }
   }
   
-  // Save updated patterns after process updates to maintain consistency
+  // If we renamed all processes, trigger pattern re-analysis to reorganize patterns
+  // based on power profiles and the new device names. This ensures that:
+  // 1. Processes with the same name and similar power profiles are grouped together
+  // 2. Processes with the same name but different power profiles may form separate patterns
+  // 3. Empty patterns (after all processes move to other patterns) are removed
+  if (shouldRenameAll) {
+    console.log('Triggering pattern re-analysis after renaming processes');
+    chargingPatterns = patternAnalyzer.analyzePatterns(chargingProcesses, chargingPatterns);
+  }
+  
+  // Save updated patterns after process updates and potential re-analysis
   patternAnalyzer.savePatterns(chargingPatterns);
   
   // Sanitize labels for safe logging (replace newlines and control characters)
