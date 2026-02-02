@@ -197,10 +197,11 @@ function ChargingPage({
                 const processId = activeProcesses[0].id;
                 const guess = guesses[processId];
                 const estimation = estimations[processId];
+                const hasDeviceName = activeProcesses[0].deviceName && activeProcesses[0].deviceName.trim() !== '';
                 
                 return (
                   <>
-                    {guess && (
+                    {guess && !hasDeviceName && (
                       <div className="info-item guess-item">
                         <strong>Device Guess:</strong>{' '}
                         <span className="guess-value">
@@ -247,7 +248,7 @@ function ChargingPage({
                             ({Math.round(estimation.confidence * 100)}% confidence)
                           </span>
                         </div>
-                        {estimation.patternDeviceName && (
+                        {estimation.patternDeviceName && !hasDeviceName && (
                           <div className="info-item estimate-hint">
                             <small>Based on pattern: {estimation.patternDeviceName}</small>
                             <div className="guess-buttons">
