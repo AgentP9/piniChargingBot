@@ -16,14 +16,14 @@ This application tracks charging sessions for your devices (iPhones, TonieBoxes,
 - **Real-time MQTT Monitoring**: Connects to MQTT broker and subscribes to configurable charger topics
 - **Charging Process Tracking**: Automatically tracks charging sessions based on power on/off events
 - **Power Consumption Logging**: Records power consumption data with timestamps
-- **Pattern Recognition**: AI-powered device fingerprinting that identifies charged devices based on power consumption characteristics
-- **Educated Guesses**: Real-time predictions about which device is being charged during active sessions (non-persistent, for informational purposes only)
+- **AI-Powered Pattern Recognition**: Automatically identifies charged devices based on power consumption characteristics
 - **Device Label Management**: Edit, merge, and manage device labels for recognized charging patterns
 - **Modern Responsive UI**: Web interface with real-time updates and interactive charts
-- **Dark Mode / Light Mode**: Toggle between dark and light themes with persistent preference - see [DARK_MODE.md](DARK_MODE.md)
+- **Dark Mode / Light Mode**: Toggle between dark and light themes with persistent preference
 - **Multi-Charger Support**: Monitor multiple chargers simultaneously
 - **Progressive Web App (PWA)**: Add to your iPhone/Android home screen for a native app experience
-- **Docker Deployment**: Easy deployment with Docker Compose
+- **Persistent Data Storage**: File-based storage that survives container restarts and updates
+- **Docker Deployment**: Easy deployment with Docker Compose or Portainer
 
 ## Architecture
 
@@ -32,15 +32,17 @@ The application consists of two main components:
 1. **Backend (Node.js + Express)**: 
    - MQTT client that subscribes to device topics
    - REST API for frontend communication
-   - In-memory storage of charging processes and events
+   - File-based persistent storage of charging processes and patterns
+   - AI-powered pattern recognition engine
 
 2. **Frontend (React + Recharts)**:
-   - Modern, responsive web interface
+   - Modern, responsive web interface with dark/light mode
    - Real-time device status display
    - Interactive power consumption charts
    - Charging process selection and visualization
+   - Device label management interface
 
-
+For detailed technical architecture, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Prerequisites
 
@@ -81,28 +83,37 @@ The application consists of two main components:
    - Frontend: http://localhost:1818
    - Backend API: Available only through frontend proxy at http://localhost:1818/api/health
 
-5. **Add to Home Screen (iOS/Android):**
-   - On your mobile device, open the app in your browser
-   - **iOS**: Tap the Share button, then "Add to Home Screen"
-   - **Android**: Tap the menu (⋮), then "Add to Home Screen" or "Install app"
-   - The app will now open as a standalone application without browser UI
-
 ### Option 2: Portainer (Web-based Management)
 
-For users who prefer a graphical interface to manage Docker containers, Portainer provides an easy way to deploy and configure the application.
+For users who prefer a graphical interface, Portainer provides an easy way to deploy and configure the application through a web UI:
 
-**See [PORTAINER.md](PORTAINER.md) for detailed instructions on:**
-- Deploying the stack via Portainer
-- Configuring environment variables through the web UI
-- Managing and monitoring containers
-- Updating configuration without command line
-
-Quick Portainer steps:
 1. Access your Portainer instance
 2. Go to **Stacks** → **+ Add stack**
-3. Use Git repository: `https://github.com/AgentP9/piniChargingBot`
-4. Configure environment variables in the web UI
-5. Deploy the stack
+3. Select **Repository** as the build method
+4. Enter repository URL: `https://github.com/AgentP9/piniChargingBot`
+5. Configure environment variables through the web interface
+6. Deploy the stack
+
+See the [Portainer Deployment Guide](#portainer-deployment-guide) section below for detailed instructions.
+
+## Progressive Web App (PWA) Support
+
+The application can be installed on mobile devices for a native app experience:
+
+### Installation:
+
+**iOS (iPhone/iPad):**
+1. Open the app in Safari (http://your-server:1818)
+2. Tap the Share button (square with arrow pointing up)
+3. Scroll down and tap "Add to Home Screen"
+4. Tap "Add" in the top right corner
+5. The app will open in standalone mode without Safari UI
+
+**Android:**
+1. Open the app in Chrome (http://your-server:1818)
+2. Tap the menu button (⋮) in the top right
+3. Tap "Add to Home Screen" or "Install app"
+4. The app will open in standalone mode
 
 ## Configuration
 
@@ -117,22 +128,6 @@ All configuration can be managed via environment variables (through `.env` file 
   - New format: `Office Charger:shellies/shellyplug07,Kitchen:shellies/shellyplug02`
   - Legacy format (backward compatible): `shellyplug-s-12345,shellyplug-s-67890`
 
-### Connecting to Your MQTT Broker
-
-The application is designed to work with any MQTT broker. Update the `.env` file with your broker details:
-
-```env
-MQTT_BROKER_URL=mqtt://192.168.1.100:1883
-MQTT_USERNAME=your-username
-MQTT_PASSWORD=your-password
-MQTT_DEVICES=Office Charger:shellies/device1,Garage:shellies/device2
-```
-
-Then start the application:
-```bash
-docker-compose up -d
-```
-
 ### MQTT Topics
 
 For each charger configuration, the backend subscribes to:
@@ -144,49 +139,89 @@ Example for charger configured as "Office Charger:shellies/shellyplug07":
 - Subscribes to: `shellies/shellyplug07/relay/0/power` - Receives power value (e.g., "15.5")
 - Displays as: "Office Charger" in the UI
 
-Legacy format example for "shellyplug-s-12345":
-- Subscribes to: `shellyplug-s-12345/relay/0` - Receives "on" or "off"
-- Subscribes to: `shellyplug-s-12345/relay/0/power` - Receives power value (e.g., "15.5")
-- Displays as: "shellyplug-s-12345" in the UI
+## Pattern Recognition
 
-## Progressive Web App (PWA) Support
+The system automatically analyzes completed charging processes to identify patterns and group similar charging sessions. This enables automatic device recognition based on power consumption characteristics.
 
-The application is a fully functional Progressive Web App that can be installed on mobile devices for a native app experience:
+### How It Works
 
-### Features:
-- **Standalone Mode**: Opens without browser UI (no Safari/Chrome interface)
-- **Home Screen Icon**: Custom app icon on your device's home screen
-- **Offline Capability**: Basic offline functionality with service worker caching
-- **Responsive Design**: Optimized for mobile and desktop devices
+**Device Fingerprinting** based on:
+1. **Power Consumption Statistics**: Average, median, min, max power, standard deviation
+2. **Charging Curve Shape**: Early/middle/late phase power consumption
+3. **Peak Power Behavior**: Ratio of time spent at high power
 
-### Installation:
+**Pattern Matching**: Charging sessions with similar power profiles (similarity score > 65%) are automatically grouped into patterns representing unique devices.
 
-**iOS (iPhone/iPad):**
-1. Open the app in Safari (http://your-server:1818)
-2. Tap the Share button (square with arrow pointing up)
-3. Scroll down and tap "Add to Home Screen"
-4. Tap "Add" in the top right corner
-5. The app icon will appear on your home screen
-6. Open the app - it will launch in standalone mode without Safari UI
+### Managing Device Labels
 
-**Android:**
-1. Open the app in Chrome (http://your-server:1818)
-2. Tap the menu button (⋮) in the top right
-3. Tap "Add to Home Screen" or "Install app"
-4. Tap "Add" to confirm
-5. The app icon will appear on your home screen
-6. Open the app - it will launch in standalone mode
+You can customize device names through the Pattern Manager interface:
+- **Edit Labels**: Rename recognized patterns from auto-generated names (Hugo, Egon) to meaningful names (Alice's iPhone)
+- **Merge Patterns**: Combine two patterns by renaming one to match another
+- **Split Patterns**: Rename individual charging sessions to create new patterns
+- **Delete Patterns**: Remove patterns that are no longer needed
 
-**Desktop (Chrome/Edge):**
-1. Look for the install icon (➕ or computer icon) in the address bar
-2. Click the icon and confirm installation
-3. The app will open in its own window
+### Troubleshooting Pattern Recognition
 
-### Technical Details:
-- Web App Manifest: Configured for standalone display mode
-- Service Worker: Provides offline caching for static assets and API responses
-- App Icons: Multiple sizes (192x192, 512x512) for different devices
-- Apple Touch Icons: Optimized for iOS devices
+**Not seeing device names?** Ensure:
+1. Processes are **completed** (have an endTime)
+2. Processes have at least **3 power consumption events**
+3. Pattern analysis has run (automatic on startup, or manual via API)
+
+Check the diagnostic endpoint: `http://localhost:1818/api/patterns/debug`
+
+For more details, see the [Troubleshooting](#troubleshooting) section below.
+
+## Data Storage and Persistence
+
+The application uses file-based persistent storage that **survives container restarts and updates**:
+
+- **Storage Location**: `/app/data` in the container (mapped to `backend-data` Docker volume)
+- **Files Stored**:
+  - `charging-processes.json` - All charging session data
+  - `charging-patterns.json` - Recognized device patterns
+  - `process-counter.json` - Process ID counter
+
+### Safe Update Procedure
+
+When updating to the latest version:
+
+```bash
+# Pull latest code
+git pull origin main
+
+# Rebuild and restart (preserves backend-data volume)
+docker-compose up -d --build
+
+# Verify data was loaded
+docker-compose logs backend | grep "Loaded.*processes"
+```
+
+**Important:** Do NOT use `docker-compose down -v` as this removes volumes and deletes all data!
+
+### Backup Your Data
+
+```bash
+# Find your volume name
+VOLUME_NAME=$(docker volume ls | grep backend-data | awk '{print $2}')
+
+# Create backup
+docker run --rm -v $VOLUME_NAME:/data -v $(pwd)/backups:/backup \
+  alpine tar czf /backup/data-$(date +%Y%m%d).tar.gz -C /data .
+```
+
+### Restore Data from Backup
+
+```bash
+# Stop the backend
+docker-compose stop backend
+
+# Restore data
+docker run --rm -v $VOLUME_NAME:/data -v $(pwd)/backups:/backup \
+  alpine tar xzf /backup/data-YYYYMMDD.tar.gz -C /data
+
+# Start the backend
+docker-compose start backend
+```
 
 ## API Endpoints
 
@@ -201,6 +236,7 @@ The application is a fully functional Progressive Web App that can be installed 
 - `GET /api/processes/:id/guess` - Get educated guess for an active process (non-persistent)
 - `GET /api/processes/charger/:chargerId` - Get processes for a charger
 - `PUT /api/processes/:id/complete` - Manually mark a process as complete
+- `PUT /api/processes/:id/device-name` - Rename individual process (splits pattern)
 - `DELETE /api/processes/:id` - Delete a specific charging process
 
 ### Pattern Recognition
@@ -208,17 +244,52 @@ The application is a fully functional Progressive Web App that can be installed 
 - `GET /api/patterns` - Get all identified charging patterns (device fingerprints)
 - `GET /api/patterns/charger/:chargerId` - Get patterns for a specific charger
 - `POST /api/patterns/analyze` - Manually trigger pattern analysis
+- `POST /api/patterns/rerun` - Clear and recreate all patterns from scratch
 - `GET /api/processes/:id/pattern` - Get matching pattern for a charging process
 - `GET /api/patterns/debug` - Diagnostic endpoint for troubleshooting pattern issues
 - `PUT /api/patterns/:patternId/label` - Update device label for a pattern
 - `POST /api/patterns/merge` - Merge two patterns into one
 - `DELETE /api/patterns/:patternId` - Delete a pattern
 
-For detailed information about pattern recognition, see [PATTERN_RECOGNITION.md](PATTERN_RECOGNITION.md).
+## Portainer Deployment Guide
 
-For information about managing device labels, see [DEVICE_LABELS.md](DEVICE_LABELS.md).
+For users who prefer a graphical interface to manage Docker containers:
 
-**Not seeing device names?** Check the [Pattern Recognition Troubleshooting Guide](TROUBLESHOOTING_PATTERNS.md).
+### Deploy from Git Repository
+
+1. **Access Portainer** (e.g., `http://localhost:9000`)
+2. **Create New Stack**: Go to **Stacks** → **+ Add stack**
+3. **Configure Repository**:
+   - Stack name: `pini-charging-monitor`
+   - Build method: **Repository**
+   - Repository URL: `https://github.com/AgentP9/piniChargingBot`
+   - Branch: `main`
+   - Compose path: `docker-compose.yml`
+
+4. **Configure Environment Variables**:
+
+   | Variable | Description | Example |
+   |----------|-------------|---------|
+   | `MQTT_BROKER_URL` | MQTT broker URL | `mqtt://192.168.1.100:1883` |
+   | `MQTT_USERNAME` | MQTT username (optional) | `myuser` |
+   | `MQTT_PASSWORD` | MQTT password (optional) | `mypassword` |
+   | `MQTT_DEVICES` | Charger configurations | `Office:shellies/plug07,Kitchen:shellies/plug02` |
+
+5. **Deploy**: Click **Deploy the stack**
+
+### Managing Configuration
+
+To update environment variables in Portainer:
+1. Navigate to **Stacks** → `pini-charging-monitor`
+2. Click **Editor** tab
+3. Modify environment variables
+4. Click **Update the stack**
+
+### Viewing Logs
+
+1. Navigate to **Containers**
+2. Click on container name (e.g., `pini-backend`)
+3. Click **Logs** to view real-time logs
 
 ## Development
 
@@ -228,7 +299,7 @@ For information about managing device labels, see [DEVICE_LABELS.md](DEVICE_LABE
 cd backend
 npm install
 cp .env.example .env
-# Edit .env with your MQTT broker configuration (point to your MQTT broker)
+# Edit .env with your MQTT broker configuration
 npm run dev
 ```
 
@@ -242,57 +313,64 @@ npm run dev
 
 The frontend will be available at http://localhost:5173 with hot reload enabled.
 
-## Data Storage
-
-The application uses file-based persistent storage for charging processes:
-- Charging processes are automatically saved to disk
-- **Data persists across container restarts and updates** (stored in Docker volume)
-- Storage location: `/app/data` in the container (mapped to `backend-data` volume)
-- Saves are throttled (max once per 5 seconds) to minimize disk I/O during high-frequency power readings
-- Graceful shutdown ensures all data is saved before the application exits
-
-The data is stored in JSON format and includes:
-- All charging processes with start/end times
-- Power consumption events with timestamps
-- Recognized device patterns with user customizations
-- Process ID counter for unique identification
-
-**Important for Updates:**
-When pulling the latest code and redeploying, your data (recognized devices, charging history, manual renames) is preserved in the `backend-data` Docker volume. See [DATA_PERSISTENCE.md](DATA_PERSISTENCE.md) for detailed information on safe updates, backups, and data recovery.
-
-## Monitoring Multiple Chargers
-
-Configure multiple chargers with custom names and topics using the `MQTT_DEVICES` environment variable:
-
-```env
-MQTT_DEVICES=Living Room:shellies/living-room-plug,Bedroom:shellies/bedroom-plug,Garage:home/garage-plug
-```
-
-Or use the legacy format (backward compatible):
-
-```env
-MQTT_DEVICES=living-room-plug,bedroom-plug,garage-plug
-```
-
-Each charger will be monitored independently, and the UI will display all chargers with their custom names and their charging processes.
-
 ## Troubleshooting
 
 ### Backend can't connect to MQTT broker
 - Verify the `MQTT_BROKER_URL` in your `.env` file
 - Ensure your MQTT broker is running and accessible
 - Check firewall settings if using external broker
+- View logs: `docker-compose logs backend`
 
 ### No data showing in frontend
 - Verify backend is running: `docker-compose logs backend`
-- Check backend health through frontend proxy: http://localhost:1818/api/health
-- Ensure chargers (physical charging devices like ShellyPlugs) are publishing to the correct MQTT topics
+- Check backend health: http://localhost:1818/api/health
+- Ensure chargers (physical devices) are publishing to the correct MQTT topics
+- Check that MQTT messages are being received (check backend logs)
+
+### Pattern Recognition Not Working
+
+**Check the diagnostic endpoint**: http://localhost:1818/api/patterns/debug
+
+This shows:
+- Total number of processes
+- How many are completed
+- Which processes have power consumption data
+- Pattern assignments
+
+**Common issues**:
+
+1. **"Insufficient power data"** - Charging session was too short
+   - Solution: Ensure MQTT power plug publishes power readings regularly
+   - Processes need at least 3 power consumption events
+
+2. **No patterns found** - Not enough completed processes
+   - Solution: Complete at least 2-3 charging sessions per device
+   - Manually trigger analysis: `curl -X POST http://localhost:1818/api/patterns/analyze`
+
+3. **Patterns exist but device names not showing**
+   - Check browser console for errors
+   - Verify `/api/patterns` returns patterns with your process IDs
+   - Ensure processes are completed (not active)
 
 ### Frontend can't connect to backend
-- Check that both frontend and backend containers are running: `docker-compose ps`
-- Check backend health through frontend proxy: http://localhost:1818/api/health
+- Check containers are running: `docker-compose ps`
+- Check backend health: http://localhost:1818/api/health
 - Check browser console for errors
 - Verify both containers are on the same Docker network
+
+### Data disappeared after update
+- Check if you ran `docker-compose down -v` (removes volumes)
+- Verify volume still exists: `docker volume ls | grep backend-data`
+- Restore from backup (see Data Storage section)
+
+## Theme Support
+
+The application includes dark and light mode themes:
+
+- **Theme Toggle**: Click the moon/sun icon in the top-right corner
+- **Persistent Preference**: Theme selection is saved to browser's localStorage
+- **Smooth Transitions**: Theme changes animate smoothly
+- **Full Coverage**: All components support both themes
 
 ## License
 
