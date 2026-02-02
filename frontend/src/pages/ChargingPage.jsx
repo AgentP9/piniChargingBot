@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import axios from 'axios';
 import DeviceList from '../components/DeviceList';
 import ChargingChart from '../components/ChargingChart';
+import { formatDateTime } from '../utils/dateFormatter';
 import './ChargingPage.css';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -70,6 +71,7 @@ function ChargingPage({
             if (response.data.hasGuess) {
               newGuesses[process.id] = {
                 deviceName: response.data.guessedDevice,
+                patternId: response.data.patternId,
                 confidence: response.data.confidence
               };
             }
@@ -99,9 +101,46 @@ function ChargingPage({
         delete updated[processId];
         return updated;
       });
+      
+      // Refresh data to show the confirmed device name
+      if (onRefreshData) {
+        await onRefreshData();
+      }
     } catch (error) {
       console.error(`Error confirming guess for process ${processId}:`, error);
       alert('Failed to confirm device guess. Please try again.');
+    }
+  };
+
+  const handleRejectGuess = async (processId, patternId) => {
+    try {
+      const response = await axios.post(`${API_URL}/processes/${processId}/reject-guess`, {
+        rejectedPatternId: patternId
+      });
+      
+      if (response.data.hasGuess) {
+        // Update the guess with the next suggestion
+        setGuesses(prev => ({
+          ...prev,
+          [processId]: {
+            deviceName: response.data.guessedDevice,
+            patternId: response.data.patternId,
+            confidence: response.data.confidence,
+            cycled: response.data.cycled,
+            totalMatches: response.data.totalMatches
+          }
+        }));
+      } else {
+        // No more guesses available
+        setGuesses(prev => {
+          const updated = { ...prev };
+          delete updated[processId];
+          return updated;
+        });
+      }
+    } catch (error) {
+      console.error(`Error rejecting guess for process ${processId}:`, error);
+      alert('Failed to reject device guess. Please try again.');
     }
   };
 
@@ -140,72 +179,111 @@ function ChargingPage({
               }
             </h2>
           </div>
-          {activeProcesses.length === 1 && (
-            <div className="process-info">
-              <div className="info-item">
-                <strong>Charger:</strong> {activeProcesses[0].chargerName || activeProcesses[0].deviceName || activeProcesses[0].chargerId || activeProcesses[0].deviceId}
-              </div>
-              <div className="info-item">
-                <strong>Start:</strong> {new Date(activeProcesses[0].startTime).toLocaleString()}
-              </div>
-              <div className="info-item">
-                <strong>Status:</strong> 
-                <span className="status-active">
-                  Active
-                </span>
-              </div>
-              {(() => {
-                const processId = activeProcesses[0].id;
-                const guess = guesses[processId];
-                const estimation = estimations[processId];
-                
-                return (
+          
+          {/* Individual process information for each active process */}
+          {activeProcesses.map((process) => {
+            const processId = process.id;
+            const guess = guesses[processId];
+            const estimation = estimations[processId];
+            const hasDeviceName = process.deviceName && process.deviceName.trim() !== '';
+            
+            return (
+              <div key={processId} className="process-info" style={{ marginBottom: activeProcesses.length > 1 ? '1.5rem' : '0' }}>
+                {activeProcesses.length > 1 && (
+                  <div className="process-header" style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
+                    <h3 style={{ margin: '0', color: 'var(--primary-color)', fontSize: '1.1rem' }}>
+                      Process #{processId} - {process.chargerName || process.chargerId || 'Charger'}
+                    </h3>
+                  </div>
+                )}
+                <div className="info-item">
+                  <strong>Charger:</strong> {process.chargerName || process.deviceName || process.chargerId || process.deviceId}
+                </div>
+                <div className="info-item">
+                  <strong>Start:</strong> {formatDateTime(process.startTime)}
+                </div>
+                <div className="info-item">
+                  <strong>Status:</strong> 
+                  <span className="status-active">
+                    Active
+                  </span>
+                </div>
+                {guess && !hasDeviceName && (
+                  <div className="info-item guess-item">
+                    <strong>Device Guess:</strong>{' '}
+                    <span className="guess-value">
+                      {guess.deviceName}
+                    </span>
+                    <span className="guess-confidence">
+                      ({Math.round(guess.confidence * 100)}% match)
+                    </span>
+                    {guess.cycled && (
+                      <span className="guess-cycled" title="All options have been shown, cycling back">
+                        🔄
+                      </span>
+                    )}
+                    <div className="guess-buttons">
+                      <button
+                        className="confirm-guess-button"
+                        onClick={() => handleConfirmGuess(processId, guess.deviceName)}
+                        title="Confirm this device identification"
+                      >
+                        &#10003;
+                      </button>
+                      <button
+                        className="reject-guess-button"
+                        onClick={() => handleRejectGuess(processId, guess.patternId)}
+                        title="Reject and show next best match"
+                      >
+                        &#10005;
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {estimation && (
                   <>
-                    {guess && (
-                      <div className="info-item guess-item">
-                        <strong>Device Guess:</strong>{' '}
-                        <span className="guess-value">
-                          {guess.deviceName}
-                        </span>
-                        <span className="guess-confidence">
-                          ({Math.round(guess.confidence * 100)}% match)
-                        </span>
-                        <button
-                          className="confirm-guess-button"
-                          onClick={() => handleConfirmGuess(processId, guess.deviceName)}
-                          title="Confirm this device identification"
-                        >
-                          ✓ Confirm
-                        </button>
+                    <div className="info-item estimate-item">
+                      <strong>Estimated Remaining:</strong>{' '}
+                      <span className="estimate-value">
+                        {estimation.status === 'completing' ? (
+                          'Completing...'
+                        ) : (
+                          formatRemainingTime(estimation.remainingMinutes)
+                        )}
+                      </span>
+                      <span className="estimate-confidence">
+                        ({Math.round(estimation.confidence * 100)}% confidence)
+                      </span>
+                    </div>
+                    {estimation.patternDeviceName && !hasDeviceName && (
+                      <div className="info-item estimate-hint">
+                        <small>Based on pattern: {estimation.patternDeviceName}</small>
+                        <div className="guess-buttons">
+                          <button
+                            className="confirm-guess-button"
+                            onClick={() => handleConfirmGuess(processId, estimation.patternDeviceName)}
+                            title="Confirm this device identification"
+                          >
+                            &#10003;
+                          </button>
+                          {estimation.patternId && (
+                            <button
+                              className="reject-guess-button"
+                              onClick={() => handleRejectGuess(processId, estimation.patternId)}
+                              title="Reject and show next best match"
+                            >
+                              &#10005;
+                            </button>
+                          )}
+                        </div>
                       </div>
                     )}
-                    {estimation && (
-                      <>
-                        <div className="info-item estimate-item">
-                          <strong>Estimated Remaining:</strong>{' '}
-                          <span className="estimate-value">
-                            {estimation.status === 'completing' ? (
-                              'Completing...'
-                            ) : (
-                              formatRemainingTime(estimation.remainingMinutes)
-                            )}
-                          </span>
-                          <span className="estimate-confidence">
-                            ({Math.round(estimation.confidence * 100)}% confidence)
-                          </span>
-                        </div>
-                        {estimation.patternDeviceName && (
-                          <div className="info-item estimate-hint">
-                            <small>Based on pattern: {estimation.patternDeviceName}</small>
-                          </div>
-                        )}
-                      </>
-                    )}
                   </>
-                );
-              })()}
-            </div>
-          )}
+                )}
+              </div>
+            );
+          })}
+          
           <ChargingChart processes={activeProcesses} />
         </section>
       )}

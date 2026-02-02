@@ -3,6 +3,7 @@ import PatternManager from '../components/PatternManager';
 import ProcessList from '../components/ProcessList';
 import ProcessFilters from '../components/ProcessFilters';
 import ChargingChart from '../components/ChargingChart';
+import { formatDateTime } from '../utils/dateFormatter';
 import './DevicePage.css';
 
 function DevicePage({ 
@@ -285,11 +286,11 @@ function DevicePage({
                 <strong>Device:</strong> {selectedProcesses[0].deviceName || selectedProcesses[0].deviceId}
               </div>
               <div className="info-item">
-                <strong>Start:</strong> {new Date(selectedProcesses[0].startTime).toLocaleString()}
+                <strong>Start:</strong> {formatDateTime(selectedProcesses[0].startTime)}
               </div>
               {selectedProcesses[0].endTime && (
                 <div className="info-item">
-                  <strong>End:</strong> {new Date(selectedProcesses[0].endTime).toLocaleString()}
+                  <strong>End:</strong> {formatDateTime(selectedProcesses[0].endTime)}
                 </div>
               )}
               <div className="info-item">

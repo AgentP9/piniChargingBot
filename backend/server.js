@@ -810,16 +810,19 @@ app.get('/api/processes/:id/guess', (req, res) => {
   }
   
   try {
-    // Try to match against existing patterns
-    const match = patternAnalyzer.findMatchingPattern(process, chargingPatterns);
+    // Try to match against existing patterns, excluding any rejected ones
+    const rejectedPatterns = Array.isArray(process.rejectedPatterns) ? process.rejectedPatterns : [];
+    const matches = patternAnalyzer.findAllMatchingPatterns(process, chargingPatterns, rejectedPatterns);
     
-    if (match) {
+    if (matches.length > 0) {
+      const bestMatch = matches[0];
       res.json({
         processId: processId,
         isActive: true,
         hasGuess: true,
-        guessedDevice: match.pattern.deviceName,
-        confidence: match.similarity,
+        guessedDevice: bestMatch.pattern.deviceName,
+        patternId: bestMatch.pattern.id,
+        confidence: bestMatch.similarity,
         message: 'Educated guess based on power consumption profile'
       });
     } else {
@@ -834,6 +837,102 @@ app.get('/api/processes/:id/guess', (req, res) => {
     console.error(`Error finding pattern match for process ${processId}:`, error);
     res.status(500).json({
       error: 'Failed to generate educated guess',
+      processId: processId,
+      isActive: true,
+      hasGuess: false
+    });
+  }
+});
+
+// Reject a pattern guess and get the next best match
+app.post('/api/processes/:id/reject-guess', (req, res) => {
+  const processId = parseInt(req.params.id);
+  const { rejectedPatternId } = req.body;
+  
+  // Validate that the ID is a valid positive integer
+  if (isNaN(processId) || processId <= 0 || !Number.isInteger(processId)) {
+    return res.status(400).json({ error: 'Invalid process ID' });
+  }
+  
+  const process = chargingProcesses.find(p => p.id === processId);
+  
+  if (!process) {
+    return res.status(404).json({ error: 'Process not found' });
+  }
+  
+  // Only allow rejecting guesses for active (incomplete) processes
+  if (process.endTime) {
+    return res.json({
+      processId: processId,
+      isActive: false,
+      hasGuess: false,
+      message: 'Process is completed, cannot reject guess'
+    });
+  }
+  
+  try {
+    // Initialize rejectedPatterns array if it doesn't exist
+    if (!process.rejectedPatterns) {
+      process.rejectedPatterns = [];
+    }
+    
+    // Add the rejected pattern ID to the list if provided and not already there
+    if (rejectedPatternId && !process.rejectedPatterns.includes(rejectedPatternId)) {
+      process.rejectedPatterns.push(rejectedPatternId);
+      console.log(`Rejected pattern ${rejectedPatternId} for process ${processId}`);
+    }
+    
+    // Save the updated process
+    storage.saveProcesses(chargingProcesses);
+    
+    // Find all matching patterns (including ALL matches, not excluding rejected ones initially)
+    const allMatches = patternAnalyzer.findAllMatchingPatterns(process, chargingPatterns, []);
+    
+    if (allMatches.length === 0) {
+      return res.json({
+        processId: processId,
+        isActive: true,
+        hasGuess: false,
+        message: 'No matching patterns found'
+      });
+    }
+    
+    // Try to find a non-rejected pattern first
+    const nonRejectedMatches = allMatches.filter(m => !process.rejectedPatterns.includes(m.pattern.id));
+    
+    let nextMatch;
+    let cycled = false;
+    
+    if (nonRejectedMatches.length > 0) {
+      // Use the best non-rejected match
+      nextMatch = nonRejectedMatches[0];
+    } else {
+      // All patterns have been rejected, cycle back to the first one
+      nextMatch = allMatches[0];
+      cycled = true;
+      // Clear rejected patterns since we're cycling through again
+      process.rejectedPatterns = [];
+      storage.saveProcesses(chargingProcesses);
+      console.log(`All patterns rejected for process ${processId}, cycling back to first match`);
+    }
+    
+    res.json({
+      processId: processId,
+      isActive: true,
+      hasGuess: true,
+      guessedDevice: nextMatch.pattern.deviceName,
+      patternId: nextMatch.pattern.id,
+      confidence: nextMatch.similarity,
+      totalMatches: allMatches.length,
+      cycled: cycled,
+      message: cycled 
+        ? `Cycled back to first option (${allMatches.length} total option${allMatches.length > 1 ? 's' : ''})`
+        : `Next best match (${allMatches.length} total option${allMatches.length > 1 ? 's' : ''})`
+    });
+  } catch (error) {
+    console.error(`Error rejecting pattern guess for process ${processId}:`, error);
+    res.status(500).json({
+      error: 'Failed to reject pattern guess',
       processId: processId,
       isActive: true,
       hasGuess: false

@@ -456,6 +456,42 @@ function savePatterns(patterns) {
 }
 
 /**
+ * Find all matching patterns for a process, sorted by similarity
+ * @param {Object} process - The charging process to match
+ * @param {Array} patterns - Array of all patterns
+ * @param {Array} excludePatternIds - Optional array of pattern IDs to exclude
+ * @returns {Array} Array of matches sorted by similarity (highest first)
+ */
+function findAllMatchingPatterns(process, patterns, excludePatternIds = []) {
+  const profile = calculatePowerProfile(process);
+  if (!profile) {
+    return [];
+  }
+  
+  const matches = [];
+  
+  for (const pattern of patterns) {
+    // Skip excluded patterns
+    if (excludePatternIds.includes(pattern.id)) {
+      continue;
+    }
+    
+    const similarity = calculateProfileSimilarity(profile, pattern.averageProfile);
+    if (similarity >= SIMILARITY_THRESHOLD) {
+      matches.push({
+        pattern,
+        similarity: parseFloat(similarity.toFixed(3))
+      });
+    }
+  }
+  
+  // Sort by similarity (highest first)
+  matches.sort((a, b) => b.similarity - a.similarity);
+  
+  return matches;
+}
+
+/**
  * Find the pattern that best matches a given process
  * @param {Object} process - A charging process
  * @param {Array} patterns - Array of existing patterns
@@ -729,6 +765,7 @@ function estimateCompletionTime(process, patterns) {
     estimatedTotalMinutes: Math.round(averageDuration),
     elapsedMinutes: Math.round(elapsedMinutes),
     patternDeviceName: pattern.deviceName,
+    patternId: pattern.id,
     status: 'charging',
     message: `Estimated based on ${pattern.count} similar charging session${pattern.count > 1 ? 's' : ''}`
   };
@@ -742,6 +779,7 @@ module.exports = {
   calculateDuration,
   calculateProfileSimilarity,
   findMatchingPattern,
+  findAllMatchingPatterns,
   updatePatternLabel,
   mergePatterns,
   deletePattern,
