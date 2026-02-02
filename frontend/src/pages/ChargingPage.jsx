@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import axios from 'axios';
 import DeviceList from '../components/DeviceList';
 import ChargingChart from '../components/ChargingChart';
+import { formatDateTime } from '../utils/dateFormatter';
 import './ChargingPage.css';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -146,7 +147,7 @@ function ChargingPage({
                 <strong>Charger:</strong> {activeProcesses[0].chargerName || activeProcesses[0].deviceName || activeProcesses[0].chargerId || activeProcesses[0].deviceId}
               </div>
               <div className="info-item">
-                <strong>Start:</strong> {new Date(activeProcesses[0].startTime).toLocaleString()}
+                <strong>Start:</strong> {formatDateTime(activeProcesses[0].startTime)}
               </div>
               <div className="info-item">
                 <strong>Status:</strong> 
@@ -175,7 +176,7 @@ function ChargingPage({
                           onClick={() => handleConfirmGuess(processId, guess.deviceName)}
                           title="Confirm this device identification"
                         >
-                          ✓ Confirm
+                          &#10003; Confirm
                         </button>
                       </div>
                     )}
@@ -202,7 +203,7 @@ function ChargingPage({
                               onClick={() => handleConfirmGuess(processId, estimation.patternDeviceName)}
                               title="Confirm this device identification"
                             >
-                              ✓ Confirm
+                              &#10003; Confirm
                             </button>
                           </div>
                         )}

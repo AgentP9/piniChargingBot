@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import ChartPreview from './ChartPreview';
 import ProcessLabelModal from './ProcessLabelModal';
+import { formatDateTime } from '../utils/dateFormatter';
 import './ProcessList.css';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -207,8 +208,7 @@ function ProcessList({ processes, patterns, selectedProcesses, onSelectProcess, 
   );
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleString();
+    return formatDateTime(dateString);
   };
 
   const formatDuration = (startTime, endTime) => {
