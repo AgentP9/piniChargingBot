@@ -133,10 +133,13 @@ function DevicePage({
   const handlePatternUpdate = async (action, data) => {
     // Clear all selections before executing pattern update operations
     // This prevents issues with stale data when patterns are renamed/merged/deleted
+    // Note: React batches these state updates together in the same render cycle.
+    // By the time the backend operation completes and fetchData() returns fresh data,
+    // these selections will definitely be cleared.
     setSelectedProcesses([]);
     setSelectedPatternId(null);
     
-    // Execute the pattern update
+    // Execute the pattern update (which includes fetchData() call)
     return onPatternUpdate(action, data);
   };
 
@@ -145,10 +148,13 @@ function DevicePage({
     // Clear all selections before executing process update operations
     // This prevents issues with stale data when processes are renamed
     // (which can affect patterns and other processes)
+    // Note: React batches these state updates together in the same render cycle.
+    // By the time the backend operation completes and fetchData() returns fresh data,
+    // these selections will definitely be cleared.
     setSelectedProcesses([]);
     setSelectedPatternId(null);
     
-    // Execute the process update
+    // Execute the process update (which includes fetchData() call)
     return onProcessUpdate(action, data);
   };
 
