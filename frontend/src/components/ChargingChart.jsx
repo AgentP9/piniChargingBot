@@ -5,9 +5,27 @@ import './ChargingChart.css';
 // Color palette for multiple processes
 const PROCESS_COLORS = ['#10b981', '#34d399', '#6ee7b7', '#14b8a6', '#2dd4bf', '#5eead4'];
 
-function ChargingChart({ processes }) {
+function ChargingChart({ processes, patterns = [] }) {
   // Support both single process (for backward compatibility) and multiple processes
   const processList = Array.isArray(processes) ? processes : [processes].filter(Boolean);
+  
+  // Helper function to get the device name from pattern matching (similar to ProcessList)
+  const getDeviceNameFromPattern = (process) => {
+    if (!process.endTime || !patterns || patterns.length === 0) {
+      return null; // No pattern for active processes or if no patterns available
+    }
+    
+    // Find pattern that contains this process ID
+    const matchingPattern = patterns.find(pattern => 
+      pattern.processIds && pattern.processIds.includes(process.id)
+    );
+    
+    if (matchingPattern && matchingPattern.deviceName) {
+      return matchingPattern.deviceName;
+    }
+    
+    return null;
+  };
   
   const chartData = useMemo(() => {
     if (processList.length === 0) return [];
@@ -187,18 +205,23 @@ function ChargingChart({ processes }) {
                 name="Power (W)"
               />
             ) : (
-              processList.map((process, index) => (
-                <Line 
-                  key={process.id}
-                  type="monotone" 
-                  dataKey={`process${process.id}`}
-                  stroke={PROCESS_COLORS[index % PROCESS_COLORS.length]}
-                  strokeWidth={2}
-                  dot={false}
-                  name={`Process #${process.id}${process.deviceName ? ` (${process.deviceName})` : ''}`}
-                  connectNulls={true}
-                />
-              ))
+              processList.map((process, index) => {
+                // Get the correct device name from pattern, fallback to process.deviceName
+                const deviceName = getDeviceNameFromPattern(process) || process.deviceName;
+                
+                return (
+                  <Line 
+                    key={process.id}
+                    type="monotone" 
+                    dataKey={`process${process.id}`}
+                    stroke={PROCESS_COLORS[index % PROCESS_COLORS.length]}
+                    strokeWidth={2}
+                    dot={false}
+                    name={`Process #${process.id}${deviceName ? ` (${deviceName})` : ''}`}
+                    connectNulls={true}
+                  />
+                );
+              })
             )}
           </LineChart>
         </ResponsiveContainer>

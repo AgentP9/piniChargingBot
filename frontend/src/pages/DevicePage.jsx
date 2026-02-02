@@ -129,6 +129,35 @@ function DevicePage({
     });
   };
 
+  // Wrapper for onPatternUpdate that clears selections before the update
+  const handlePatternUpdate = async (action, data) => {
+    // Clear all selections before executing pattern update operations
+    // This prevents issues with stale data when patterns are renamed/merged/deleted
+    // Note: React batches these state updates together in the same render cycle.
+    // By the time the backend operation completes and fetchData() returns fresh data,
+    // these selections will definitely be cleared.
+    setSelectedProcesses([]);
+    setSelectedPatternId(null);
+    
+    // Execute the pattern update (which includes fetchData() call)
+    return onPatternUpdate(action, data);
+  };
+
+  // Wrapper for onProcessUpdate that clears selections before the update
+  const handleProcessUpdate = async (action, data) => {
+    // Clear all selections before executing process update operations
+    // This prevents issues with stale data when processes are renamed
+    // (which can affect patterns and other processes)
+    // Note: React batches these state updates together in the same render cycle.
+    // By the time the backend operation completes and fetchData() returns fresh data,
+    // these selections will definitely be cleared.
+    setSelectedProcesses([]);
+    setSelectedPatternId(null);
+    
+    // Execute the process update (which includes fetchData() call)
+    return onProcessUpdate(action, data);
+  };
+
   return (
     <div className="device-page">
       <div className="dashboard-grid">
@@ -137,7 +166,7 @@ function DevicePage({
           <PatternManager 
             patterns={patterns}
             selectedPatternId={selectedPatternId}
-            onPatternUpdate={onPatternUpdate}
+            onPatternUpdate={handlePatternUpdate}
             onSelectPattern={handlePatternSelect}
           />
         </section>
@@ -226,8 +255,8 @@ function DevicePage({
             onSelectProcess={handleProcessSelect}
             onDeleteProcess={onDeleteProcess}
             onCompleteProcess={onCompleteProcess}
-            onPatternUpdate={onPatternUpdate}
-            onProcessUpdate={onProcessUpdate}
+            onPatternUpdate={handlePatternUpdate}
+            onProcessUpdate={handleProcessUpdate}
             filters={filters}
           />
         </section>
@@ -271,7 +300,7 @@ function DevicePage({
               </div>
             </div>
           )}
-          <ChargingChart processes={selectedProcesses} />
+          <ChargingChart processes={selectedProcesses} patterns={patterns} />
         </section>
       )}
     </div>
