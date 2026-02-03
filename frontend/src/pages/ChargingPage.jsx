@@ -191,10 +191,8 @@ function ChargingPage({
             return (
               <div key={processId} className="process-info" style={{ marginBottom: activeProcesses.length > 1 ? '1.5rem' : '0' }}>
                 {activeProcesses.length > 1 && (
-                  <div className="process-header" style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
-                    <h3 style={{ margin: '0', color: 'var(--primary-color)', fontSize: '1.1rem' }}>
-                      Process #{processId}
-                    </h3>
+                  <div className="info-item">
+                    <strong>Process:</strong> #{processId}
                   </div>
                 )}
                 <div className="info-item">
