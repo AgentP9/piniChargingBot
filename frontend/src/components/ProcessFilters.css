@@ -65,6 +65,11 @@
   color: var(--text-tertiary);
 }
 
+/* Hidden badge when filters are expanded - maintains space to prevent text jump */
+.active-filters-badge.badge-hidden {
+  visibility: hidden;
+}
+
 .filter-row {
   display: flex;
   flex-wrap: wrap;
