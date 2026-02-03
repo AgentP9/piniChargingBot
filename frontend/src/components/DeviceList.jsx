@@ -94,22 +94,23 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }
     <div className="device-list">
       {devices.map(device => {
         const guess = deviceGuesses[device.id];
+        const isSelectable = onSelectDevice && typeof onSelectDevice === 'function' && selectedDeviceId !== undefined;
         
         return (
         <div 
           key={device.id} 
-          className={`device-item ${selectedDeviceId === device.id ? 'selected' : ''} ${device.isOn ? 'device-on' : 'device-off'}`}
-          onClick={() => handleDeviceClick(device.id)}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
+          className={`device-item ${selectedDeviceId === device.id ? 'selected' : ''} ${device.isOn ? 'device-on' : 'device-off'} ${isSelectable ? 'selectable' : ''}`}
+          onClick={isSelectable ? () => handleDeviceClick(device.id) : undefined}
+          role={isSelectable ? "button" : undefined}
+          tabIndex={isSelectable ? 0 : undefined}
+          onKeyDown={isSelectable ? (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
               handleDeviceClick(device.id);
             }
-          }}
-          aria-pressed={selectedDeviceId === device.id}
-          aria-label={`Select ${device.name}`}
+          } : undefined}
+          aria-pressed={isSelectable ? selectedDeviceId === device.id : undefined}
+          aria-label={isSelectable ? `Select ${device.name}` : undefined}
         >
           <div className="device-header">
             <h3 className="device-name">{device.name}</h3>
