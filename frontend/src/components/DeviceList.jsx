@@ -151,18 +151,18 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }
             </div>
           </div>
           <div className="device-details">
-            {device.isOn && device.power > 0 && (
-              <div className="detail-row">
-                <span className="detail-label">Power:</span>
-                <span className="detail-value">{device.power.toFixed(2)} W</span>
-              </div>
-            )}
-            {device.currentProcessId !== null && (
-              <div className="detail-row">
-                <span className="detail-label">Current Process:</span>
-                <span className="detail-value">#{device.currentProcessId}</span>
-              </div>
-            )}
+            <div className="detail-row">
+              <span className="detail-label">Power:</span>
+              <span className="detail-value">
+                {device.isOn && device.power > 0 ? `${device.power.toFixed(2)} W` : '0.00 W'}
+              </span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">Current Process:</span>
+              <span className="detail-value">
+                {device.currentProcessId !== null ? `#${device.currentProcessId}` : '-'}
+              </span>
+            </div>
             {guess && (
               <div className="detail-row guess-row">
                 <span className="detail-label">Likely Device:</span>
