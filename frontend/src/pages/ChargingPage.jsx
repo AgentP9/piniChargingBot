@@ -203,12 +203,6 @@ function ChargingPage({
                 <div className="info-item">
                   <strong>Start:</strong> {formatDateTime(process.startTime)}
                 </div>
-                <div className="info-item">
-                  <strong>Status:</strong> 
-                  <span className="status-active">
-                    Active
-                  </span>
-                </div>
                 {guess && !hasDeviceName && (
                   <div className="info-item guess-item">
                     <strong>Device Guess:</strong>{' '}
@@ -253,7 +247,7 @@ function ChargingPage({
                 {estimation && (
                   <>
                     <div className="info-item estimate-item">
-                      <strong>Estimated Remaining:</strong>{' '}
+                      <strong>Remaining:</strong>{' '}
                       <span className="estimate-value">
                         {estimation.status === 'completing' ? (
                           'Completing...'
