@@ -971,6 +971,59 @@ app.get('/api/processes/:id/estimate', (req, res) => {
   }
 });
 
+// Check if a charger's active process is in completion phase
+app.get('/api/chargers/:chargerId/completion-status', (req, res) => {
+  const { chargerId } = req.params;
+  
+  const chargerState = chargerStates[chargerId];
+  
+  if (!chargerState) {
+    return res.status(404).json({ error: 'Charger not found' });
+  }
+  
+  // If charger is not on or has no active process, it's not in completion phase
+  if (!chargerState.isOn || chargerState.currentProcessId === null) {
+    return res.json({
+      chargerId: chargerId,
+      isActive: false,
+      isInCompletionPhase: false,
+      message: 'No active charging process'
+    });
+  }
+  
+  const process = chargingProcesses.find(p => p.id === chargerState.currentProcessId);
+  
+  if (!process || process.endTime) {
+    return res.json({
+      chargerId: chargerId,
+      isActive: false,
+      isInCompletionPhase: false,
+      message: 'Process not found or already completed'
+    });
+  }
+  
+  try {
+    // Check if in completion phase (power < 5W for 5 minutes by default)
+    const isCompleting = patternAnalyzer.isInCompletionPhase(process);
+    
+    res.json({
+      chargerId: chargerId,
+      processId: process.id,
+      isActive: true,
+      isInCompletionPhase: isCompleting,
+      message: isCompleting ? 'Charging is nearing completion' : 'Charging in progress'
+    });
+  } catch (error) {
+    console.error(`Error checking completion status for charger ${chargerId}:`, error);
+    res.status(500).json({
+      error: 'Failed to check completion status',
+      chargerId: chargerId,
+      isActive: true,
+      isInCompletionPhase: false
+    });
+  }
+});
+
 // Pattern Label Management Endpoints
 
 // Update device label for a pattern

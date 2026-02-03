@@ -26,6 +26,11 @@
   border-color: rgba(16, 185, 129, 0.3);
 }
 
+.device-item.device-completing {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.08) 100%);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
 .device-item.device-off {
   background: var(--bg-tertiary);
   border-color: var(--border-primary);
@@ -87,6 +92,10 @@
 
 .toggle-switch.toggle-on {
   background: #10b981;
+}
+
+.toggle-switch.toggle-completing {
+  background: #f59e0b;
 }
 
 .toggle-switch.toggle-off {

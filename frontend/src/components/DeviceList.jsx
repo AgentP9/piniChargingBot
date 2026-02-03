@@ -7,6 +7,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 // DeviceList displays connected chargers (physical charging devices like ShellyPlugs)
 function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }) {
   const [deviceGuesses, setDeviceGuesses] = useState({});
+  const [completionStatus, setCompletionStatus] = useState({});
   const [controllingDevice, setControllingDevice] = useState(null);
 
   // Fetch educated guesses for active processes
@@ -45,6 +46,39 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }
     fetchGuesses();
     // Refresh guesses every 10 seconds while there are active devices
     const interval = setInterval(fetchGuesses, 10000);
+    return () => clearInterval(interval);
+  }, [devices]);
+
+  // Fetch completion status for active chargers
+  useEffect(() => {
+    const activeDevices = devices.filter(d => d.isOn && d.currentProcessId !== null);
+    
+    if (activeDevices.length === 0) {
+      setCompletionStatus({});
+      return;
+    }
+    
+    const fetchCompletionStatus = async () => {
+      const statuses = {};
+      await Promise.all(
+        activeDevices.map(async (device) => {
+          try {
+            const response = await axios.get(`${API_URL}/chargers/${device.id}/completion-status`);
+            if (response.data.isActive) {
+              statuses[device.id] = response.data.isInCompletionPhase;
+            }
+          } catch (error) {
+            console.error(`Error fetching completion status for charger ${device.id}:`, error);
+          }
+        })
+      );
+      
+      setCompletionStatus(statuses);
+    };
+    
+    fetchCompletionStatus();
+    // Refresh completion status every 30 seconds
+    const interval = setInterval(fetchCompletionStatus, 30000);
     return () => clearInterval(interval);
   }, [devices]);
 
@@ -156,12 +190,15 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }
     <div className="device-list">
       {devices.map(device => {
         const guess = deviceGuesses[device.id];
+        const isCompleting = completionStatus[device.id] === true;
         const isSelectable = onSelectDevice && typeof onSelectDevice === 'function' && selectedDeviceId !== undefined;
         
         return (
         <div 
           key={device.id} 
-          className={`device-item ${selectedDeviceId === device.id ? 'selected' : ''} ${device.isOn ? 'device-on' : 'device-off'} ${isSelectable ? 'selectable' : ''}`}
+          className={`device-item ${selectedDeviceId === device.id ? 'selected' : ''} ${
+            isCompleting ? 'device-completing' : (device.isOn ? 'device-on' : 'device-off')
+          } ${isSelectable ? 'selectable' : ''}`}
           onClick={isSelectable ? () => handleDeviceClick(device.id) : undefined}
           role={isSelectable ? "button" : undefined}
           tabIndex={isSelectable ? 0 : undefined}
@@ -178,7 +215,9 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }
             <h3 className="device-name">{device.name}</h3>
             <div className="device-header-right">
               <div 
-                className={`toggle-switch ${device.isOn ? 'toggle-on' : 'toggle-off'} ${controllingDevice === device.id ? 'toggle-loading' : ''}`}
+                className={`toggle-switch ${
+                  isCompleting ? 'toggle-completing' : (device.isOn ? 'toggle-on' : 'toggle-off')
+                } ${controllingDevice === device.id ? 'toggle-loading' : ''}`}
                 onClick={(e) => {
                   if (controllingDevice !== device.id) {
                     handleToggleCharger(device.id, device.isOn, e);
