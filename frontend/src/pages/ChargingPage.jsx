@@ -262,12 +262,13 @@ function ChargingPage({
                         )}
                       </span>
                       <span className="estimate-confidence">
-                        ({Math.round(estimation.confidence * 100)}% confidence)
+                        ({Math.round(estimation.confidence * 100)}% confidence
+                        {estimation.patternDeviceName && `, based on ${estimation.patternDeviceName}`})
                       </span>
                     </div>
                     {estimation.patternDeviceName && !hasDeviceName && (
                       <div className="info-item estimate-hint">
-                        <small>Based on pattern: {estimation.patternDeviceName}</small>
+                        <small>Confirm or reject device identification:</small>
                         <div className="guess-buttons">
                           <button
                             className="confirm-guess-button"
