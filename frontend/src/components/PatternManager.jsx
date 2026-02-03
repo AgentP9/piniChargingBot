@@ -102,7 +102,6 @@ function PatternManager({ patterns, selectedPatternId, onPatternUpdate, onSelect
     return (
       <div className="pattern-manager">
         <div className="pattern-header-row">
-          <h3>Recognized Devices</h3>
           <button 
             className="rerun-button"
             onClick={handleRerunRecognition}
@@ -131,7 +130,6 @@ function PatternManager({ patterns, selectedPatternId, onPatternUpdate, onSelect
   return (
     <div className="pattern-manager">
       <div className="pattern-header-row">
-        <h3>Recognized Devices ({patterns.length})</h3>
         <div className="header-buttons">
           <button 
             className="create-button"

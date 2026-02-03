@@ -55,11 +55,10 @@
 
 .select-all-toggle-button {
   flex-shrink: 0;
-  width: auto;
-  min-width: 38px;
-  height: auto;
-  padding: 0.5rem;
-  background: var(--border-secondary);
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  background: #3b82f6;
   color: var(--text-on-primary);
   border: none;
   border-radius: 8px;
