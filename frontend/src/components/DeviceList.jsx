@@ -113,7 +113,8 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }
       }
     } catch (error) {
       console.error(`Error confirming guess for process ${processId}:`, error);
-      alert('Failed to confirm device guess. Please try again.');
+      const errorMessage = error.response?.data?.error || 'Failed to confirm device guess';
+      alert(`${errorMessage}. Please try again.`);
     }
   };
 
@@ -146,7 +147,8 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }
       }
     } catch (error) {
       console.error(`Error rejecting guess for process ${processId}:`, error);
-      alert('Failed to reject device guess. Please try again.');
+      const errorMessage = error.response?.data?.error || 'Failed to reject device guess';
+      alert(`${errorMessage}. Please try again.`);
     }
   };
 
