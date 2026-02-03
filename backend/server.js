@@ -1003,7 +1003,7 @@ app.get('/api/chargers/:chargerId/completion-status', (req, res) => {
   }
   
   try {
-    // Check if in completion phase (power < 5W for 5 minutes by default)
+    // Check if in completion phase (power below 5W threshold for 5 minutes)
     const isCompleting = patternAnalyzer.isInCompletionPhase(process);
     
     res.json({

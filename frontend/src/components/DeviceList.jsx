@@ -55,7 +55,7 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }
     
     if (activeDevices.length === 0) {
       setCompletionStatus({});
-      return;
+      return; // No interval to clean up
     }
     
     const fetchCompletionStatus = async () => {
@@ -78,8 +78,8 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }
     
     fetchCompletionStatus();
     // Refresh completion status every 30 seconds
-    const interval = setInterval(fetchCompletionStatus, 30000);
-    return () => clearInterval(interval);
+    const completionInterval = setInterval(fetchCompletionStatus, 30000);
+    return () => clearInterval(completionInterval);
   }, [devices]);
 
   if (devices.length === 0) {
