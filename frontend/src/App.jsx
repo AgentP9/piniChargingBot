@@ -136,7 +136,7 @@ function App() {
             {theme === 'light' ? '🌙' : '☀️'}
           </button>
           <h1>🔌 Charging Monitor</h1>
-          <span className="version-badge">v0.9</span>
+          <span className="version-badge">v0.9.1</span>
         </header>
 
         <Navigation />

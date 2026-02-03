@@ -240,6 +240,15 @@ function ChargingPage({
                     </div>
                   </div>
                 )}
+                {!guess && !hasDeviceName && (
+                  <div className="info-item unknown-device-hint">
+                    <strong>Device:</strong>{' '}
+                    <span className="unknown-value">Unknown device</span>
+                    <small style={{ display: 'block', marginTop: '0.25rem', color: 'var(--text-muted)' }}>
+                      Continue charging to allow device recognition
+                    </small>
+                  </div>
+                )}
                 {estimation && (
                   <>
                     <div className="info-item estimate-item">
