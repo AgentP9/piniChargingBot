@@ -35,11 +35,19 @@ function StatisticsPage({ processes, patterns, devices }) {
       deviceUsage[pattern.deviceName] = pattern.count || 0;
     });
     
-    // Charger usage count
+    // Charger usage count with friendly names
+    // Create a mapping from charger IDs to names
+    const chargerIdToName = {};
+    devices.forEach(device => {
+      chargerIdToName[device.id] = device.name;
+    });
+    
     const chargerUsage = {};
     processes.forEach(p => {
       const chargerId = p.chargerId || p.deviceId || 'Unknown';
-      chargerUsage[chargerId] = (chargerUsage[chargerId] || 0) + 1;
+      // Use the friendly name if available, otherwise use the ID
+      const chargerName = chargerIdToName[chargerId] || chargerId;
+      chargerUsage[chargerName] = (chargerUsage[chargerName] || 0) + 1;
     });
     
     // Processes per day (last 30 days)
@@ -75,7 +83,7 @@ function StatisticsPage({ processes, patterns, devices }) {
       chargerUsage,
       processesPerDay: dateArray
     };
-  }, [processes, patterns]);
+  }, [processes, patterns, devices]);
   
   // Prepare data for charts
   const deviceUsageData = Object.entries(statistics.deviceUsage)
@@ -275,19 +283,19 @@ function StatisticsPage({ processes, patterns, devices }) {
           <div className="card chart-card">
             <h3>Charger Usage</h3>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={chargerUsageData} layout="horizontal">
+              <BarChart data={chargerUsageData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
                 <XAxis 
-                  type="number"
-                  stroke="var(--text-tertiary)"
-                  tick={{ fill: 'var(--text-tertiary)', fontSize: 12 }}
-                />
-                <YAxis 
-                  type="category"
                   dataKey="name" 
                   stroke="var(--text-tertiary)"
                   tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }}
-                  width={100}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                />
+                <YAxis 
+                  stroke="var(--text-tertiary)"
+                  tick={{ fill: 'var(--text-tertiary)', fontSize: 12 }}
                 />
                 <Tooltip 
                   contentStyle={{ 
