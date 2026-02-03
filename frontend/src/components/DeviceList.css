@@ -1,3 +1,4 @@
+/* Horizontal patch layout - chargers display left-to-right instead of vertically */
 .device-list {
   display: flex;
   flex-wrap: wrap;

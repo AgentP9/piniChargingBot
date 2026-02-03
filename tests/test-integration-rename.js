@@ -5,8 +5,8 @@
  * Tests the actual server endpoint behavior
  */
 
-const patternAnalyzer = require('./backend/patternAnalyzer.js');
-const storage = require('./backend/storage.js');
+const patternAnalyzer = require('../backend/patternAnalyzer.js');
+const storage = require('../backend/storage.js');
 
 console.log('Pattern Rename Integration Test');
 console.log('================================\n');

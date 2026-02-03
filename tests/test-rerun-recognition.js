@@ -9,7 +9,7 @@
  * 3. The manually assigned names should be preserved in the new patterns
  */
 
-const patternAnalyzer = require('./backend/patternAnalyzer.js');
+const patternAnalyzer = require('../backend/patternAnalyzer.js');
 
 console.log('Rerun Recognition with Manual Names Test');
 console.log('=========================================\n');
