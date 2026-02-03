@@ -95,37 +95,6 @@ function ProcessList({ processes, patterns, selectedProcesses, onSelectProcess, 
     return names;
   }, [patterns]);
   
-  // Get the assumed device name for a process based on pattern matching
-  const getAssumedDevice = (process) => {
-    if (!process.endTime || !patterns || patterns.length === 0) {
-      return null; // No pattern for active processes or if no patterns available
-    }
-    
-    // Find pattern that contains this process ID
-    const matchingPattern = patterns.find(pattern => 
-      pattern.processIds && pattern.processIds.includes(process.id)
-    );
-    
-    if (matchingPattern && patternNames[matchingPattern.id]) {
-      return patternNames[matchingPattern.id];
-    }
-    
-    return null;
-  };
-
-  // Get the educated guess for an active process
-  const getGuessedDevice = (process) => {
-    if (process.endTime) {
-      return null; // Only for active processes
-    }
-    
-    return processGuesses[process.id] || null;
-  };
-
-  if (processes.length === 0) {
-    return <div className="empty-state">No charging processes yet</div>;
-  }
-
   // Parse filter dates once to avoid repeated parsing in the filter function
   const filterStartDate = useMemo(() => {
     if (!filters?.startDate) return null;
@@ -158,53 +127,89 @@ function ProcessList({ processes, patterns, selectedProcesses, onSelectProcess, 
   }, [patterns]);
 
   // Apply filters
-  const filteredProcesses = processes.filter(process => {
-    // State filter - A process is completed if it has an endTime, active otherwise
-    const isCompleted = process.endTime !== null && process.endTime !== undefined;
-    if (filters?.state === 'active' && isCompleted) return false;
-    if (filters?.state === 'completed' && !isCompleted) return false;
+  const filteredProcesses = useMemo(() => {
+    return processes.filter(process => {
+      // State filter - A process is completed if it has an endTime, active otherwise
+      const isCompleted = process.endTime !== null && process.endTime !== undefined;
+      if (filters?.state === 'active' && isCompleted) return false;
+      if (filters?.state === 'completed' && !isCompleted) return false;
 
-    // Charger filter (physical charging device like ShellyPlug)
-    // Check both chargerId and deviceId for backward compatibility
-    if (filters?.charger && filters.charger !== 'all') {
-      const processChargerId = process.chargerId || process.deviceId;
-      if (processChargerId !== filters.charger) return false;
-    }
-
-    // Device filter (charged device from pattern recognition)
-    // Note: Only completed processes can be filtered by device since pattern recognition
-    // requires a complete charging session to identify the device
-    if (filters?.device && filters.device !== 'all') {
-      // Use pre-computed mapping for O(1) lookup
-      const deviceName = processIdToDeviceName[process.id];
-      if (!deviceName || deviceName !== filters.device) {
-        return false;
+      // Charger filter (physical charging device like ShellyPlug)
+      // Check both chargerId and deviceId for backward compatibility
+      if (filters?.charger && filters.charger !== 'all') {
+        const processChargerId = process.chargerId || process.deviceId;
+        if (processChargerId !== filters.charger) return false;
       }
-    }
 
-    // Start date filter
-    if (filterStartDate) {
-      const processDate = new Date(process.startTime);
-      if (processDate < filterStartDate) return false;
-    }
+      // Device filter (charged device from pattern recognition)
+      // Note: Only completed processes can be filtered by device since pattern recognition
+      // requires a complete charging session to identify the device
+      if (filters?.device && filters.device !== 'all') {
+        // Use pre-computed mapping for O(1) lookup
+        const deviceName = processIdToDeviceName[process.id];
+        if (!deviceName || deviceName !== filters.device) {
+          return false;
+        }
+      }
 
-    // End date filter
-    if (filterEndDate) {
-      const processDate = new Date(process.startTime);
-      if (processDate > filterEndDate) return false;
-    }
+      // Start date filter
+      if (filterStartDate) {
+        const processDate = new Date(process.startTime);
+        if (processDate < filterStartDate) return false;
+      }
 
-    return true;
-  });
+      // End date filter
+      if (filterEndDate) {
+        const processDate = new Date(process.startTime);
+        if (processDate > filterEndDate) return false;
+      }
+
+      return true;
+    });
+  }, [processes, filters, processIdToDeviceName, filterStartDate, filterEndDate]);
+
+  // Sort processes by start time (most recent first)
+  const sortedProcesses = useMemo(() => {
+    return [...filteredProcesses].sort((a, b) => 
+      new Date(b.startTime) - new Date(a.startTime)
+    );
+  }, [filteredProcesses]);
+
+  // Get the assumed device name for a process based on pattern matching
+  const getAssumedDevice = useCallback((process) => {
+    if (!process.endTime || !patterns || patterns.length === 0) {
+      return null; // No pattern for active processes or if no patterns available
+    }
+    
+    // Find pattern that contains this process ID
+    const matchingPattern = patterns.find(pattern => 
+      pattern.processIds && pattern.processIds.includes(process.id)
+    );
+    
+    if (matchingPattern && patternNames[matchingPattern.id]) {
+      return patternNames[matchingPattern.id];
+    }
+    
+    return null;
+  }, [patterns, patternNames]);
+
+  // Get the educated guess for an active process
+  const getGuessedDevice = useCallback((process) => {
+    if (process.endTime) {
+      return null; // Only for active processes
+    }
+    
+    return processGuesses[process.id] || null;
+  }, [processGuesses]);
+
+  // Early returns AFTER all hooks
+  if (processes.length === 0) {
+    return <div className="empty-state">No charging processes yet</div>;
+  }
 
   if (filteredProcesses.length === 0) {
     return <div className="empty-state">No charging processes match the current filters</div>;
   }
-
-  // Sort processes by start time (most recent first)
-  const sortedProcesses = [...filteredProcesses].sort((a, b) => 
-    new Date(b.startTime) - new Date(a.startTime)
-  );
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
