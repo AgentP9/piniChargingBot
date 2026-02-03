@@ -202,6 +202,40 @@ function ProcessList({ processes, patterns, selectedProcesses, onSelectProcess, 
     return processGuesses[process.id] || null;
   }, [processGuesses]);
 
+  // Update duration for active processes every second
+  const [, setTick] = useState(0);
+  const hasActiveProcesses = useMemo(() => 
+    processes.some(p => !p.endTime),
+    [processes]
+  );
+  
+  useEffect(() => {
+    if (!hasActiveProcesses) return;
+    
+    const interval = setInterval(() => {
+      setTick(prev => prev + 1);
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [hasActiveProcesses]);
+
+  // Check if last MQTT update is older than one hour
+  const isLastUpdateOlderThanOneHour = useCallback((process) => {
+    if (!process.events || process.events.length === 0) return false;
+    
+    // Get the most recent event timestamp
+    const lastEvent = process.events[process.events.length - 1];
+    const lastUpdateTime = new Date(lastEvent.timestamp);
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    
+    return lastUpdateTime < oneHourAgo;
+  }, []);
+
+  // Determine if complete button should be shown
+  const shouldShowCompleteButton = useCallback((process) => {
+    return !process.endTime && isLastUpdateOlderThanOneHour(process);
+  }, [isLastUpdateOlderThanOneHour]);
+
   // Early returns AFTER all hooks
   if (processes.length === 0) {
     return <div className="empty-state">No charging processes yet</div>;
@@ -234,23 +268,6 @@ function ProcessList({ processes, patterns, selectedProcesses, onSelectProcess, 
     return `${seconds}s`;
   };
 
-  // Update duration for active processes every second
-  const [, setTick] = useState(0);
-  const hasActiveProcesses = useMemo(() => 
-    processes.some(p => !p.endTime),
-    [processes]
-  );
-  
-  useEffect(() => {
-    if (!hasActiveProcesses) return;
-    
-    const interval = setInterval(() => {
-      setTick(prev => prev + 1);
-    }, 1000);
-    
-    return () => clearInterval(interval);
-  }, [hasActiveProcesses]);
-
   const calculateTotalEnergy = (process) => {
     const powerEvents = process.events.filter(e => e.type === 'power_consumption');
     if (powerEvents.length === 0) return 0;
@@ -264,23 +281,6 @@ function ProcessList({ processes, patterns, selectedProcesses, onSelectProcess, 
     // Convert to Wh (duration in ms / 1000 / 3600 = hours)
     return (avgPower * duration / 1000 / 3600).toFixed(2);
   };
-
-  // Check if last MQTT update is older than one hour
-  const isLastUpdateOlderThanOneHour = useCallback((process) => {
-    if (!process.events || process.events.length === 0) return false;
-    
-    // Get the most recent event timestamp
-    const lastEvent = process.events[process.events.length - 1];
-    const lastUpdateTime = new Date(lastEvent.timestamp);
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    
-    return lastUpdateTime < oneHourAgo;
-  }, []);
-
-  // Determine if complete button should be shown
-  const shouldShowCompleteButton = useCallback((process) => {
-    return !process.endTime && isLastUpdateOlderThanOneHour(process);
-  }, [isLastUpdateOlderThanOneHour]);
 
   return (
     <div className="process-list">
