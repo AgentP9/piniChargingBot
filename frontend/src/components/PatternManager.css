@@ -46,7 +46,7 @@
 }
 
 .rerun-button {
-  background: var(--border-secondary);
+  background: var(--status-active);
   color: white;
   border: none;
   padding: 0.5rem 1rem;
@@ -155,6 +155,9 @@
 
 .pattern-expand-btn {
   color: var(--border-secondary);
+  font-size: 1.4rem;
+  font-weight: bold;
+  line-height: 1;
 }
 
 .pattern-expand-btn:hover,

@@ -173,6 +173,19 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }
                 </span>
               </div>
             )}
+            <div className="device-actions">
+              <button 
+                className="auto-off-button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  alert('Auto OFF functionality will be implemented in a future update.');
+                }}
+                title="Automatically turn off charger when device is fully charged (Coming soon)"
+                disabled
+              >
+                ⏰ Auto OFF
+              </button>
+            </div>
           </div>
         </div>
       );

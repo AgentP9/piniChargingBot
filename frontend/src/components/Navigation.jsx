@@ -18,6 +18,12 @@ function Navigation() {
       >
         📱 Devices
       </NavLink>
+      <NavLink 
+        to="/statistics" 
+        className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+      >
+        📊 Statistics
+      </NavLink>
     </nav>
   );
 }

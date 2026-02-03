@@ -4,6 +4,7 @@ import axios from 'axios';
 import Navigation from './components/Navigation';
 import ChargingPage from './pages/ChargingPage';
 import DevicePage from './pages/DevicePage';
+import StatisticsPage from './pages/StatisticsPage';
 import { useTheme } from './contexts/ThemeContext';
 import './App.css';
 
@@ -135,6 +136,7 @@ function App() {
             {theme === 'light' ? '🌙' : '☀️'}
           </button>
           <h1>🔌 Charging Monitor</h1>
+          <span className="version-badge">v0.9</span>
         </header>
 
         <Navigation />
@@ -167,6 +169,16 @@ function App() {
                     onDeleteProcess={handleProcessDelete}
                     onCompleteProcess={handleProcessComplete}
                     onProcessUpdate={handleProcessUpdate}
+                  />
+                } 
+              />
+              <Route 
+                path="/statistics" 
+                element={
+                  <StatisticsPage 
+                    processes={processes}
+                    patterns={patterns}
+                    devices={devices}
                   />
                 } 
               />
