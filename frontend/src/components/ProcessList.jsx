@@ -96,37 +96,6 @@ function ProcessList({ processes, patterns, selectedProcesses, onSelectProcess, 
     return names;
   }, [patterns]);
   
-  // Get the assumed device name for a process based on pattern matching
-  const getAssumedDevice = (process) => {
-    if (!process.endTime || !patterns || patterns.length === 0) {
-      return null; // No pattern for active processes or if no patterns available
-    }
-    
-    // Find pattern that contains this process ID
-    const matchingPattern = patterns.find(pattern => 
-      pattern.processIds && pattern.processIds.includes(process.id)
-    );
-    
-    if (matchingPattern && patternNames[matchingPattern.id]) {
-      return patternNames[matchingPattern.id];
-    }
-    
-    return null;
-  };
-
-  // Get the educated guess for an active process
-  const getGuessedDevice = (process) => {
-    if (process.endTime) {
-      return null; // Only for active processes
-    }
-    
-    return processGuesses[process.id] || null;
-  };
-
-  if (processes.length === 0) {
-    return <div className="empty-state">No charging processes yet</div>;
-  }
-
   // Parse filter dates once to avoid repeated parsing in the filter function
   const filterStartDate = useMemo(() => {
     if (!filters?.startDate) return null;
@@ -159,53 +128,123 @@ function ProcessList({ processes, patterns, selectedProcesses, onSelectProcess, 
   }, [patterns]);
 
   // Apply filters
-  const filteredProcesses = processes.filter(process => {
-    // State filter - A process is completed if it has an endTime, active otherwise
-    const isCompleted = process.endTime !== null && process.endTime !== undefined;
-    if (filters?.state === 'active' && isCompleted) return false;
-    if (filters?.state === 'completed' && !isCompleted) return false;
+  const filteredProcesses = useMemo(() => {
+    return processes.filter(process => {
+      // State filter - A process is completed if it has an endTime, active otherwise
+      const isCompleted = process.endTime !== null && process.endTime !== undefined;
+      if (filters?.state === 'active' && isCompleted) return false;
+      if (filters?.state === 'completed' && !isCompleted) return false;
 
-    // Charger filter (physical charging device like ShellyPlug)
-    // Check both chargerId and deviceId for backward compatibility
-    if (filters?.charger && filters.charger !== 'all') {
-      const processChargerId = process.chargerId || process.deviceId;
-      if (processChargerId !== filters.charger) return false;
-    }
-
-    // Device filter (charged device from pattern recognition)
-    // Note: Only completed processes can be filtered by device since pattern recognition
-    // requires a complete charging session to identify the device
-    if (filters?.device && filters.device !== 'all') {
-      // Use pre-computed mapping for O(1) lookup
-      const deviceName = processIdToDeviceName[process.id];
-      if (!deviceName || deviceName !== filters.device) {
-        return false;
+      // Charger filter (physical charging device like ShellyPlug)
+      // Check both chargerId and deviceId for backward compatibility
+      if (filters?.charger && filters.charger !== 'all') {
+        const processChargerId = process.chargerId || process.deviceId;
+        if (processChargerId !== filters.charger) return false;
       }
-    }
 
-    // Start date filter
-    if (filterStartDate) {
-      const processDate = new Date(process.startTime);
-      if (processDate < filterStartDate) return false;
-    }
+      // Device filter (charged device from pattern recognition)
+      // Note: Only completed processes can be filtered by device since pattern recognition
+      // requires a complete charging session to identify the device
+      if (filters?.device && filters.device !== 'all') {
+        // Use pre-computed mapping for O(1) lookup
+        const deviceName = processIdToDeviceName[process.id];
+        if (!deviceName || deviceName !== filters.device) {
+          return false;
+        }
+      }
 
-    // End date filter
-    if (filterEndDate) {
-      const processDate = new Date(process.startTime);
-      if (processDate > filterEndDate) return false;
-    }
+      // Start date filter
+      if (filterStartDate) {
+        const processDate = new Date(process.startTime);
+        if (processDate < filterStartDate) return false;
+      }
 
-    return true;
-  });
+      // End date filter
+      if (filterEndDate) {
+        const processDate = new Date(process.startTime);
+        if (processDate > filterEndDate) return false;
+      }
+
+      return true;
+    });
+  }, [processes, filters, processIdToDeviceName, filterStartDate, filterEndDate]);
+
+  // Sort processes by start time (most recent first)
+  const sortedProcesses = useMemo(() => {
+    return [...filteredProcesses].sort((a, b) => 
+      new Date(b.startTime) - new Date(a.startTime)
+    );
+  }, [filteredProcesses]);
+
+  // Get the assumed device name for a process based on pattern matching
+  const getAssumedDevice = useCallback((process) => {
+    if (!process.endTime || !patterns || patterns.length === 0) {
+      return null; // No pattern for active processes or if no patterns available
+    }
+    
+    // Find pattern that contains this process ID
+    const matchingPattern = patterns.find(pattern => 
+      pattern.processIds && pattern.processIds.includes(process.id)
+    );
+    
+    if (matchingPattern && patternNames[matchingPattern.id]) {
+      return patternNames[matchingPattern.id];
+    }
+    
+    return null;
+  }, [patterns, patternNames]);
+
+  // Get the educated guess for an active process
+  const getGuessedDevice = useCallback((process) => {
+    if (process.endTime) {
+      return null; // Only for active processes
+    }
+    
+    return processGuesses[process.id] || null;
+  }, [processGuesses]);
+
+  // Update duration for active processes every second
+  const [, setTick] = useState(0);
+  const hasActiveProcesses = useMemo(() => 
+    processes.some(p => !p.endTime),
+    [processes]
+  );
+  
+  useEffect(() => {
+    if (!hasActiveProcesses) return;
+    
+    const interval = setInterval(() => {
+      setTick(prev => prev + 1);
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [hasActiveProcesses]);
+
+  // Check if last MQTT update is older than one hour
+  const isLastUpdateOlderThanOneHour = useCallback((process) => {
+    if (!process.events || process.events.length === 0) return false;
+    
+    // Get the most recent event timestamp
+    const lastEvent = process.events[process.events.length - 1];
+    const lastUpdateTime = new Date(lastEvent.timestamp);
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    
+    return lastUpdateTime < oneHourAgo;
+  }, []);
+
+  // Determine if complete button should be shown
+  const shouldShowCompleteButton = useCallback((process) => {
+    return !process.endTime && isLastUpdateOlderThanOneHour(process);
+  }, [isLastUpdateOlderThanOneHour]);
+
+  // Early returns AFTER all hooks
+  if (processes.length === 0) {
+    return <div className="empty-state">No charging processes yet</div>;
+  }
 
   if (filteredProcesses.length === 0) {
     return <div className="empty-state">No charging processes match the current filters</div>;
   }
-
-  // Sort processes by start time (most recent first)
-  const sortedProcesses = [...filteredProcesses].sort((a, b) => 
-    new Date(b.startTime) - new Date(a.startTime)
-  );
 
   const formatDate = (dateString) => {
     return formatDateTime(dateString);
@@ -229,23 +268,6 @@ function ProcessList({ processes, patterns, selectedProcesses, onSelectProcess, 
     return `${seconds}s`;
   };
 
-  // Update duration for active processes every second
-  const [, setTick] = useState(0);
-  const hasActiveProcesses = useMemo(() => 
-    processes.some(p => !p.endTime),
-    [processes]
-  );
-  
-  useEffect(() => {
-    if (!hasActiveProcesses) return;
-    
-    const interval = setInterval(() => {
-      setTick(prev => prev + 1);
-    }, 1000);
-    
-    return () => clearInterval(interval);
-  }, [hasActiveProcesses]);
-
   const calculateTotalEnergy = (process) => {
     const powerEvents = process.events.filter(e => e.type === 'power_consumption');
     if (powerEvents.length === 0) return 0;
@@ -259,23 +281,6 @@ function ProcessList({ processes, patterns, selectedProcesses, onSelectProcess, 
     // Convert to Wh (duration in ms / 1000 / 3600 = hours)
     return (avgPower * duration / 1000 / 3600).toFixed(2);
   };
-
-  // Check if last MQTT update is older than one hour
-  const isLastUpdateOlderThanOneHour = useCallback((process) => {
-    if (!process.events || process.events.length === 0) return false;
-    
-    // Get the most recent event timestamp
-    const lastEvent = process.events[process.events.length - 1];
-    const lastUpdateTime = new Date(lastEvent.timestamp);
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    
-    return lastUpdateTime < oneHourAgo;
-  }, []);
-
-  // Determine if complete button should be shown
-  const shouldShowCompleteButton = useCallback((process) => {
-    return !process.endTime && isLastUpdateOlderThanOneHour(process);
-  }, [isLastUpdateOlderThanOneHour]);
 
   return (
     <div className="process-list">

@@ -266,11 +266,24 @@ function analyzePatterns(processes, existingPatterns = []) {
     // First, check if this process was in an existing pattern (to preserve user customizations)
     const existingPatternForProcess = processToExistingPattern.get(process.id);
     
+    // Check if this process has a manually customized device name
+    const processDeviceName = process.deviceName;
+    const processChargerName = process.chargerName || process.deviceName || process.chargerId || process.deviceId;
+    const processHasManualName = processDeviceName && 
+                                  processDeviceName !== processChargerName && 
+                                  isManuallyCustomized(processDeviceName);
+    
     // Find existing pattern that matches in the new patterns array
     let matchedPattern = null;
     let maxSimilarity = 0;
     
     for (const pattern of patterns) {
+      // If process has a manual name, only match patterns with the same device name
+      // This ensures processes with different manual names are kept in separate patterns
+      if (processHasManualName && pattern.deviceName !== processDeviceName) {
+        continue; // Skip patterns with different device names
+      }
+      
       const similarity = calculateProfileSimilarity(profile, pattern.averageProfile);
       if (similarity > maxSimilarity && similarity >= SIMILARITY_THRESHOLD) {
         maxSimilarity = similarity;
@@ -285,25 +298,17 @@ function analyzePatterns(processes, existingPatterns = []) {
       matchedPattern.durations.push(duration);
       matchedPattern.lastSeen = process.endTime;
       
-      // Check if we should preserve a manually customized name
-      // Priority: existing pattern manual name > process manual name > current pattern name
-      if (existingPatternForProcess && 
-          isManuallyCustomized(existingPatternForProcess.deviceName) &&
-          !isManuallyCustomized(matchedPattern.deviceName)) {
+      // Check if we should preserve a manually customized name over an auto-generated one
+      // This handles cases where a pattern with an auto-generated name (e.g., "Hugo") 
+      // matches a process with a manually assigned name (e.g., "My Device")
+      if (processHasManualName && !isManuallyCustomized(matchedPattern.deviceName)) {
+        console.log(`Pattern analysis: Using manually assigned device name "${processDeviceName}" from process ${process.id} over auto-generated "${matchedPattern.deviceName}"`);
+        matchedPattern.deviceName = processDeviceName;
+      } else if (existingPatternForProcess && 
+                 isManuallyCustomized(existingPatternForProcess.deviceName) &&
+                 !isManuallyCustomized(matchedPattern.deviceName)) {
         console.log(`Pattern analysis: Preserving manual device name "${existingPatternForProcess.deviceName}" over auto-generated "${matchedPattern.deviceName}"`);
         matchedPattern.deviceName = existingPatternForProcess.deviceName;
-      } else {
-        // Check if the process itself has a manually assigned device name
-        const processDeviceName = process.deviceName;
-        const processChargerName = process.chargerName || process.deviceName || process.chargerId || process.deviceId;
-        
-        if (processDeviceName && 
-            processDeviceName !== processChargerName && 
-            isManuallyCustomized(processDeviceName) &&
-            !isManuallyCustomized(matchedPattern.deviceName)) {
-          console.log(`Pattern analysis: Using manually assigned device name "${processDeviceName}" from process ${process.id} over "${matchedPattern.deviceName}"`);
-          matchedPattern.deviceName = processDeviceName;
-        }
       }
       
       // Update average profile (simple running average)
@@ -327,9 +332,13 @@ function analyzePatterns(processes, existingPatterns = []) {
       // Check if we should restore from existing pattern to preserve user customizations
       let patternId, deviceName;
       
-      if (existingPatternForProcess && !restoredPatternIds.has(existingPatternForProcess.id)) {
+      if (existingPatternForProcess && 
+          !restoredPatternIds.has(existingPatternForProcess.id) &&
+          existingPatternForProcess.deviceName === processDeviceName) {
         // Reuse the existing pattern's ID and deviceName to preserve user customizations
-        // Only do this if we haven't already restored this pattern ID
+        // Only do this if:
+        // 1. We haven't already restored this pattern ID
+        // 2. The device name matches (process hasn't been renamed to a different device)
         patternId = existingPatternForProcess.id;
         deviceName = existingPatternForProcess.deviceName;
         restoredPatternIds.add(patternId);
@@ -343,14 +352,8 @@ function analyzePatterns(processes, existingPatterns = []) {
         patternId = `pattern_${timestamp}_${random}`;
         const patternIndex = patterns.length;
         
-        // Check if the process has a manually assigned device name
-        // (different from charger name and manually customized)
-        const processDeviceName = process.deviceName;
-        const processChargerName = process.chargerName || process.deviceName || process.chargerId || process.deviceId;
-        
-        if (processDeviceName && 
-            processDeviceName !== processChargerName && 
-            isManuallyCustomized(processDeviceName)) {
+        // Use manually assigned device name if available
+        if (processHasManualName) {
           // Use the manually assigned device name from the process
           deviceName = processDeviceName;
           console.log(`Pattern analysis: Using manually assigned device name "${deviceName}" from process ${process.id}`);
