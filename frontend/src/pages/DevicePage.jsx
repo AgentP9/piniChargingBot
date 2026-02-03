@@ -46,17 +46,23 @@ function DevicePage({
   useEffect(() => {
     if (selectedPatternId) {
       const selectedPattern = patterns.find(p => p.id === selectedPatternId);
-      if (selectedPattern && selectedPattern.deviceName) {
-        setFilters(prevFilters => {
-          if (prevFilters.device !== selectedPattern.deviceName) {
-            return {
-              ...prevFilters,
-              device: selectedPattern.deviceName
-            };
-          }
-          return prevFilters;
-        });
-      } else if (!selectedPattern) {
+      if (selectedPattern) {
+        // Check if the pattern has a valid deviceName
+        if (selectedPattern.deviceName) {
+          setFilters(prevFilters => {
+            if (prevFilters.device !== selectedPattern.deviceName) {
+              return {
+                ...prevFilters,
+                device: selectedPattern.deviceName
+              };
+            }
+            return prevFilters;
+          });
+        }
+        // If pattern exists but has no deviceName (shouldn't happen, but defensive coding)
+        // Don't change filters - keep current state
+      } else {
+        // Pattern no longer exists - clear selection
         setSelectedPatternId(null);
         setFilters(prevFilters => ({
           ...prevFilters,
@@ -117,7 +123,8 @@ function DevicePage({
     let deviceFilterValue = 'all';
     if (patternId) {
       const pattern = patterns.find(p => p.id === patternId);
-      if (pattern && pattern.deviceName) {
+      // Ensure pattern exists and has a valid deviceName before using it
+      if (pattern && pattern.deviceName && pattern.deviceName.trim() !== '') {
         deviceFilterValue = pattern.deviceName;
       }
     }
