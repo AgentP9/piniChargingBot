@@ -18,7 +18,7 @@
 }
 
 .device-item.selectable {
-  cursor: pointer;
+  /* Removed cursor: pointer as requested - cards are clickable but don't show hand cursor */
 }
 
 .device-item.device-on {
