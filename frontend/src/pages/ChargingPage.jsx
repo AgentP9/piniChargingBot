@@ -72,7 +72,8 @@ function ChargingPage({
               newGuesses[process.id] = {
                 deviceName: response.data.guessedDevice,
                 patternId: response.data.patternId,
-                confidence: response.data.confidence
+                confidence: response.data.confidence,
+                cycled: response.data.cycled
               };
             }
           } catch (error) {
