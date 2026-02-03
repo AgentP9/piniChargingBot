@@ -9,7 +9,7 @@
  * 3. Rename last "Test" to "Laptop" -> RP "Test" should be deleted
  */
 
-const patternAnalyzer = require('./backend/patternAnalyzer.js');
+const patternAnalyzer = require('../backend/patternAnalyzer.js');
 
 console.log('Comprehensive Pattern Rename Test');
 console.log('==================================\n');

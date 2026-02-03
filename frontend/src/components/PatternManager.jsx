@@ -102,7 +102,6 @@ function PatternManager({ patterns, selectedPatternId, onPatternUpdate, onSelect
     return (
       <div className="pattern-manager">
         <div className="pattern-header-row">
-          <h3>Recognized Devices</h3>
           <button 
             className="rerun-button"
             onClick={handleRerunRecognition}
@@ -131,21 +130,20 @@ function PatternManager({ patterns, selectedPatternId, onPatternUpdate, onSelect
   return (
     <div className="pattern-manager">
       <div className="pattern-header-row">
-        <h3>Recognized Devices ({patterns.length})</h3>
         <div className="header-buttons">
           <button 
             className="create-button"
             onClick={() => setShowCreateModal(true)}
             title="Create a new device pattern manually"
           >
-            ➕ New Pattern
+            ✨ New Pattern
           </button>
           <button 
             className="rerun-button"
             onClick={handleRerunRecognition}
             title="Rerun device recognition from scratch"
           >
-            🔄 Rerun Recognition
+            🔍 Rerun Recognition
           </button>
         </div>
       </div>
@@ -185,7 +183,7 @@ function PatternManager({ patterns, selectedPatternId, onPatternUpdate, onSelect
                     }}
                     title={isExpanded ? "Collapse" : "Expand"}
                   >
-                    {isExpanded ? '▼' : '▶'}
+                    {isExpanded ? '−' : '+'}
                   </button>
                   <button
                     className="pattern-edit-btn"

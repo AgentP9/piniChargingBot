@@ -1,10 +1,10 @@
 .pattern-manager {
-  margin-top: 1rem;
+  margin-top: 0;
 }
 
 .pattern-header-row {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   margin-bottom: 1rem;
 }
@@ -33,6 +33,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  height: 42px;
 }
 
 .create-button:hover {
@@ -46,7 +47,7 @@
 }
 
 .rerun-button {
-  background: var(--border-secondary);
+  background: var(--status-active);
   color: white;
   border: none;
   padding: 0.5rem 1rem;
@@ -58,6 +59,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  height: 42px;
 }
 
 .rerun-button:hover {
@@ -155,6 +157,9 @@
 
 .pattern-expand-btn {
   color: var(--border-secondary);
+  font-size: 1.4rem;
+  font-weight: bold;
+  line-height: 1;
 }
 
 .pattern-expand-btn:hover,

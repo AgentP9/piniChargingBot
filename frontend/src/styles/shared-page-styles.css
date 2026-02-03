@@ -55,14 +55,14 @@
 
 .select-all-toggle-button {
   flex-shrink: 0;
-  width: 52px;
-  height: 52px;
+  width: 42px;
+  height: 42px;
   padding: 0;
-  background: var(--border-secondary);
+  background: var(--status-active);
   color: var(--text-on-primary);
   border: none;
   border-radius: 8px;
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;

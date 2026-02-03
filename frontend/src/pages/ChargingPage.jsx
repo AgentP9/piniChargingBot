@@ -72,7 +72,8 @@ function ChargingPage({
               newGuesses[process.id] = {
                 deviceName: response.data.guessedDevice,
                 patternId: response.data.patternId,
-                confidence: response.data.confidence
+                confidence: response.data.confidence,
+                cycled: response.data.cycled
               };
             }
           } catch (error) {
@@ -190,10 +191,8 @@ function ChargingPage({
             return (
               <div key={processId} className="process-info" style={{ marginBottom: activeProcesses.length > 1 ? '1.5rem' : '0' }}>
                 {activeProcesses.length > 1 && (
-                  <div className="process-header" style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
-                    <h3 style={{ margin: '0', color: 'var(--primary-color)', fontSize: '1.1rem' }}>
-                      Process #{processId} - {process.chargerName || process.chargerId || 'Charger'}
-                    </h3>
+                  <div className="info-item">
+                    <strong>Process:</strong> #{processId}
                   </div>
                 )}
                 <div className="info-item">
@@ -201,12 +200,6 @@ function ChargingPage({
                 </div>
                 <div className="info-item">
                   <strong>Start:</strong> {formatDateTime(process.startTime)}
-                </div>
-                <div className="info-item">
-                  <strong>Status:</strong> 
-                  <span className="status-active">
-                    Active
-                  </span>
                 </div>
                 {guess && !hasDeviceName && (
                   <div className="info-item guess-item">
@@ -240,10 +233,19 @@ function ChargingPage({
                     </div>
                   </div>
                 )}
+                {!guess && !hasDeviceName && (
+                  <div className="info-item unknown-device-hint">
+                    <strong>Device:</strong>{' '}
+                    <span className="unknown-value">Unknown device</span>
+                    <small style={{ display: 'block', marginTop: '0.25rem', color: 'var(--text-muted)' }}>
+                      Continue charging to allow device recognition
+                    </small>
+                  </div>
+                )}
                 {estimation && (
                   <>
                     <div className="info-item estimate-item">
-                      <strong>Estimated Remaining:</strong>{' '}
+                      <strong>Remaining:</strong>{' '}
                       <span className="estimate-value">
                         {estimation.status === 'completing' ? (
                           'Completing...'
@@ -252,12 +254,13 @@ function ChargingPage({
                         )}
                       </span>
                       <span className="estimate-confidence">
-                        ({Math.round(estimation.confidence * 100)}% confidence)
+                        ({Math.round(estimation.confidence * 100)}% confidence
+                        {estimation.patternDeviceName && `, based on ${estimation.patternDeviceName}`})
                       </span>
                     </div>
                     {estimation.patternDeviceName && !hasDeviceName && (
                       <div className="info-item estimate-hint">
-                        <small>Based on pattern: {estimation.patternDeviceName}</small>
+                        <small>Confirm or reject device identification:</small>
                         <div className="guess-buttons">
                           <button
                             className="confirm-guess-button"
