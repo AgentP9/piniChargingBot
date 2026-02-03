@@ -193,7 +193,7 @@ function ChargingPage({
                 {activeProcesses.length > 1 && (
                   <div className="process-header" style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
                     <h3 style={{ margin: '0', color: 'var(--primary-color)', fontSize: '1.1rem' }}>
-                      Process #{processId} - {process.chargerName || process.chargerId || 'Charger'}
+                      Process #{processId}
                     </h3>
                   </div>
                 )}

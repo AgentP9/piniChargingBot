@@ -2,8 +2,8 @@ import React, { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import './ChargingChart.css';
 
-// Color palette for multiple processes
-const PROCESS_COLORS = ['#10b981', '#34d399', '#6ee7b7', '#14b8a6', '#2dd4bf', '#5eead4'];
+// Color palette for multiple processes - distinct colors for better differentiation
+const PROCESS_COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
 function ChargingChart({ processes, patterns = [] }) {
   // Support both single process (for backward compatibility) and multiple processes
@@ -149,19 +149,6 @@ function ChargingChart({ processes, patterns = [] }) {
           </div>
           <div className="stat-card">
             <div className="stat-label">Data Points</div>
-            <div className="stat-value">{stats.dataPoints}</div>
-          </div>
-        </div>
-      )}
-      
-      {isMultiProcess && (
-        <div className="chart-stats">
-          <div className="stat-card">
-            <div className="stat-label">Comparing Processes</div>
-            <div className="stat-value">{stats.processCount}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">Total Data Points</div>
             <div className="stat-value">{stats.dataPoints}</div>
           </div>
         </div>
