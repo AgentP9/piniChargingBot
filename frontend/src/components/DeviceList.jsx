@@ -28,7 +28,9 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }
             if (response.data.hasGuess) {
               guesses[device.id] = {
                 deviceName: response.data.guessedDevice,
-                confidence: response.data.confidence
+                patternId: response.data.patternId,
+                confidence: response.data.confidence,
+                cycled: response.data.cycled
               };
             }
           } catch (error) {
@@ -87,6 +89,64 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }
       alert(`${errorMessage}. Please try again.`);
     } finally {
       setControllingDevice(null);
+    }
+  };
+
+  const handleConfirmGuess = async (deviceId, processId, guessedDeviceName, event) => {
+    event.stopPropagation();
+    
+    try {
+      await axios.post(`${API_URL}/processes/${processId}/confirm-guess`, {
+        guessedDeviceName
+      });
+      
+      // Remove the guess from state since it's been confirmed
+      setDeviceGuesses(prev => {
+        const updated = { ...prev };
+        delete updated[deviceId];
+        return updated;
+      });
+      
+      // Refresh data to show updated device name
+      if (onRefreshData) {
+        await onRefreshData();
+      }
+    } catch (error) {
+      console.error(`Error confirming guess for process ${processId}:`, error);
+      alert('Failed to confirm device guess. Please try again.');
+    }
+  };
+
+  const handleRejectGuess = async (deviceId, processId, patternId, event) => {
+    event.stopPropagation();
+    
+    try {
+      const response = await axios.post(`${API_URL}/processes/${processId}/reject-guess`, {
+        rejectedPatternId: patternId
+      });
+      
+      if (response.data.hasGuess) {
+        // Update the guess with the next suggestion
+        setDeviceGuesses(prev => ({
+          ...prev,
+          [deviceId]: {
+            deviceName: response.data.guessedDevice,
+            patternId: response.data.patternId,
+            confidence: response.data.confidence,
+            cycled: response.data.cycled
+          }
+        }));
+      } else {
+        // No more guesses available, remove from state
+        setDeviceGuesses(prev => {
+          const updated = { ...prev };
+          delete updated[deviceId];
+          return updated;
+        });
+      }
+    } catch (error) {
+      console.error(`Error rejecting guess for process ${processId}:`, error);
+      alert('Failed to reject device guess. Please try again.');
     }
   };
 
@@ -171,7 +231,28 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }
                   <span className="confidence-badge">
                     {Math.round(guess.confidence * 100)}%
                   </span>
+                  {guess.cycled && (
+                    <span className="guess-cycled" title="All options have been shown, cycling back">
+                      🔄
+                    </span>
+                  )}
                 </span>
+                <div className="guess-buttons">
+                  <button
+                    className="confirm-guess-button"
+                    onClick={(e) => handleConfirmGuess(device.id, device.currentProcessId, guess.deviceName, e)}
+                    title="Confirm this device identification"
+                  >
+                    ✓
+                  </button>
+                  <button
+                    className="reject-guess-button"
+                    onClick={(e) => handleRejectGuess(device.id, device.currentProcessId, guess.patternId, e)}
+                    title="Reject and show next best match"
+                  >
+                    ✗
+                  </button>
+                </div>
               </div>
             )}
             <div className="device-actions">
