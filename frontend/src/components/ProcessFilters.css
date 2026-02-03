@@ -16,7 +16,7 @@
 
 .filter-toggle-button {
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 1rem;
   background: transparent;
   border: none;
   border-radius: 8px;
@@ -24,12 +24,12 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--text-primary);
   transition: background-color 0.2s ease;
   text-align: left;
-  min-height: 50px;
+  min-height: auto;
 }
 
 .filter-toggle-button:hover {
