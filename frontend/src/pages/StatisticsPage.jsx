@@ -283,7 +283,7 @@ function StatisticsPage({ processes, patterns, devices }) {
           <div className="card chart-card">
             <h3>Charger Usage</h3>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={chargerUsageData}>
+              <BarChart data={chargerUsageData} margin={{ bottom: 80 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
                 <XAxis 
                   dataKey="name" 
@@ -291,7 +291,6 @@ function StatisticsPage({ processes, patterns, devices }) {
                   tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }}
                   angle={-45}
                   textAnchor="end"
-                  height={80}
                 />
                 <YAxis 
                   stroke="var(--text-tertiary)"
