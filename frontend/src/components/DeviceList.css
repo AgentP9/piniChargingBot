@@ -31,15 +31,15 @@
 .device-item.device-on::before {
   content: '';
   position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background: linear-gradient(
-    45deg,
-    transparent 30%,
+    135deg,
+    transparent 0%,
     rgba(16, 185, 129, 0.15) 50%,
-    transparent 70%
+    transparent 100%
   );
   animation: charging-pulse 3s ease-in-out infinite;
   pointer-events: none;
@@ -52,11 +52,11 @@
 }
 
 @keyframes charging-pulse {
-  0% {
-    transform: translate(-50%, -50%) rotate(0deg);
+  0%, 100% {
+    opacity: 0.3;
   }
-  100% {
-    transform: translate(50%, 50%) rotate(360deg);
+  50% {
+    opacity: 1;
   }
 }
 
