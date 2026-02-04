@@ -24,11 +24,79 @@
 .device-item.device-on {
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0.08) 100%);
   border-color: rgba(16, 185, 129, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.device-item.device-on::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(16, 185, 129, 0.15) 50%,
+    transparent 70%
+  );
+  animation: charging-pulse 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.device-item.device-on > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes charging-pulse {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(50%, 50%) rotate(360deg);
+  }
 }
 
 .device-item.device-completing {
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.08) 100%);
   border-color: rgba(245, 158, 11, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.device-item.device-completing::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(245, 158, 11, 0.2) 50%,
+    transparent 100%
+  );
+  animation: idling-sweep 2s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.device-item.device-completing > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes idling-sweep {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
 }
 
 .device-item.device-off {
