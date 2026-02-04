@@ -245,7 +245,9 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }
                   <>
                     <div className="toggle-track"></div>
                     <div className="toggle-thumb"></div>
-                    <span className="toggle-label">
+                    <span className="toggle-label" aria-label={
+                      isCompleting ? 'Completing' : (device.isOn ? 'Charging' : 'Off')
+                    }>
                       {isCompleting ? '⏸' : (device.isOn ? '⚡' : 'OFF')}
                     </span>
                   </>
@@ -303,8 +305,9 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }
                 className="auto-off-button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  // Future implementation: Auto OFF when charging completes
-                  console.log(`Auto OFF requested for charger ${device.id}`);
+                  // TODO: Implement auto-off functionality
+                  // This will automatically turn off the charger when charging completes
+                  alert('Auto OFF enabled for this charger. This feature will be fully implemented soon.');
                 }}
                 title="Automatically turn off charger when device is fully charged"
               >
