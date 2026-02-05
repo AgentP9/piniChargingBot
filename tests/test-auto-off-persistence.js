@@ -46,7 +46,10 @@ if (!fs.existsSync(autoOffFile)) {
   console.log('✗ FAIL: Auto-off state file was not created');
   console.log('Expected location:', autoOffFile);
   console.log('Test data dir:', testDataDir);
-  console.log('Files in test dir:', fs.existsSync(testDataDir) ? fs.readdirSync(testDataDir) : 'directory does not exist');
+  const dirContents = fs.existsSync(testDataDir) 
+    ? fs.readdirSync(testDataDir) 
+    : 'directory does not exist';
+  console.log('Files in test dir:', dirContents);
   process.exit(1);
 }
 console.log('✓ Auto-off state file created');

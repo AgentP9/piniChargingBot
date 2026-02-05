@@ -126,11 +126,14 @@ function saveAutoOffState(autoOffState) {
     // Create a clean version without timers (which can't be serialized)
     const cleanState = {};
     Object.keys(autoOffState).forEach(chargerId => {
-      cleanState[chargerId] = {
-        enabled: autoOffState[chargerId].enabled,
-        // Don't persist completionDetectedAt or revalidationTimer
-        // These are runtime-only state that should reset on restart
-      };
+      // Skip if the state object is null or undefined
+      if (autoOffState[chargerId] && typeof autoOffState[chargerId].enabled !== 'undefined') {
+        cleanState[chargerId] = {
+          enabled: autoOffState[chargerId].enabled,
+          // Don't persist completionDetectedAt or revalidationTimer
+          // These are runtime-only state that should reset on restart
+        };
+      }
     });
     
     const tempFile = `${AUTO_OFF_FILE}.tmp`;
