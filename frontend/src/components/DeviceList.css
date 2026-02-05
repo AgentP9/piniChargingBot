@@ -328,6 +328,17 @@
   cursor: not-allowed;
 }
 
+.auto-off-button.auto-off-active {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: #10b981;
+  color: #10b981;
+}
+
+.auto-off-button.auto-off-active:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: #10b981;
+}
+
 .guess-buttons {
   display: flex;
   gap: 0.5rem;

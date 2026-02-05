@@ -298,17 +298,28 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }
             )}
             <div className="device-actions">
               <button 
-                className="auto-off-button"
-                onClick={(e) => {
+                className={`auto-off-button ${device.autoOffEnabled ? 'auto-off-active' : ''}`}
+                onClick={async (e) => {
                   e.stopPropagation();
-                  // TODO: Implement auto-off functionality
-                  // This will automatically turn off the charger when charging completes
-                  alert('Auto OFF enabled for this charger. This feature will be fully implemented soon.');
+                  try {
+                    const endpoint = device.autoOffEnabled ? 'disable' : 'enable';
+                    await axios.post(`${API_URL}/chargers/${device.id}/auto-off/${endpoint}`);
+                    
+                    // Refresh data to show updated state
+                    if (onRefreshData) {
+                      await onRefreshData();
+                    }
+                  } catch (error) {
+                    console.error(`Error toggling auto-off for charger ${device.id}:`, error);
+                    alert(`Failed to ${device.autoOffEnabled ? 'disable' : 'enable'} Auto OFF. Please try again.`);
+                  }
                 }}
-                title="Automatically turn off charger when device is fully charged"
+                title={device.autoOffEnabled 
+                  ? "Auto OFF is enabled - will turn off charger after 5 minutes of completion" 
+                  : "Automatically turn off charger when device is fully charged"}
                 disabled={!device.isOn}
               >
-                ⏰ Auto OFF
+                ⏰ Auto OFF {device.autoOffEnabled ? '✓' : ''}
               </button>
             </div>
           </div>
