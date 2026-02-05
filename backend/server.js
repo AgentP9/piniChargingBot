@@ -79,7 +79,18 @@ const chargerStates = {};
 
 // Auto-off tracking for chargers
 // Tracks which chargers have auto-off enabled and their completion timers
+// Load persisted auto-off state from storage
+const persistedAutoOff = storage.loadAutoOffState();
 const autoOffState = {};
+
+// Initialize autoOffState with persisted data, adding runtime-only fields
+Object.keys(persistedAutoOff).forEach(chargerId => {
+  autoOffState[chargerId] = {
+    enabled: persistedAutoOff[chargerId].enabled,
+    completionDetectedAt: null,  // Runtime-only
+    revalidationTimer: null      // Runtime-only
+  };
+});
 
 /**
  * Enable auto-off for a charger
@@ -96,6 +107,9 @@ function enableAutoOff(chargerId) {
     autoOffState[chargerId].enabled = true;
   }
   console.log(`Auto-off enabled for charger ${chargerId}`);
+  
+  // Persist the auto-off state
+  storage.saveAutoOffState(autoOffState);
 }
 
 /**
@@ -112,6 +126,9 @@ function disableAutoOff(chargerId) {
     autoOffState[chargerId].completionDetectedAt = null;
   }
   console.log(`Auto-off disabled for charger ${chargerId}`);
+  
+  // Persist the auto-off state
+  storage.saveAutoOffState(autoOffState);
 }
 
 /**
@@ -1509,6 +1526,7 @@ function gracefulShutdown(signal) {
   storage.saveProcesses(chargingProcesses);
   storage.saveProcessCounter(processIdCounter);
   patternAnalyzer.savePatterns(chargingPatterns);
+  storage.saveAutoOffState(autoOffState);
   
   // Close MQTT connection with timeout
   if (mqttClient && mqttClient.connected) {

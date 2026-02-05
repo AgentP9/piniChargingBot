@@ -5,6 +5,7 @@ const path = require('path');
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const PROCESSES_FILE = path.join(DATA_DIR, 'charging-processes.json');
 const COUNTER_FILE = path.join(DATA_DIR, 'process-counter.json');
+const AUTO_OFF_FILE = path.join(DATA_DIR, 'auto-off-state.json');
 
 /**
  * Ensure the data directory exists
@@ -93,9 +94,59 @@ function saveProcessCounter(counter) {
   }
 }
 
+/**
+ * Load auto-off state from file
+ * @returns {Object} Object mapping charger IDs to their auto-off state
+ */
+function loadAutoOffState() {
+  ensureDataDirectory();
+  
+  try {
+    if (fs.existsSync(AUTO_OFF_FILE)) {
+      const data = fs.readFileSync(AUTO_OFF_FILE, 'utf8');
+      const autoOffState = JSON.parse(data);
+      console.log(`Loaded auto-off state for ${Object.keys(autoOffState).length} chargers from storage`);
+      return autoOffState;
+    }
+  } catch (error) {
+    console.error('Error loading auto-off state from file:', error);
+  }
+  
+  return {};
+}
+
+/**
+ * Save auto-off state to file
+ * @param {Object} autoOffState - Object mapping charger IDs to their auto-off state
+ */
+function saveAutoOffState(autoOffState) {
+  ensureDataDirectory();
+  
+  try {
+    // Create a clean version without timers (which can't be serialized)
+    const cleanState = {};
+    Object.keys(autoOffState).forEach(chargerId => {
+      cleanState[chargerId] = {
+        enabled: autoOffState[chargerId].enabled,
+        // Don't persist completionDetectedAt or revalidationTimer
+        // These are runtime-only state that should reset on restart
+      };
+    });
+    
+    const tempFile = `${AUTO_OFF_FILE}.tmp`;
+    fs.writeFileSync(tempFile, JSON.stringify(cleanState, null, 2), 'utf8');
+    fs.renameSync(tempFile, AUTO_OFF_FILE);
+    console.log(`Saved auto-off state for ${Object.keys(cleanState).length} chargers to storage`);
+  } catch (error) {
+    console.error('Error saving auto-off state to file:', error);
+  }
+}
+
 module.exports = {
   loadProcesses,
   saveProcesses,
   loadProcessCounter,
-  saveProcessCounter
+  saveProcessCounter,
+  loadAutoOffState,
+  saveAutoOffState
 };
