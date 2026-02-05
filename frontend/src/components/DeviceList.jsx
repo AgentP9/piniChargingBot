@@ -7,6 +7,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 // DeviceList displays connected chargers (physical charging devices like ShellyPlugs)
 function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }) {
   const [deviceGuesses, setDeviceGuesses] = useState({});
+  const [completionStatus, setCompletionStatus] = useState({});
   const [controllingDevice, setControllingDevice] = useState(null);
 
   // Fetch educated guesses for active processes
@@ -46,6 +47,39 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }
     // Refresh guesses every 10 seconds while there are active devices
     const interval = setInterval(fetchGuesses, 10000);
     return () => clearInterval(interval);
+  }, [devices]);
+
+  // Fetch completion status for active chargers
+  useEffect(() => {
+    const activeDevices = devices.filter(d => d.isOn && d.currentProcessId !== null);
+    
+    if (activeDevices.length === 0) {
+      setCompletionStatus({});
+      return; // No interval to clean up
+    }
+    
+    const fetchCompletionStatus = async () => {
+      const statuses = {};
+      await Promise.all(
+        activeDevices.map(async (device) => {
+          try {
+            const response = await axios.get(`${API_URL}/chargers/${device.id}/completion-status`);
+            if (response.data.isActive) {
+              statuses[device.id] = response.data.isInCompletionPhase;
+            }
+          } catch (error) {
+            console.error(`Error fetching completion status for charger ${device.id}:`, error);
+          }
+        })
+      );
+      
+      setCompletionStatus(statuses);
+    };
+    
+    fetchCompletionStatus();
+    // Refresh completion status every 30 seconds
+    const completionInterval = setInterval(fetchCompletionStatus, 30000);
+    return () => clearInterval(completionInterval);
   }, [devices]);
 
   if (devices.length === 0) {
@@ -156,12 +190,15 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }
     <div className="device-list">
       {devices.map(device => {
         const guess = deviceGuesses[device.id];
+        const isCompleting = completionStatus[device.id] === true;
         const isSelectable = onSelectDevice && typeof onSelectDevice === 'function' && selectedDeviceId !== undefined;
         
         return (
         <div 
           key={device.id} 
-          className={`device-item ${selectedDeviceId === device.id ? 'selected' : ''} ${device.isOn ? 'device-on' : 'device-off'} ${isSelectable ? 'selectable' : ''}`}
+          className={`device-item ${selectedDeviceId === device.id ? 'selected' : ''} ${
+            isCompleting ? 'device-completing' : (device.isOn ? 'device-on' : 'device-off')
+          } ${isSelectable ? 'selectable' : ''}`}
           onClick={isSelectable ? () => handleDeviceClick(device.id) : undefined}
           role={isSelectable ? "button" : undefined}
           tabIndex={isSelectable ? 0 : undefined}
@@ -178,7 +215,9 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }
             <h3 className="device-name">{device.name}</h3>
             <div className="device-header-right">
               <div 
-                className={`toggle-switch ${device.isOn ? 'toggle-on' : 'toggle-off'} ${controllingDevice === device.id ? 'toggle-loading' : ''}`}
+                className={`toggle-switch ${
+                  isCompleting ? 'toggle-completing' : (device.isOn ? 'toggle-on' : 'toggle-off')
+                } ${controllingDevice === device.id ? 'toggle-loading' : ''}`}
                 onClick={(e) => {
                   if (controllingDevice !== device.id) {
                     handleToggleCharger(device.id, device.isOn, e);
@@ -259,15 +298,28 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }
             )}
             <div className="device-actions">
               <button 
-                className="auto-off-button"
-                onClick={(e) => {
+                className={`auto-off-button ${device.autoOffEnabled ? 'auto-off-active' : ''}`}
+                onClick={async (e) => {
                   e.stopPropagation();
-                  alert('Auto OFF functionality will be implemented in a future update.');
+                  try {
+                    const endpoint = device.autoOffEnabled ? 'disable' : 'enable';
+                    await axios.post(`${API_URL}/chargers/${device.id}/auto-off/${endpoint}`);
+                    
+                    // Refresh data to show updated state
+                    if (onRefreshData) {
+                      await onRefreshData();
+                    }
+                  } catch (error) {
+                    console.error(`Error toggling auto-off for charger ${device.id}:`, error);
+                    alert(`Failed to ${device.autoOffEnabled ? 'disable' : 'enable'} Auto OFF. Please try again.`);
+                  }
                 }}
-                title="Automatically turn off charger when device is fully charged (Coming soon)"
-                disabled
+                title={device.autoOffEnabled 
+                  ? "Auto OFF is enabled - will turn off charger after 5 minutes of completion" 
+                  : "Automatically turn off charger when device is fully charged"}
+                disabled={!device.isOn}
               >
-                ⏰ Auto OFF
+                ⏰ Auto OFF {device.autoOffEnabled ? '✓' : ''}
               </button>
             </div>
           </div>

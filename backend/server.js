@@ -27,6 +27,10 @@ let chargingPatterns = patternAnalyzer.loadPatterns();
 let saveTimer = null;
 const SAVE_THROTTLE_MS = 5000; // Save at most once every 5 seconds
 
+// Auto-off configuration
+const AUTO_OFF_DELAY_MS = 5 * 60 * 1000; // 5 minutes in milliseconds
+const AUTO_OFF_CHECK_INTERVAL_MS = 30000; // Check every 30 seconds
+
 function scheduleSave() {
   if (saveTimer) {
     clearTimeout(saveTimer);
@@ -72,6 +76,186 @@ function tryAutoAssignDeviceName(process, processId) {
 
 // Current state of each charger (physical charging device like ShellyPlug)
 const chargerStates = {};
+
+// Auto-off tracking for chargers
+// Tracks which chargers have auto-off enabled and their completion timers
+const autoOffState = {};
+
+/**
+ * Enable auto-off for a charger
+ * @param {string} chargerId - The charger ID
+ */
+function enableAutoOff(chargerId) {
+  if (!autoOffState[chargerId]) {
+    autoOffState[chargerId] = {
+      enabled: true,
+      completionDetectedAt: null,
+      revalidationTimer: null
+    };
+  } else {
+    autoOffState[chargerId].enabled = true;
+  }
+  console.log(`Auto-off enabled for charger ${chargerId}`);
+}
+
+/**
+ * Disable auto-off for a charger and clear any pending timers
+ * @param {string} chargerId - The charger ID
+ */
+function disableAutoOff(chargerId) {
+  if (autoOffState[chargerId]) {
+    autoOffState[chargerId].enabled = false;
+    if (autoOffState[chargerId].revalidationTimer) {
+      clearTimeout(autoOffState[chargerId].revalidationTimer);
+      autoOffState[chargerId].revalidationTimer = null;
+    }
+    autoOffState[chargerId].completionDetectedAt = null;
+  }
+  console.log(`Auto-off disabled for charger ${chargerId}`);
+}
+
+/**
+ * Turn off charger via MQTT
+ * @param {string} chargerId - The charger ID
+ */
+function turnOffCharger(chargerId) {
+  const chargerState = chargerStates[chargerId];
+  if (!chargerState) {
+    console.error(`Cannot turn off charger ${chargerId}: charger not found`);
+    return;
+  }
+
+  if (!mqttClient || !mqttClient.connected) {
+    console.error(`Cannot turn off charger ${chargerId}: MQTT not connected`);
+    return;
+  }
+
+  const commandTopic = `${chargerState.topic}/relay/0/command`;
+  const command = 'off';
+
+  console.log(`Auto-off: Sending OFF command to charger "${chargerState.name}" (${chargerId})`);
+
+  mqttClient.publish(commandTopic, command, { qos: 1, retain: false }, (err) => {
+    if (err) {
+      console.error(`Auto-off: Failed to send OFF command to ${commandTopic}:`, err);
+    } else {
+      console.log(`Auto-off: Successfully sent OFF command to charger "${chargerState.name}"`);
+    }
+  });
+}
+
+/**
+ * Check and handle auto-off for a charger
+ * Called periodically to check if completion criteria are met
+ * @param {string} chargerId - The charger ID
+ */
+function checkAutoOff(chargerId) {
+  const autoOff = autoOffState[chargerId];
+  const chargerState = chargerStates[chargerId];
+
+  // Skip if auto-off not enabled or charger not found
+  if (!autoOff || !autoOff.enabled || !chargerState) {
+    return;
+  }
+
+  // Skip if charger is off or no active process
+  if (!chargerState.isOn || chargerState.currentProcessId === null) {
+    // Clear any pending timers if charger is off
+    if (autoOff.revalidationTimer) {
+      clearTimeout(autoOff.revalidationTimer);
+      autoOff.revalidationTimer = null;
+      autoOff.completionDetectedAt = null;
+    }
+    return;
+  }
+
+  const process = chargingProcesses.find(p => p.id === chargerState.currentProcessId);
+  if (!process || process.endTime) {
+    return;
+  }
+
+  // Check if in completion phase
+  const isCompleting = patternAnalyzer.isInCompletionPhase(process);
+
+  if (isCompleting) {
+    const now = Date.now();
+
+    if (!autoOff.completionDetectedAt) {
+      // First time detecting completion - start the timer
+      autoOff.completionDetectedAt = now;
+      console.log(`Auto-off: Completion detected for charger ${chargerId}, starting 5-minute timer`);
+
+      // Set timer for 5 minutes (300000 ms)
+      autoOff.revalidationTimer = setTimeout(() => {
+        console.log(`Auto-off: 5-minute timer expired for charger ${chargerId}, revalidating...`);
+        
+        // Revalidate completion state
+        const currentProcess = chargingProcesses.find(p => p.id === chargerState.currentProcessId);
+        if (currentProcess && !currentProcess.endTime) {
+          const stillCompleting = patternAnalyzer.isInCompletionPhase(currentProcess);
+          
+          if (stillCompleting) {
+            console.log(`Auto-off: Revalidation confirmed completion for charger ${chargerId}, turning off`);
+            turnOffCharger(chargerId);
+            // Reset state
+            autoOff.completionDetectedAt = null;
+            autoOff.revalidationTimer = null;
+          } else {
+            console.log(`Auto-off: Revalidation showed charging resumed for charger ${chargerId}, timer reset`);
+            autoOff.completionDetectedAt = null;
+            autoOff.revalidationTimer = null;
+          }
+        } else {
+          console.log(`Auto-off: Process ended or not found for charger ${chargerId}, clearing timer`);
+          autoOff.completionDetectedAt = null;
+          autoOff.revalidationTimer = null;
+        }
+      }, AUTO_OFF_DELAY_MS);
+    }
+  } else {
+    // Not in completion phase - clear any pending timer
+    if (autoOff.completionDetectedAt) {
+      console.log(`Auto-off: Charging resumed for charger ${chargerId}, clearing completion timer`);
+      if (autoOff.revalidationTimer) {
+        clearTimeout(autoOff.revalidationTimer);
+        autoOff.revalidationTimer = null;
+      }
+      autoOff.completionDetectedAt = null;
+    }
+  }
+}
+
+// Check auto-off for all chargers periodically
+const autoOffCheckInterval = setInterval(() => {
+  Object.keys(chargerStates).forEach(chargerId => {
+    checkAutoOff(chargerId);
+  });
+}, AUTO_OFF_CHECK_INTERVAL_MS);
+
+// Cleanup on shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, cleaning up...');
+  if (autoOffCheckInterval) {
+    clearInterval(autoOffCheckInterval);
+  }
+  // Clear all auto-off timers
+  Object.keys(autoOffState).forEach(chargerId => {
+    disableAutoOff(chargerId);
+  });
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, cleaning up...');
+  if (autoOffCheckInterval) {
+    clearInterval(autoOffCheckInterval);
+  }
+  // Clear all auto-off timers
+  Object.keys(autoOffState).forEach(chargerId => {
+    disableAutoOff(chargerId);
+  });
+  process.exit(0);
+});
 
 // MQTT Configuration
 const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || 'mqtt://localhost:1883';
@@ -486,28 +670,36 @@ app.put('/api/processes/:id/device-name', (req, res) => {
 
 // Get current charger states
 app.get('/api/chargers', (req, res) => {
-  const chargers = Object.entries(chargerStates).map(([id, state]) => ({
-    id,
-    name: state.name,
-    topic: state.topic,
-    isOn: state.isOn,
-    power: state.power,
-    currentProcessId: state.currentProcessId
-  }));
+  const chargers = Object.entries(chargerStates).map(([id, state]) => {
+    const autoOff = autoOffState[id];
+    return {
+      id,
+      name: state.name,
+      topic: state.topic,
+      isOn: state.isOn,
+      power: state.power,
+      currentProcessId: state.currentProcessId,
+      autoOffEnabled: autoOff ? autoOff.enabled : false
+    };
+  });
   
   res.json(chargers);
 });
 
 // Backward compatibility: old endpoint name
 app.get('/api/devices', (req, res) => {
-  const chargers = Object.entries(chargerStates).map(([id, state]) => ({
-    id,
-    name: state.name,
-    topic: state.topic,
-    isOn: state.isOn,
-    power: state.power,
-    currentProcessId: state.currentProcessId
-  }));
+  const chargers = Object.entries(chargerStates).map(([id, state]) => {
+    const autoOff = autoOffState[id];
+    return {
+      id,
+      name: state.name,
+      topic: state.topic,
+      isOn: state.isOn,
+      power: state.power,
+      currentProcessId: state.currentProcessId,
+      autoOffEnabled: autoOff ? autoOff.enabled : false
+    };
+  });
   
   res.json(chargers);
 });
@@ -518,13 +710,15 @@ app.get('/api/chargers/:chargerId', (req, res) => {
   const state = chargerStates[chargerId];
   
   if (state) {
+    const autoOff = autoOffState[chargerId];
     res.json({
       id: chargerId,
       name: state.name,
       topic: state.topic,
       isOn: state.isOn,
       power: state.power,
-      currentProcessId: state.currentProcessId
+      currentProcessId: state.currentProcessId,
+      autoOffEnabled: autoOff ? autoOff.enabled : false
     });
   } else {
     res.status(404).json({ error: 'Charger not found' });
@@ -537,13 +731,15 @@ app.get('/api/devices/:deviceId', (req, res) => {
   const state = chargerStates[deviceId];
   
   if (state) {
+    const autoOff = autoOffState[deviceId];
     res.json({
       id: deviceId,
       name: state.name,
       topic: state.topic,
       isOn: state.isOn,
       power: state.power,
-      currentProcessId: state.currentProcessId
+      currentProcessId: state.currentProcessId,
+      autoOffEnabled: autoOff ? autoOff.enabled : false
     });
   } else {
     res.status(404).json({ error: 'Device not found' });
@@ -591,6 +787,71 @@ app.post('/api/chargers/:chargerId/control', (req, res) => {
       chargerName: chargerState.name,
       commandSent: command
     });
+  });
+});
+
+// Enable auto-off for a charger
+app.post('/api/chargers/:chargerId/auto-off/enable', (req, res) => {
+  const { chargerId } = req.params;
+  
+  const chargerState = chargerStates[chargerId];
+  if (!chargerState) {
+    return res.status(404).json({ error: 'Charger not found' });
+  }
+  
+  enableAutoOff(chargerId);
+  
+  res.json({
+    success: true,
+    message: `Auto-off enabled for charger "${chargerState.name}"`,
+    chargerId: chargerId,
+    chargerName: chargerState.name,
+    autoOffEnabled: true
+  });
+});
+
+// Disable auto-off for a charger
+app.post('/api/chargers/:chargerId/auto-off/disable', (req, res) => {
+  const { chargerId } = req.params;
+  
+  const chargerState = chargerStates[chargerId];
+  if (!chargerState) {
+    return res.status(404).json({ error: 'Charger not found' });
+  }
+  
+  disableAutoOff(chargerId);
+  
+  res.json({
+    success: true,
+    message: `Auto-off disabled for charger "${chargerState.name}"`,
+    chargerId: chargerId,
+    chargerName: chargerState.name,
+    autoOffEnabled: false
+  });
+});
+
+// Get auto-off status for a charger
+app.get('/api/chargers/:chargerId/auto-off/status', (req, res) => {
+  const { chargerId } = req.params;
+  
+  const chargerState = chargerStates[chargerId];
+  if (!chargerState) {
+    return res.status(404).json({ error: 'Charger not found' });
+  }
+  
+  const autoOff = autoOffState[chargerId];
+  const enabled = autoOff ? autoOff.enabled : false;
+  const completionDetected = autoOff && autoOff.completionDetectedAt !== null;
+  const timeUntilShutoff = completionDetected 
+    ? Math.max(0, Math.round((AUTO_OFF_DELAY_MS - (Date.now() - autoOff.completionDetectedAt)) / 1000))
+    : null;
+  
+  res.json({
+    chargerId: chargerId,
+    chargerName: chargerState.name,
+    autoOffEnabled: enabled,
+    completionDetected: completionDetected,
+    timeUntilShutoffSeconds: timeUntilShutoff
   });
 });
 
@@ -967,6 +1228,59 @@ app.get('/api/processes/:id/estimate', (req, res) => {
       processId: processId,
       isActive: true,
       hasEstimate: false
+    });
+  }
+});
+
+// Check if a charger's active process is in completion phase
+app.get('/api/chargers/:chargerId/completion-status', (req, res) => {
+  const { chargerId } = req.params;
+  
+  const chargerState = chargerStates[chargerId];
+  
+  if (!chargerState) {
+    return res.status(404).json({ error: 'Charger not found' });
+  }
+  
+  // If charger is not on or has no active process, it's not in completion phase
+  if (!chargerState.isOn || chargerState.currentProcessId === null) {
+    return res.json({
+      chargerId: chargerId,
+      isActive: false,
+      isInCompletionPhase: false,
+      message: 'No active charging process'
+    });
+  }
+  
+  const process = chargingProcesses.find(p => p.id === chargerState.currentProcessId);
+  
+  if (!process || process.endTime) {
+    return res.json({
+      chargerId: chargerId,
+      isActive: false,
+      isInCompletionPhase: false,
+      message: 'Process not found or already completed'
+    });
+  }
+  
+  try {
+    // Check if in completion phase (power below 5W threshold for 5 minutes)
+    const isCompleting = patternAnalyzer.isInCompletionPhase(process);
+    
+    res.json({
+      chargerId: chargerId,
+      processId: process.id,
+      isActive: true,
+      isInCompletionPhase: isCompleting,
+      message: isCompleting ? 'Charging is nearing completion' : 'Charging in progress'
+    });
+  } catch (error) {
+    console.error(`Error checking completion status for charger ${chargerId}:`, error);
+    res.status(500).json({
+      error: 'Failed to check completion status',
+      chargerId: chargerId,
+      isActive: true,
+      isInCompletionPhase: false
     });
   }
 });
