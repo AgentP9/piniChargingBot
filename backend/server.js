@@ -27,6 +27,10 @@ let chargingPatterns = patternAnalyzer.loadPatterns();
 let saveTimer = null;
 const SAVE_THROTTLE_MS = 5000; // Save at most once every 5 seconds
 
+// Auto-off configuration
+const AUTO_OFF_DELAY_MS = 5 * 60 * 1000; // 5 minutes in milliseconds
+const AUTO_OFF_CHECK_INTERVAL_MS = 30000; // Check every 30 seconds
+
 function scheduleSave() {
   if (saveTimer) {
     clearTimeout(saveTimer);
@@ -206,7 +210,7 @@ function checkAutoOff(chargerId) {
           autoOff.completionDetectedAt = null;
           autoOff.revalidationTimer = null;
         }
-      }, 5 * 60 * 1000); // 5 minutes
+      }, AUTO_OFF_DELAY_MS);
     }
   } else {
     // Not in completion phase - clear any pending timer
@@ -221,12 +225,37 @@ function checkAutoOff(chargerId) {
   }
 }
 
-// Check auto-off for all chargers every 30 seconds
-setInterval(() => {
+// Check auto-off for all chargers periodically
+const autoOffCheckInterval = setInterval(() => {
   Object.keys(chargerStates).forEach(chargerId => {
     checkAutoOff(chargerId);
   });
-}, 30000);
+}, AUTO_OFF_CHECK_INTERVAL_MS);
+
+// Cleanup on shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, cleaning up...');
+  if (autoOffCheckInterval) {
+    clearInterval(autoOffCheckInterval);
+  }
+  // Clear all auto-off timers
+  Object.keys(autoOffState).forEach(chargerId => {
+    disableAutoOff(chargerId);
+  });
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, cleaning up...');
+  if (autoOffCheckInterval) {
+    clearInterval(autoOffCheckInterval);
+  }
+  // Clear all auto-off timers
+  Object.keys(autoOffState).forEach(chargerId => {
+    disableAutoOff(chargerId);
+  });
+  process.exit(0);
+});
 
 // MQTT Configuration
 const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || 'mqtt://localhost:1883';
@@ -814,7 +843,7 @@ app.get('/api/chargers/:chargerId/auto-off/status', (req, res) => {
   const enabled = autoOff ? autoOff.enabled : false;
   const completionDetected = autoOff && autoOff.completionDetectedAt !== null;
   const timeUntilShutoff = completionDetected 
-    ? Math.max(0, Math.round((5 * 60 * 1000 - (Date.now() - autoOff.completionDetectedAt)) / 1000))
+    ? Math.max(0, Math.round((AUTO_OFF_DELAY_MS - (Date.now() - autoOff.completionDetectedAt)) / 1000))
     : null;
   
   res.json({
