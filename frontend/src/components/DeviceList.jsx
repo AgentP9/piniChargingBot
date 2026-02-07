@@ -315,7 +315,7 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }
                   }
                 }}
                 title={device.autoOffEnabled 
-                  ? "Auto OFF is enabled - will turn off charger after 5 minutes of completion" 
+                  ? "Auto OFF is enabled - will turn off charger after 10 minutes of completion" 
                   : "Automatically turn off charger when device is fully charged"}
               >
                 ⏰ Auto OFF {device.autoOffEnabled ? '✓' : ''}
