@@ -665,19 +665,21 @@ function deletePattern(patterns, patternId) {
 /**
  * Detect if a charging process is in its completion phase
  * This detects when power consumption drops below a threshold and stabilizes
+ * with improved algorithm to prevent premature detection
  * @param {Object} process - Active charging process
  * @param {number} thresholdWatts - Power threshold below which we consider charging near complete (default 5W)
- * @param {number} stableMinutes - Number of minutes power must stay below threshold (default 5 minutes)
+ * @param {number} stableMinutes - Number of minutes power must stay below threshold (default 10 minutes)
  * @returns {boolean} True if process appears to be in completion phase
  */
-function isInCompletionPhase(process, thresholdWatts = 5, stableMinutes = 5) {
+function isInCompletionPhase(process, thresholdWatts = 5, stableMinutes = 10) {
   if (!process || !process.events || process.endTime) {
     return false;
   }
   
   const powerEvents = process.events.filter(e => e.type === 'power_consumption');
   
-  if (powerEvents.length < 10) {
+  // Require more data points for reliable detection (increased from 10 to 20)
+  if (powerEvents.length < 20) {
     return false; // Need more data
   }
   
@@ -688,12 +690,41 @@ function isInCompletionPhase(process, thresholdWatts = 5, stableMinutes = 5) {
     now - new Date(e.timestamp).getTime() < stableThresholdMs
   );
   
-  if (recentEvents.length < 3) {
+  // Require more recent data points for better confidence (increased from 3 to 5)
+  if (recentEvents.length < 5) {
     return false; // Need more recent data
   }
   
   // Check if all recent events are below threshold
-  return recentEvents.every(e => e.value < thresholdWatts);
+  const allBelowThreshold = recentEvents.every(e => e.value < thresholdWatts);
+  
+  if (!allBelowThreshold) {
+    return false;
+  }
+  
+  // Additional check: verify power is declining or stable (not increasing)
+  // Compare older events vs recent events to ensure we're not in a temporary dip
+  const bufferMinutes = 5; // Look back 5 minutes before the stable period
+  const bufferThresholdMs = (stableMinutes + bufferMinutes) * 60 * 1000;
+  const bufferEvents = powerEvents.filter(e => {
+    const eventTime = new Date(e.timestamp).getTime();
+    const timeDiff = now - eventTime;
+    return timeDiff >= stableThresholdMs && timeDiff < bufferThresholdMs;
+  });
+  
+  // If we have buffer events, check that power isn't increasing
+  if (bufferEvents.length >= 3) {
+    const bufferAvg = bufferEvents.reduce((sum, e) => sum + e.value, 0) / bufferEvents.length;
+    const recentAvg = recentEvents.reduce((sum, e) => sum + e.value, 0) / recentEvents.length;
+    
+    // If recent power is higher than buffer period, we might be charging again
+    // Add a 20% tolerance to account for normal fluctuations
+    if (recentAvg > bufferAvg * 1.2) {
+      return false; // Power is increasing, not in completion phase
+    }
+  }
+  
+  return true;
 }
 
 /**

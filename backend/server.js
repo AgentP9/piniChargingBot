@@ -28,7 +28,8 @@ let saveTimer = null;
 const SAVE_THROTTLE_MS = 5000; // Save at most once every 5 seconds
 
 // Auto-off configuration
-const AUTO_OFF_DELAY_MS = 5 * 60 * 1000; // 5 minutes in milliseconds
+// Increased delay to provide more buffer time before turning off
+const AUTO_OFF_DELAY_MS = 10 * 60 * 1000; // 10 minutes in milliseconds (increased from 5)
 const AUTO_OFF_CHECK_INTERVAL_MS = 30000; // Check every 30 seconds
 
 function scheduleSave() {
@@ -200,11 +201,11 @@ function checkAutoOff(chargerId) {
     if (!autoOff.completionDetectedAt) {
       // First time detecting completion - start the timer
       autoOff.completionDetectedAt = now;
-      console.log(`Auto-off: Completion detected for charger ${chargerId}, starting 5-minute timer`);
+      console.log(`Auto-off: Completion detected for charger ${chargerId}, starting ${AUTO_OFF_DELAY_MS / 60000}-minute timer`);
 
-      // Set timer for 5 minutes (300000 ms)
+      // Set timer for revalidation after configured delay
       autoOff.revalidationTimer = setTimeout(() => {
-        console.log(`Auto-off: 5-minute timer expired for charger ${chargerId}, revalidating...`);
+        console.log(`Auto-off: ${AUTO_OFF_DELAY_MS / 60000}-minute timer expired for charger ${chargerId}, revalidating...`);
         
         // Revalidate completion state
         const currentProcess = chargingProcesses.find(p => p.id === chargerState.currentProcessId);

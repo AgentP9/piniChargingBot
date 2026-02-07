@@ -36,7 +36,7 @@ console.log(`Expected: false, Got: ${isCompleting1}`);
 console.log(isCompleting1 === false ? '✓ PASS\n' : '✗ FAIL\n');
 
 // Test 2: Process with low power consumption (completing)
-console.log('Test 2: Charging with low power for 5+ minutes (should be completing)');
+console.log('Test 2: Charging with low power for 10+ minutes (should be completing)');
 const completingProcess = {
   id: 2,
   chargerId: 'charger1',
@@ -45,8 +45,8 @@ const completingProcess = {
   events: []
 };
 
-// Add high power events initially
-for (let i = 0; i < 10; i++) {
+// Add high power events initially (15-20 minutes ago)
+for (let i = 0; i < 15; i++) {
   const timestamp = new Date(Date.now() - (50 - i * 2) * 60 * 1000).toISOString();
   completingProcess.events.push({
     timestamp: timestamp,
@@ -55,9 +55,9 @@ for (let i = 0; i < 10; i++) {
   });
 }
 
-// Add low power events in the last 6 minutes
-for (let i = 0; i < 10; i++) {
-  const timestamp = new Date(Date.now() - (6 - i * 0.6) * 60 * 1000).toISOString();
+// Add low power events in the last 12 minutes (to exceed 10-minute threshold)
+for (let i = 0; i < 15; i++) {
+  const timestamp = new Date(Date.now() - (12 - i * 0.8) * 60 * 1000).toISOString();
   completingProcess.events.push({
     timestamp: timestamp,
     type: 'power_consumption',
@@ -106,8 +106,53 @@ console.log(`Result: ${isCompleting4 ? 'COMPLETING ✗' : 'NOT COMPLETING ✓'}`
 console.log(`Expected: false, Got: ${isCompleting4}`);
 console.log(isCompleting4 === false ? '✓ PASS\n' : '✗ FAIL\n');
 
+// Test 5: Process with low power but increasing trend (should NOT be completing)
+console.log('Test 5: Low power but increasing trend (should NOT be completing)');
+const increasingPowerProcess = {
+  id: 5,
+  chargerId: 'charger1',
+  startTime: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+  endTime: null,
+  events: []
+};
+
+// Add older events with high power (30+ minutes ago) to ensure we have enough total events
+for (let i = 0; i < 10; i++) {
+  const timestamp = new Date(Date.now() - (40 - i * 2) * 60 * 1000).toISOString();
+  increasingPowerProcess.events.push({
+    timestamp: timestamp,
+    type: 'power_consumption',
+    value: 15 + Math.random() * 5 // 15-20W
+  });
+}
+
+// Add buffer period with lower power (10-15 minutes ago)
+for (let i = 0; i < 8; i++) {
+  const timestamp = new Date(Date.now() - (15 - i * 0.625) * 60 * 1000).toISOString();
+  increasingPowerProcess.events.push({
+    timestamp: timestamp,
+    type: 'power_consumption',
+    value: 1.5 + Math.random() * 1 // 1.5-2.5W
+  });
+}
+
+// Add recent period with higher (but still low) power in last 10 minutes
+for (let i = 0; i < 12; i++) {
+  const timestamp = new Date(Date.now() - (10 - i * 0.833) * 60 * 1000).toISOString();
+  increasingPowerProcess.events.push({
+    timestamp: timestamp,
+    type: 'power_consumption',
+    value: 3 + Math.random() * 1.5 // 3-4.5W (still below 5W but 50%+ higher than buffer period)
+  });
+}
+
+const isCompleting5 = patternAnalyzer.isInCompletionPhase(increasingPowerProcess);
+console.log(`Result: ${isCompleting5 ? 'COMPLETING ✗' : 'NOT COMPLETING ✓'}`);
+console.log(`Expected: false, Got: ${isCompleting5}`);
+console.log(isCompleting5 === false ? '✓ PASS\n' : '✗ FAIL\n');
+
 // Summary
 console.log('================================');
-const allPassed = !isCompleting1 && isCompleting2 && !isCompleting3 && !isCompleting4;
+const allPassed = !isCompleting1 && isCompleting2 && !isCompleting3 && !isCompleting4 && !isCompleting5;
 console.log(allPassed ? '✓ ALL TESTS PASSED' : '✗ SOME TESTS FAILED');
 process.exit(allPassed ? 0 : 1);

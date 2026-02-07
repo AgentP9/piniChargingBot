@@ -9,10 +9,11 @@ This feature automatically detects when a device charging session is nearing com
 The system monitors power consumption patterns during active charging sessions. A charger is considered to be in the "completion phase" when:
 
 1. **Power drops below threshold**: Power consumption falls below 5 Watts
-2. **Stable low power**: Power remains below the threshold for at least 5 minutes
-3. **Sufficient data**: At least 10 power consumption events recorded, with at least 3 recent events
+2. **Stable low power**: Power remains below the threshold for at least 10 minutes (increased from 5 minutes for better reliability)
+3. **Sufficient data**: At least 20 power consumption events recorded, with at least 5 recent events (increased for more accurate detection)
+4. **Declining or stable trend**: Power consumption must not be increasing, with a buffer period check to ensure we're not in a temporary power dip
 
-This pattern is typical of devices that have finished their fast-charging phase and are only maintaining trickle charge.
+This improved pattern detection is more robust and prevents premature completion detection, accounting for normal charging fluctuations and ensuring devices are truly finished charging before marking them as complete.
 
 ### Visual Feedback
 
