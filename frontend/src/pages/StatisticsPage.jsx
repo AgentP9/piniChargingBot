@@ -81,7 +81,7 @@ function StatisticsPage({ processes, patterns, devices }) {
     
     processes.forEach(p => {
       const hour = new Date(p.startTime).getHours();
-      chargingByHour[hour] = (chargingByHour[hour] || 0) + 1;
+      chargingByHour[hour] += 1;
     });
     
     const peakHoursData = Object.entries(chargingByHour).map(([hour, count]) => ({
