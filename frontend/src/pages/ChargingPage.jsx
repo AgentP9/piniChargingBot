@@ -14,6 +14,7 @@ function ChargingPage({
 }) {
   const [estimations, setEstimations] = useState({});
   const [guesses, setGuesses] = useState({});
+  const [completionStatus, setCompletionStatus] = useState(null);
 
   // Get active (currently running) charging processes
   const activeProcesses = useMemo(() => {
@@ -89,6 +90,35 @@ function ChargingPage({
     const interval = setInterval(fetchGuesses, 10000);
     return () => clearInterval(interval);
   }, [activeProcesses]);
+
+  // Fetch completion status for the single active process
+  useEffect(() => {
+    if (activeProcesses.length !== 1) {
+      setCompletionStatus(null);
+      return;
+    }
+
+    const fetchCompletionStatus = async () => {
+      const process = activeProcesses[0];
+      const chargerId = process.chargerId || process.deviceId;
+      
+      if (!chargerId) {
+        return;
+      }
+
+      try {
+        const response = await axios.get(`${API_URL}/chargers/${chargerId}/completion-status`);
+        setCompletionStatus(response.data);
+      } catch (error) {
+        console.error(`Error fetching completion status for charger ${chargerId}:`, error);
+      }
+    };
+
+    fetchCompletionStatus();
+    // Refresh completion status every 30 seconds
+    const interval = setInterval(fetchCompletionStatus, 30000);
+    return () => clearInterval(interval);
+  }, [activeProcessIds, activeProcesses]);
 
   const handleConfirmGuess = async (processId, guessedDeviceName) => {
     try {
@@ -287,7 +317,10 @@ function ChargingPage({
             );
           })}
           
-          <ChargingChart processes={activeProcesses} />
+          <ChargingChart 
+            processes={activeProcesses} 
+            completionStatus={activeProcesses.length === 1 ? completionStatus : null}
+          />
         </section>
       )}
 

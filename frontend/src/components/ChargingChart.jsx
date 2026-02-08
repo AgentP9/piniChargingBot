@@ -4,8 +4,10 @@ import './ChargingChart.css';
 
 // Color palette for multiple processes - distinct colors for better differentiation
 const PROCESS_COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+const COMPLETING_COLOR = '#f59e0b'; // Yellow color for completion phase
+const DEFAULT_SINGLE_COLOR = '#10b981'; // Default green color for single process
 
-function ChargingChart({ processes, patterns = [] }) {
+function ChargingChart({ processes, patterns = [], completionStatus = null }) {
   // Support both single process (for backward compatibility) and multiple processes
   const processList = Array.isArray(processes) ? processes : [processes].filter(Boolean);
   
@@ -185,9 +187,9 @@ function ChargingChart({ processes, patterns = [] }) {
               <Line 
                 type="monotone" 
                 dataKey="power" 
-                stroke="#10b981" 
+                stroke={completionStatus?.isInCompletionPhase ? COMPLETING_COLOR : DEFAULT_SINGLE_COLOR} 
                 strokeWidth={2}
-                dot={{ fill: '#10b981', r: 3 }}
+                dot={{ fill: completionStatus?.isInCompletionPhase ? COMPLETING_COLOR : DEFAULT_SINGLE_COLOR, r: 3 }}
                 activeDot={{ r: 6 }}
                 name="Power (W)"
               />
