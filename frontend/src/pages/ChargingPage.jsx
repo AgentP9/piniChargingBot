@@ -118,7 +118,7 @@ function ChargingPage({
     // Refresh completion status every 30 seconds
     const interval = setInterval(fetchCompletionStatus, 30000);
     return () => clearInterval(interval);
-  }, [activeProcessIds, activeProcesses]);
+  }, [activeProcesses]);
 
   const handleConfirmGuess = async (processId, guessedDeviceName) => {
     try {
