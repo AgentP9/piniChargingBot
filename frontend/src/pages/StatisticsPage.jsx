@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, LineChart, Line, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { formatDateTime } from '../utils/dateFormatter';
 import './StatisticsPage.css';
 
@@ -73,6 +73,23 @@ function StatisticsPage({ processes, patterns, devices }) {
       });
     }
     
+    // Peak charging hours (by hour of day)
+    const chargingByHour = {};
+    for (let i = 0; i < 24; i++) {
+      chargingByHour[i] = 0;
+    }
+    
+    processes.forEach(p => {
+      const hour = new Date(p.startTime).getHours();
+      chargingByHour[hour] = (chargingByHour[hour] || 0) + 1;
+    });
+    
+    const peakHoursData = Object.entries(chargingByHour).map(([hour, count]) => ({
+      hour: parseInt(hour),
+      count,
+      label: `${hour.toString().padStart(2, '0')}:00`
+    }));
+    
     return {
       totalProcesses,
       completedProcesses,
@@ -81,7 +98,8 @@ function StatisticsPage({ processes, patterns, devices }) {
       totalEnergy,
       deviceUsage,
       chargerUsage,
-      processesPerDay: dateArray
+      processesPerDay: dateArray,
+      peakHoursData
     };
   }, [processes, patterns, devices]);
   
@@ -94,11 +112,6 @@ function StatisticsPage({ processes, patterns, devices }) {
   const chargerUsageData = Object.entries(statistics.chargerUsage)
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count);
-  
-  const statusData = [
-    { name: 'Completed', value: statistics.completedProcesses, color: '#10b981' },
-    { name: 'Active', value: statistics.activeProcesses, color: '#3b82f6' }
-  ];
   
   const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
   
@@ -248,33 +261,34 @@ function StatisticsPage({ processes, patterns, devices }) {
           </div>
         )}
         
-        {/* Status Distribution */}
+        {/* Peak Charging Hours */}
         <div className="card chart-card">
-          <h3>Session Status</h3>
+          <h3>Peak Charging Hours</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={statusData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {statusData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
+            <BarChart data={statistics.peakHoursData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
+              <XAxis 
+                dataKey="label" 
+                stroke="var(--text-tertiary)"
+                tick={{ fill: 'var(--text-tertiary)', fontSize: 10 }}
+                angle={-45}
+                textAnchor="end"
+                height={60}
+              />
+              <YAxis 
+                stroke="var(--text-tertiary)"
+                tick={{ fill: 'var(--text-tertiary)', fontSize: 12 }}
+              />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'var(--bg-secondary)', 
                   border: '1px solid var(--border-primary)',
                   borderRadius: '6px'
                 }}
+                labelFormatter={(label) => `Time: ${label}`}
               />
-            </PieChart>
+              <Bar dataKey="count" fill="#8b5cf6" name="Sessions" />
+            </BarChart>
           </ResponsiveContainer>
         </div>
         

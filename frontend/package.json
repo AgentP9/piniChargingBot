@@ -1,6 +1,6 @@
 {
   "name": "pini-charging-bot-frontend",
-  "version": "1.0.0",
+  "version": "0.9.3",
   "description": "Frontend for monitoring device charging",
   "license": "MIT",
   "scripts": {
