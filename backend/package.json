@@ -1,6 +1,6 @@
 {
   "name": "pini-charging-bot-backend",
-  "version": "1.0.0",
+  "version": "0.9.3",
   "description": "Backend for monitoring device charging via MQTT",
   "main": "server.js",
   "scripts": {
