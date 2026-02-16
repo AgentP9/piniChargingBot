@@ -5,10 +5,11 @@ import './DeviceList.css';
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 // DeviceList displays connected chargers (physical charging devices like ShellyPlugs)
-function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }) {
+function DeviceList({ devices, patterns, selectedDeviceId, onSelectDevice, onRefreshData }) {
   const [deviceGuesses, setDeviceGuesses] = useState({});
   const [completionStatus, setCompletionStatus] = useState({});
   const [controllingDevice, setControllingDevice] = useState(null);
+  const [selectingDevice, setSelectingDevice] = useState(null); // Track which charger is showing the selector
 
   // Fetch educated guesses for active processes
   useEffect(() => {
@@ -186,6 +187,44 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }
     }
   };
 
+  const handleManualDeviceSelect = async (deviceId, processId, selectedDeviceName, event) => {
+    event.stopPropagation();
+    
+    if (!selectedDeviceName) {
+      return;
+    }
+    
+    try {
+      await axios.put(`${API_URL}/processes/${processId}/device-name`, {
+        newDeviceName: selectedDeviceName
+      });
+      
+      // Remove the guess from state since device is now set
+      setDeviceGuesses(prev => {
+        const updated = { ...prev };
+        delete updated[deviceId];
+        return updated;
+      });
+      
+      // Close the selector
+      setSelectingDevice(null);
+      
+      // Refresh data to show updated device name
+      if (onRefreshData) {
+        await onRefreshData();
+      }
+    } catch (error) {
+      console.error(`Error setting device for process ${processId}:`, error);
+      const errorMessage = error.response?.data?.error || 'Failed to set device';
+      alert(`${errorMessage}. Please try again.`);
+    }
+  };
+
+  const toggleDeviceSelector = (deviceId, event) => {
+    event.stopPropagation();
+    setSelectingDevice(selectingDevice === deviceId ? null : deviceId);
+  };
+
   return (
     <div className="device-list">
       {devices.map(device => {
@@ -293,6 +332,45 @@ function DeviceList({ devices, selectedDeviceId, onSelectDevice, onRefreshData }
                   >
                     ✗
                   </button>
+                </div>
+              </div>
+            )}
+            {device.isOn && device.currentProcessId !== null && patterns && patterns.length > 0 && (
+              <div className="detail-row device-selector-row">
+                <span className="detail-label">Set Device:</span>
+                <div className="device-selector-container">
+                  {selectingDevice === device.id ? (
+                    <div className="device-selector-dropdown">
+                      <select
+                        className="device-selector"
+                        onChange={(e) => handleManualDeviceSelect(device.id, device.currentProcessId, e.target.value, e)}
+                        onClick={(e) => e.stopPropagation()}
+                        defaultValue=""
+                      >
+                        <option value="" disabled>Select a device...</option>
+                        {patterns.map((pattern) => (
+                          <option key={pattern.id} value={pattern.deviceName}>
+                            {pattern.deviceName} ({pattern.count} sessions)
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        className="cancel-selector-button"
+                        onClick={(e) => toggleDeviceSelector(device.id, e)}
+                        title="Cancel selection"
+                      >
+                        ✗
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      className="show-selector-button"
+                      onClick={(e) => toggleDeviceSelector(device.id, e)}
+                      title="Manually select device"
+                    >
+                      📋 Select Device
+                    </button>
+                  )}
                 </div>
               </div>
             )}
