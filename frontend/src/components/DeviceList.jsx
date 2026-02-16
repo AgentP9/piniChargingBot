@@ -238,6 +238,13 @@ function DeviceList({ devices, processes, patterns, selectedDeviceId, onSelectDe
           : null;
         const assignedDeviceName = currentProcess?.deviceName;
         
+        // Helper to determine if device selector should be shown
+        const shouldShowDeviceSelector = device.isOn 
+          && device.currentProcessId !== null 
+          && !assignedDeviceName 
+          && patterns 
+          && patterns.length > 0;
+        
         return (
         <div 
           key={device.id} 
@@ -349,7 +356,7 @@ function DeviceList({ devices, processes, patterns, selectedDeviceId, onSelectDe
                 </div>
               </div>
             )}
-            {device.isOn && device.currentProcessId !== null && !assignedDeviceName && patterns && patterns.length > 0 && (
+            {shouldShowDeviceSelector && (
               <div className="detail-row device-selector-row">
                 <span className="detail-label">Set Device:</span>
                 <div className="device-selector-container">
