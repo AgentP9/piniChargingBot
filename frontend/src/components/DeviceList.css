@@ -391,6 +391,26 @@
   margin-left: 0.25rem;
 }
 
+/* Assigned Device Styles */
+.assigned-device-row {
+  border-top: 1px solid var(--border-primary);
+  padding-top: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.assigned-device-value {
+  font-weight: 700;
+  color: var(--status-active);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.assigned-device-value::before {
+  content: '✓';
+  font-size: 0.9rem;
+}
+
 /* Device Selector Styles */
 .device-selector-row {
   border-top: 1px solid var(--border-primary);
