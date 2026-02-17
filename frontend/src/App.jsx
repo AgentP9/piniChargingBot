@@ -154,6 +154,7 @@ function App() {
                   <ChargingPage 
                     devices={devices}
                     processes={processes}
+                    patterns={patterns}
                     onRefreshData={fetchData}
                   />
                 } 

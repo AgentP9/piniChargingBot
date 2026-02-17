@@ -390,3 +390,121 @@
   font-size: 0.85rem;
   margin-left: 0.25rem;
 }
+
+/* Assigned Device Styles */
+.assigned-device-row {
+  border-top: 1px solid var(--border-primary);
+  padding-top: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.assigned-device-value {
+  font-weight: 700;
+  color: var(--status-active);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.assigned-device-value::before {
+  content: '✓';
+  font-size: 0.9rem;
+}
+
+/* Device Selector Styles */
+.device-selector-row {
+  border-top: 1px solid var(--border-primary);
+  padding-top: 0.5rem;
+  margin-top: 0.5rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.device-selector-container {
+  width: 100%;
+}
+
+.device-selector-dropdown {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  width: 100%;
+}
+
+.device-selector {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid var(--border-primary);
+  border-radius: 4px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.device-selector:hover {
+  border-color: var(--border-secondary);
+  background: var(--bg-hover);
+}
+
+.device-selector:focus {
+  outline: none;
+  border-color: var(--border-secondary);
+  box-shadow: 0 0 0 2px var(--shadow-accent);
+}
+
+.show-selector-button {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.show-selector-button:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-secondary);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px var(--shadow-accent);
+}
+
+.show-selector-button:active {
+  transform: translateY(0);
+}
+
+.cancel-selector-button {
+  padding: 0.5rem 0.75rem;
+  background: var(--status-error);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 700;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+}
+
+.cancel-selector-button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+}
+
+.cancel-selector-button:active {
+  transform: translateY(0);
+}
